@@ -148,6 +148,12 @@ function renderTable(manufacturer) {
                                 <div class="report-block">
                                     <div class="report-block-header">Perfil do produto</div>
                                     <div class="report-grid">
+                                        <div class="report-item"><span class="label">Linha</span><span class="value">${row.line || '—'}</span></div>
+                                        <div class="report-item"><span class="label">Uso</span><span class="value">${row.lineTargetUse || '—'}</span></div>
+                                        <div class="report-item"><span class="label">Posicionamento</span><span class="value">${row.linePositioning || '—'}</span></div>
+                                        <div class="report-item"><span class="label">Opções de cor</span><span class="value">${row.lineColorOptions || '—'}</span></div>
+                                        <div class="report-item"><span class="label">Cor</span><span class="value">${row.color || '—'}</span></div>
+                                        <div class="report-item"><span class="label">Acabamento</span><span class="value">${row.surfaceFinish || '—'}</span></div>
                                         <div class="report-item"><span class="label">Impressora</span><span class="value">${row.printerModel || '—'}</span></div>
                                         <div class="report-item"><span class="label">Bico</span><span class="value">${row.nozzleSize || '—'} mm</span></div>
                                         <div class="report-item"><span class="label">Herança</span><span class="value">${row.inherits || '—'}</span></div>

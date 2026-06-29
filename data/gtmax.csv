@@ -1,0 +1,21 @@
+manufacturer,line,material,commercial_name,sku,color_name,hex,rgb,finish,diameter_mm,weight_g,nozzle_min,nozzle_ideal,nozzle_max,bed_temp,flow_ratio,max_volumetric_speed,dry_temp,dry_hours,recommended_use,notes,status
+GTMax3D,PLA Premium,PLA,PLA Premium,GTM-PLA-WHT-1K,White,#F5F5F5,"245,245,245",Gloss,1.75,1000,210,220,230,60,1.00,15,50,8,General purpose,Linha Premium,Active
+GTMax3D,PLA Premium,PLA,PLA Premium,GTM-PLA-BLK-1K,Black,#111111,"17,17,17",Gloss,1.75,1000,210,220,230,60,1.00,15,50,8,General purpose,,Active
+GTMax3D,PLA Premium,PLA,PLA Premium,GTM-PLA-GRY-1K,Gray,#808080,"128,128,128",Gloss,1.75,1000,210,220,230,60,1.00,15,50,8,Functional parts,,Active
+GTMax3D,PLA Premium,PLA,PLA Premium,GTM-PLA-RED-1K,Red,#C62828,"198,40,40",Gloss,1.75,1000,210,220,230,60,1.00,15,50,8,General purpose,,Active
+GTMax3D,PLA Premium,PLA,PLA Premium,GTM-PLA-BLU-1K,Blue,#1565C0,"21,101,192",Gloss,1.75,1000,210,220,230,60,1.00,15,50,8,General purpose,,Active
+GTMax3D,PLA Premium,PLA,PLA Premium,GTM-PLA-GRN-1K,Green,#2E7D32,"46,125,50",Gloss,1.75,1000,210,220,230,60,1.00,15,50,8,General purpose,,Active
+GTMax3D,PLA Silk,PLA Silk,PLA Silk,GTM-SLK-GLD-1K,Gold,#D4AF37,"212,175,55",Silk,1.75,1000,215,225,235,60,1.02,12,50,8,Decorative,High gloss finish,Active
+GTMax3D,PLA Silk,PLA Silk,PLA Silk,GTM-SLK-SLV-1K,Silver,#C0C0C0,"192,192,192",Silk,1.75,1000,215,225,235,60,1.02,12,50,8,Decorative,,Active
+GTMax3D,PLA Silk,PLA Silk,PLA Silk,GTM-SLK-CPR-1K,Copper,#B87333,"184,115,51",Silk,1.75,1000,215,225,235,60,1.02,12,50,8,Decorative,,Active
+GTMax3D,PLA Matte,PLA Matte,PLA Matte,GTM-MAT-WHT-1K,Matte White,#F2F2F2,"242,242,242",Matte,1.75,1000,205,215,225,55,1.00,14,50,8,Display models,,Active
+GTMax3D,PLA Matte,PLA Matte,PLA Matte,GTM-MAT-BLK-1K,Matte Black,#222222,"34,34,34",Matte,1.75,1000,205,215,225,55,1.00,14,50,8,Display models,,Active
+GTMax3D,PETG Premium,PETG,PETG Premium,GTM-PET-WHT-1K,White,#F5F5F5,"245,245,245",Semi-Gloss,1.75,1000,235,245,255,80,0.98,12,65,8,Mechanical parts,,Active
+GTMax3D,PETG Premium,PETG,PETG Premium,GTM-PET-BLK-1K,Black,#111111,"17,17,17",Semi-Gloss,1.75,1000,235,245,255,80,0.98,12,65,8,Mechanical parts,,Active
+GTMax3D,PETG Premium,PETG,PETG Premium,GTM-PET-CLR-1K,Transparent,#F8F8F8,"248,248,248",Transparent,1.75,1000,235,245,255,80,0.98,12,65,8,Mechanical parts,Good layer adhesion,Active
+GTMax3D,ABS Premium,ABS,ABS Premium,GTM-ABS-BLK-1K,Black,#111111,"17,17,17",Gloss,1.75,1000,240,250,260,100,1.00,10,80,6,Engineering parts,,Active
+GTMax3D,ABS Premium,ABS,ABS Premium,GTM-ABS-WHT-1K,White,#F5F5F5,"245,245,245",Gloss,1.75,1000,240,250,260,100,1.00,10,80,6,Engineering parts,,Active
+GTMax3D,ASA,ASA,ASA,GTM-ASA-GRY-1K,Gray,#808080,"128,128,128",Matte,1.75,1000,245,255,265,100,1.00,10,80,6,Outdoor parts,UV resistant,Active
+GTMax3D,ASA,ASA,ASA,GTM-ASA-BLK-1K,Black,#111111,"17,17,17",Matte,1.75,1000,245,255,265,100,1.00,10,80,6,Outdoor parts,,Active
+GTMax3D,TPU 95A,TPU,TPU 95A,GTM-TPU-BLK-1K,Black,#111111,"17,17,17",Semi-Gloss,1.75,1000,215,225,235,50,1.05,8,50,8,Flexible parts,,Active
+GTMax3D,TPU 95A,TPU,TPU 95A,GTM-TPU-WHT-1K,White,#F5F5F5,"245,245,245",Semi-Gloss,1.75,1000,215,225,235,50,1.05,8,50,8,Flexible parts,,Active

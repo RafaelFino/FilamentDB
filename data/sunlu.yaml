@@ -2,247 +2,255 @@ manufacturer:
   name: Sunlu
   country: China
   website: https://www.sunlu.com
-
 lines:
-
-  - name: PLA Standard Line
-    description: General purpose PLA for everyday printing
-    positioning: balanced
-    difficulty: 40
-    target_use: general_printing
-    notes: "PLA base da Sunlu, confiável e fácil de imprimir"
-
-  - name: PLA+ Line
-    description: Improved strength PLA with better impact resistance
-    positioning: improved_quality
-    difficulty: 45
-    target_use: functional_pla
-    notes: "PLA reforçado, bom equilíbrio geral"
-
-  - name: High Speed Line
-    description: Optimized for high-speed printing
-    positioning: performance
-    difficulty: 35
-    target_use: high_speed_printing
-    notes: "Uma das linhas mais usadas em impressão rápida"
-
-  - name: Meta Line
-    description: Advanced PLA with improved flow and surface finish
-    positioning: performance_plus
-    difficulty: 40
-    target_use: advanced_pla
-    notes: "Melhor fluidez e acabamento superficial"
-
-  - name: Silk Line
-    description: Glossy aesthetic PLA for visual parts
-    positioning: aesthetic
-    difficulty: 45
-    target_use: visual_quality
-    notes: "Acabamento brilhante, foco estético"
-
-  - name: PETG Line
-    description: Functional PETG for mechanical parts
-    positioning: functional
-    difficulty: 55
-    target_use: mechanical_parts
-    notes: "Boa resistência mecânica e química"
-
-  - name: ABS Line
-    description: Engineering ABS for high strength parts
-    positioning: engineering
-    difficulty: 70
-    target_use: mechanical_heat_resistant
-    notes: "Requer ambiente fechado para melhor resultado"
-
-  - name: TPU Line
-    description: Flexible TPU materials
-    positioning: flexible
-    difficulty: 80
-    target_use: flexible_parts
-    notes: "Baixa velocidade, alta elasticidade"
-
+- name: PLA Standard Line
+  description: General purpose PLA for everyday printing
+  positioning: balanced
+  difficulty: 40
+  target_use: general_printing
+  notes: PLA base da Sunlu, confiável e fácil de imprimir
+  color_options:
+  - Natural
+  - Black
+- name: PLA+ Line
+  description: Improved strength PLA with better impact resistance
+  positioning: improved_quality
+  difficulty: 45
+  target_use: functional_pla
+  notes: PLA reforçado, bom equilíbrio geral
+  color_options:
+  - Natural
+  - Black
+- name: High Speed Line
+  description: Optimized for high-speed printing
+  positioning: performance
+  difficulty: 35
+  target_use: high_speed_printing
+  notes: Uma das linhas mais usadas em impressão rápida
+  color_options:
+  - Natural
+  - Black
+- name: Meta Line
+  description: Advanced PLA with improved flow and surface finish
+  positioning: performance_plus
+  difficulty: 40
+  target_use: advanced_pla
+  notes: Melhor fluidez e acabamento superficial
+  color_options:
+  - Natural
+  - Black
+- name: Silk Line
+  description: Glossy aesthetic PLA for visual parts
+  positioning: aesthetic
+  difficulty: 45
+  target_use: visual_quality
+  notes: Acabamento brilhante, foco estético
+  color_options:
+  - White
+  - Natural
+  - Silver
+- name: PETG Line
+  description: Functional PETG for mechanical parts
+  positioning: functional
+  difficulty: 55
+  target_use: mechanical_parts
+  notes: Boa resistência mecânica e química
+  color_options:
+  - Natural
+  - Black
+- name: ABS Line
+  description: Engineering ABS for high strength parts
+  positioning: engineering
+  difficulty: 70
+  target_use: mechanical_heat_resistant
+  notes: Requer ambiente fechado para melhor resultado
+  color_options:
+  - Natural
+  - Black
+- name: TPU Line
+  description: Flexible TPU materials
+  positioning: flexible
+  difficulty: 80
+  target_use: flexible_parts
+  notes: Baixa velocidade, alta elasticidade
+  color_options:
+  - Natural
+  - Black
+  - Gray
 materials:
-
   PLA:
-
     profiles:
-
-      - line: PLA Standard Line
-        commercial_name: PLA
-        profile_name: Sunlu PLA K2
-
-        inherits: Hyper PLA @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 215
-          min: 205
-          max: 230
-
-        bed:
-          initial: 60
-          temp: 60
-
-        flow_ratio: 1.00
-        max_volumetric_speed: 14
-        confidence: 85
-
-        recommendation: "PLA confiável e fácil de imprimir"
-
-      - line: PLA+ Line
-        commercial_name: PLA+
-        profile_name: Sunlu PLA+ K2
-
-        inherits: Hyper PLA @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 220
-          min: 210
-          max: 235
-
-        bed:
-          initial: 60
-          temp: 60
-
-        flow_ratio: 1.02
-        max_volumetric_speed: 15
-        confidence: 88
-
-        recommendation: "PLA mais resistente e estável"
-
-      - line: High Speed Line
-        commercial_name: PLA High Speed
-        profile_name: Sunlu PLA High Speed K2
-
-        inherits: Hyper PLA @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 225
-          min: 215
-          max: 240
-
-        bed:
-          initial: 60
-          temp: 60
-
-        flow_ratio: 0.98
-        max_volumetric_speed: 20
-        confidence: 90
-
-        recommendation: "Excelente para impressão rápida"
-
-      - line: Meta Line
-        commercial_name: PLA Meta
-        profile_name: Sunlu PLA Meta K2
-
-        inherits: Hyper PLA @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 220
-          min: 210
-          max: 235
-
-        bed:
-          initial: 60
-          temp: 60
-
-        flow_ratio: 1.01
-        max_volumetric_speed: 18
-        confidence: 90
-
-        recommendation: "Melhor fluxo e acabamento da linha PLA"
-
-      - line: Silk Line
-        commercial_name: PLA Silk
-        profile_name: Sunlu PLA Silk K2
-
-        inherits: Hyper PLA @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 225
-          min: 215
-          max: 240
-
-        bed:
-          initial: 60
-          temp: 60
-
-        flow_ratio: 1.05
-        max_volumetric_speed: 12
-        confidence: 85
-
-        recommendation: "Acabamento brilhante para peças estéticas"
-
+    - line: PLA Standard Line
+      commercial_name: PLA
+      profile_name: Sunlu PLA K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 215
+        min: 205
+        max: 230
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      confidence: 85
+      recommendation: PLA confiável e fácil de imprimir
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+    - line: PLA+ Line
+      commercial_name: PLA+
+      profile_name: Sunlu PLA+ K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 220
+        min: 210
+        max: 235
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.02
+      max_volumetric_speed: 15
+      confidence: 88
+      recommendation: PLA mais resistente e estável
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+    - line: High Speed Line
+      commercial_name: PLA High Speed
+      profile_name: Sunlu PLA High Speed K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 225
+        min: 215
+        max: 240
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 0.98
+      max_volumetric_speed: 20
+      confidence: 90
+      recommendation: Excelente para impressão rápida
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+    - line: Meta Line
+      commercial_name: PLA Meta
+      profile_name: Sunlu PLA Meta K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 220
+        min: 210
+        max: 235
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.01
+      max_volumetric_speed: 18
+      confidence: 90
+      recommendation: Melhor fluxo e acabamento da linha PLA
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+    - line: Silk Line
+      commercial_name: PLA Silk
+      profile_name: Sunlu PLA Silk K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 225
+        min: 215
+        max: 240
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.05
+      max_volumetric_speed: 12
+      confidence: 85
+      recommendation: Acabamento brilhante para peças estéticas
+      color: Natural
+      surface_finish: Silky
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
   PETG:
-
     profiles:
-
-      - line: PETG Line
-        commercial_name: PETG
-        profile_name: Sunlu PETG K2
-
-        inherits: Hyper PETG @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 245
-          min: 235
-          max: 255
-
-        bed:
-          initial: 80
-          temp: 80
-
-        flow_ratio: 0.98
-        max_volumetric_speed: 12
-        confidence: 85
-
-        recommendation: "Boa resistência mecânica e química"
-
+    - line: PETG Line
+      commercial_name: PETG
+      profile_name: Sunlu PETG K2
+      inherits: Hyper PETG @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 245
+        min: 235
+        max: 255
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      max_volumetric_speed: 12
+      confidence: 85
+      recommendation: Boa resistência mecânica e química
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
   ABS:
-
     profiles:
-
-      - line: ABS Line
-        commercial_name: ABS
-        profile_name: Sunlu ABS K2
-
-        inherits: ABS @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 250
-          min: 240
-          max: 265
-
-        bed:
-          initial: 100
-          temp: 100
-
-        flow_ratio: 1.00
-        max_volumetric_speed: 10
-        confidence: 80
-
-        recommendation: "Peças resistentes ao calor e impacto"
-
+    - line: ABS Line
+      commercial_name: ABS
+      profile_name: Sunlu ABS K2
+      inherits: ABS @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 250
+        min: 240
+        max: 265
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 10
+      confidence: 80
+      recommendation: Peças resistentes ao calor e impacto
+      color: Black
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
   TPU:
-
     profiles:
-
-      - line: TPU Line
-        commercial_name: TPU 95A
-        profile_name: Sunlu TPU K2
-
-        inherits: TPU @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 225
-          min: 215
-          max: 235
-
-        bed:
-          initial: 50
-          temp: 50
-
-        flow_ratio: 1.05
-        max_volumetric_speed: 8
-        confidence: 80
-
-        recommendation: "Flexível padrão, baixa velocidade obrigatória"
+    - line: TPU Line
+      commercial_name: TPU 95A
+      profile_name: Sunlu TPU K2
+      inherits: TPU @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 225
+        min: 215
+        max: 235
+      bed:
+        initial: 50
+        temp: 50
+      flow_ratio: 1.05
+      max_volumetric_speed: 8
+      confidence: 80
+      recommendation: Flexível padrão, baixa velocidade obrigatória
+      color: Natural
+      surface_finish: Flexible
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30

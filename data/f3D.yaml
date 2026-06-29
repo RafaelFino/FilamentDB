@@ -2,167 +2,167 @@ manufacturer:
   name: F3D
   country: Brazil
   website: null
-
 lines:
-
-  - name: Standard Line
-    description: General purpose filaments with good balance between cost and quality
-    positioning: balanced
-    difficulty: 45
-    target_use: general_printing
-    notes: "Linha base da F3D, foco em consistência"
-
-  - name: Premium Line
-    description: Improved surface finish and dimensional stability PLA/PETG
-    positioning: improved_quality
-    difficulty: 50
-    target_use: better_surface_finish
-    notes: "Melhor controle de acabamento e tolerância dimensional"
-
-  - name: Industrial Line
-    description: Engineering materials for functional and mechanical parts
-    positioning: functional
-    difficulty: 65
-    target_use: mechanical_parts
-    notes: "Maior resistência mecânica e estabilidade térmica"
-
-  - name: High Temp Line
-    description: Materials optimized for higher temperature resistance applications
-    positioning: engineering
-    difficulty: 70
-    target_use: heat_resistant_parts
-    notes: "Voltado para ABS/ASA e aplicações mais exigentes"
-
-  - name: Flex Line
-    description: TPU flexible materials
-    positioning: flexible
-    difficulty: 80
-    target_use: flexible_parts
-    notes: "Impressão lenta e controle rigoroso de retração"
-
+- name: Standard Line
+  description: General purpose filaments with good balance between cost and quality
+  positioning: balanced
+  difficulty: 45
+  target_use: general_printing
+  notes: Linha base da F3D, foco em consistência
+  color_options:
+  - Natural
+  - Black
+- name: Premium Line
+  description: Improved surface finish and dimensional stability PLA/PETG
+  positioning: improved_quality
+  difficulty: 50
+  target_use: better_surface_finish
+  notes: Melhor controle de acabamento e tolerância dimensional
+  color_options:
+  - Natural
+  - Black
+- name: Industrial Line
+  description: Engineering materials for functional and mechanical parts
+  positioning: functional
+  difficulty: 65
+  target_use: mechanical_parts
+  notes: Maior resistência mecânica e estabilidade térmica
+  color_options:
+  - Black
+  - White
+  - Natural
+- name: High Temp Line
+  description: Materials optimized for higher temperature resistance applications
+  positioning: engineering
+  difficulty: 70
+  target_use: heat_resistant_parts
+  notes: Voltado para ABS/ASA e aplicações mais exigentes
+  color_options:
+  - Natural
+  - Black
+- name: Flex Line
+  description: TPU flexible materials
+  positioning: flexible
+  difficulty: 80
+  target_use: flexible_parts
+  notes: Impressão lenta e controle rigoroso de retração
+  color_options:
+  - Natural
+  - Black
+  - Gray
 materials:
-
   PLA:
-
     profiles:
-
-      - line: Premium Line
-        commercial_name: PLA Premium
-        profile_name: F3D PLA Premium K2
-
-        inherits: Hyper PLA @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 225
-          min: 215
-          max: 235
-
-        bed:
-          initial: 60
-          temp: 60
-
-        flow_ratio: 1.00
-        max_volumetric_speed: 14
-        confidence: 85
-
-        recommendation: "PLA equilibrado com bom acabamento superficial"
-
+    - line: Premium Line
+      commercial_name: PLA Premium
+      profile_name: F3D PLA Premium K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 225
+        min: 215
+        max: 235
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      confidence: 85
+      recommendation: PLA equilibrado com bom acabamento superficial
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
   PETG:
-
     profiles:
-
-      - line: Industrial Line
-        commercial_name: PETG Standard
-        profile_name: F3D PETG K2
-
-        inherits: Hyper PETG @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 245
-          min: 235
-          max: 255
-
-        bed:
-          initial: 80
-          temp: 80
-
-        flow_ratio: 0.98
-        max_volumetric_speed: 12
-        confidence: 85
-
-        recommendation: "Boa resistência mecânica e estabilidade dimensional"
-
+    - line: Industrial Line
+      commercial_name: PETG Standard
+      profile_name: F3D PETG K2
+      inherits: Hyper PETG @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 245
+        min: 235
+        max: 255
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      max_volumetric_speed: 12
+      confidence: 85
+      recommendation: Boa resistência mecânica e estabilidade dimensional
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
   ABS:
-
     profiles:
-
-      - line: High Temp Line
-        commercial_name: ABS Industrial
-        profile_name: F3D ABS K2
-
-        inherits: ABS @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 250
-          min: 240
-          max: 265
-
-        bed:
-          initial: 100
-          temp: 100
-
-        flow_ratio: 1.00
-        max_volumetric_speed: 10
-        confidence: 80
-
-        recommendation: "Peças resistentes a temperatura e impacto"
-
+    - line: High Temp Line
+      commercial_name: ABS Industrial
+      profile_name: F3D ABS K2
+      inherits: ABS @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 250
+        min: 240
+        max: 265
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 10
+      confidence: 80
+      recommendation: Peças resistentes a temperatura e impacto
+      color: Black
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
   ASA:
-
     profiles:
-
-      - line: High Temp Line
-        commercial_name: ASA Outdoor
-        profile_name: F3D ASA K2
-
-        inherits: ASA @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 255
-          min: 245
-          max: 270
-
-        bed:
-          initial: 100
-          temp: 100
-
-        flow_ratio: 1.00
-        max_volumetric_speed: 10
-        confidence: 80
-
-        recommendation: "Uso externo com resistência UV"
-
+    - line: High Temp Line
+      commercial_name: ASA Outdoor
+      profile_name: F3D ASA K2
+      inherits: ASA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 255
+        min: 245
+        max: 270
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 10
+      confidence: 80
+      recommendation: Uso externo com resistência UV
+      color: White
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
   TPU:
-
     profiles:
-
-      - line: Flex Line
-        commercial_name: TPU 95A
-        profile_name: F3D TPU K2
-
-        inherits: TPU @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 225
-          min: 215
-          max: 235
-
-        bed:
-          initial: 50
-          temp: 50
-
-        flow_ratio: 1.05
-        max_volumetric_speed: 8
-        confidence: 75
-
-        recommendation: "Flexível padrão, exige baixa velocidade"
+    - line: Flex Line
+      commercial_name: TPU 95A
+      profile_name: F3D TPU K2
+      inherits: TPU @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 225
+        min: 215
+        max: 235
+      bed:
+        initial: 50
+        temp: 50
+      flow_ratio: 1.05
+      max_volumetric_speed: 8
+      confidence: 75
+      recommendation: Flexível padrão, exige baixa velocidade
+      color: Natural
+      surface_finish: Flexible
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30

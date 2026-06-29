@@ -2,184 +2,186 @@ manufacturer:
   name: GTMax
   country: Brazil
   website: null
-
 lines:
-
-  - name: Standard Line
-    description: General purpose filaments for everyday printing
-    positioning: balanced
-    difficulty: 45
-    target_use: general_printing
-    notes: "Linha base mais comum no mercado brasileiro"
-
-  - name: Economy Line
-    description: Low-cost filaments with higher tolerance variation
-    positioning: budget
-    difficulty: 55
-    target_use: low_cost_printing
-    notes: "Mais variação entre lotes, exige ajuste fino de perfil"
-
-  - name: Plus Line
-    description: Improved PLA/PETG with better consistency
-    positioning: improved_quality
-    difficulty: 50
-    target_use: better_stability
-    notes: "Versão mais estável da linha padrão"
-
-  - name: Industrial Line
-    description: Functional materials for mechanical applications
-    positioning: functional
-    difficulty: 65
-    target_use: mechanical_parts
-    notes: "Voltado para peças funcionais e uso técnico"
-
-  - name: Flex Line
-    description: TPU flexible materials
-    positioning: flexible
-    difficulty: 80
-    target_use: flexible_parts
-    notes: "Requer baixa velocidade e controle de retração"
-
+- name: Standard Line
+  description: General purpose filaments for everyday printing
+  positioning: balanced
+  difficulty: 45
+  target_use: general_printing
+  notes: Linha base mais comum no mercado brasileiro
+  color_options:
+  - Natural
+  - Black
+- name: Economy Line
+  description: Low-cost filaments with higher tolerance variation
+  positioning: budget
+  difficulty: 55
+  target_use: low_cost_printing
+  notes: Mais variação entre lotes, exige ajuste fino de perfil
+  color_options:
+  - Natural
+  - Black
+- name: Plus Line
+  description: Improved PLA/PETG with better consistency
+  positioning: improved_quality
+  difficulty: 50
+  target_use: better_stability
+  notes: Versão mais estável da linha padrão
+  color_options:
+  - Natural
+  - Black
+- name: Industrial Line
+  description: Functional materials for mechanical applications
+  positioning: functional
+  difficulty: 65
+  target_use: mechanical_parts
+  notes: Voltado para peças funcionais e uso técnico
+  color_options:
+  - Black
+  - White
+  - Natural
+- name: Flex Line
+  description: TPU flexible materials
+  positioning: flexible
+  difficulty: 80
+  target_use: flexible_parts
+  notes: Requer baixa velocidade e controle de retração
+  color_options:
+  - Natural
+  - Black
+  - Gray
 materials:
-
   PLA:
-
     profiles:
-
-      - line: Standard Line
-        commercial_name: PLA
-        profile_name: GTMax PLA K2
-
-        inherits: Hyper PLA @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 220
-          min: 210
-          max: 235
-
-        bed:
-          initial: 60
-          temp: 60
-
-        flow_ratio: 1.00
-        max_volumetric_speed: 13
-        confidence: 80
-
-        recommendation: "PLA comum, bom custo-benefício"
-
-      - line: Plus Line
-        commercial_name: PLA+
-        profile_name: GTMax PLA+ K2
-
-        inherits: Hyper PLA @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 225
-          min: 215
-          max: 240
-
-        bed:
-          initial: 60
-          temp: 60
-
-        flow_ratio: 1.02
-        max_volumetric_speed: 14
-        confidence: 82
-
-        recommendation: "Melhor estabilidade que o PLA padrão"
-
-      - line: Economy Line
-        commercial_name: PLA Economy
-        profile_name: GTMax PLA Economy K2
-
-        inherits: Hyper PLA @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 215
-          min: 205
-          max: 230
-
-        bed:
-          initial: 60
-          temp: 60
-
-        flow_ratio: 1.03
-        max_volumetric_speed: 12
-        confidence: 75
-
-        recommendation: "Mais barato, exige mais calibração"
-
+    - line: Standard Line
+      commercial_name: PLA
+      profile_name: GTMax PLA K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 220
+        min: 210
+        max: 235
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 13
+      confidence: 80
+      recommendation: PLA comum, bom custo-benefício
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+    - line: Plus Line
+      commercial_name: PLA+
+      profile_name: GTMax PLA+ K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 225
+        min: 215
+        max: 240
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.02
+      max_volumetric_speed: 14
+      confidence: 82
+      recommendation: Melhor estabilidade que o PLA padrão
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+    - line: Economy Line
+      commercial_name: PLA Economy
+      profile_name: GTMax PLA Economy K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 215
+        min: 205
+        max: 230
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.03
+      max_volumetric_speed: 12
+      confidence: 75
+      recommendation: Mais barato, exige mais calibração
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
   PETG:
-
     profiles:
-
-      - line: Industrial Line
-        commercial_name: PETG
-        profile_name: GTMax PETG K2
-
-        inherits: Hyper PETG @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 245
-          min: 235
-          max: 255
-
-        bed:
-          initial: 80
-          temp: 80
-
-        flow_ratio: 0.98
-        max_volumetric_speed: 11
-        confidence: 80
-
-        recommendation: "Boa resistência mecânica com custo acessível"
-
+    - line: Industrial Line
+      commercial_name: PETG
+      profile_name: GTMax PETG K2
+      inherits: Hyper PETG @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 245
+        min: 235
+        max: 255
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      max_volumetric_speed: 11
+      confidence: 80
+      recommendation: Boa resistência mecânica com custo acessível
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
   ABS:
-
     profiles:
-
-      - line: Industrial Line
-        commercial_name: ABS
-        profile_name: GTMax ABS K2
-
-        inherits: ABS @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 250
-          min: 240
-          max: 265
-
-        bed:
-          initial: 100
-          temp: 100
-
-        flow_ratio: 1.00
-        max_volumetric_speed: 10
-        confidence: 75
-
-        recommendation: "Peças funcionais, requer ambiente controlado"
-
+    - line: Industrial Line
+      commercial_name: ABS
+      profile_name: GTMax ABS K2
+      inherits: ABS @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 250
+        min: 240
+        max: 265
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 10
+      confidence: 75
+      recommendation: Peças funcionais, requer ambiente controlado
+      color: Black
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
   TPU:
-
     profiles:
-
-      - line: Flex Line
-        commercial_name: TPU 95A
-        profile_name: GTMax TPU K2
-
-        inherits: TPU @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 225
-          min: 215
-          max: 235
-
-        bed:
-          initial: 50
-          temp: 50
-
-        flow_ratio: 1.05
-        max_volumetric_speed: 8
-        confidence: 75
-
-        recommendation: "Flexível padrão, baixa velocidade obrigatória"
+    - line: Flex Line
+      commercial_name: TPU 95A
+      profile_name: GTMax TPU K2
+      inherits: TPU @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 225
+        min: 215
+        max: 235
+      bed:
+        initial: 50
+        temp: 50
+      flow_ratio: 1.05
+      max_volumetric_speed: 8
+      confidence: 75
+      recommendation: Flexível padrão, baixa velocidade obrigatória
+      color: Natural
+      surface_finish: Flexible
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30

@@ -1,0 +1,16 @@
+manufacturer,line,material,commercial_name,sku,color_name,hex,rgb,finish,diameter_mm,weight_g,nozzle_min,nozzle_ideal,nozzle_max,bed_temp,flow_ratio,max_volumetric_speed,dry_temp,dry_hours,recommended_use,notes,status
+Creality,Hyper PLA,PLA,Hyper PLA,HPLA-WHT-1K,White,#F5F5F5,"245,245,245",Gloss,1.75,1000,210,220,230,60,1.0,18,50,8,High-speed prototypes,High-speed optimized,Active
+Creality,Hyper PLA,PLA,Hyper PLA,HPLA-BLK-1K,Black,#111111,"17,17,17",Gloss,1.75,1000,210,220,230,60,1.0,18,50,8,General purpose,High-speed optimized,Active
+Creality,Hyper PLA,PLA,Hyper PLA,HPLA-GRY-1K,Gray,#808080,"128,128,128",Gloss,1.75,1000,210,220,230,60,1.0,18,50,8,Functional parts,,Active
+Creality,Hyper PLA,PLA,Hyper PLA,HPLA-RED-1K,Red,#D32F2F,"211,47,47",Gloss,1.75,1000,210,220,230,60,1.0,18,50,8,General,,Active
+Creality,Hyper PLA,PLA,Hyper PLA,HPLA-BLU-1K,Blue,#1565C0,"21,101,192",Gloss,1.75,1000,210,220,230,60,1.0,18,50,8,General,,Active
+Creality,Hyper PLA,PLA,Hyper PLA,HPLA-GRN-1K,Green,#2E7D32,"46,125,50",Gloss,1.75,1000,210,220,230,60,1.0,18,50,8,General,,Active
+Creality,PLA Matte,PLA Matte,PLA Matte,PMAT-WHT-1K,Matte White,#F2F2F2,"242,242,242",Matte,1.75,1000,205,215,225,55,1.0,14,50,8,Display models,,Active
+Creality,PLA Matte,PLA Matte,PLA Matte,PMAT-BLK-1K,Matte Black,#222222,"34,34,34",Matte,1.75,1000,205,215,225,55,1.0,14,50,8,Display models,,Active
+Creality,PLA Silk,PLA Silk,PLA Silk,PSIL-GOLD-1K,Gold,#D4AF37,"212,175,55",Silk,1.75,1000,215,225,235,60,1.02,12,50,8,Decorative,,Active
+Creality,PLA Silk,PLA Silk,PLA Silk,PSIL-SILV-1K,Silver,#C0C0C0,"192,192,192",Silk,1.75,1000,215,225,235,60,1.02,12,50,8,Decorative,,Active
+Creality,PETG,PETG,PETG,PETG-WHT-1K,White,#F5F5F5,"245,245,245",Semi-Gloss,1.75,1000,235,245,255,80,0.98,12,65,8,Mechanical parts,,Active
+Creality,PETG,PETG,PETG,PETG-BLK-1K,Black,#111111,"17,17,17",Semi-Gloss,1.75,1000,235,245,255,80,0.98,12,65,8,Mechanical parts,,Active
+Creality,ABS,ABS,ABS,ABS-WHT-1K,White,#F5F5F5,"245,245,245",Gloss,1.75,1000,240,250,260,100,1.0,10,80,6,Engineering,,Active
+Creality,ASA,ASA,ASA,ASA-BLK-1K,Black,#111111,"17,17,17",Matte,1.75,1000,245,255,265,100,1.0,10,80,6,Outdoor UV,,Active
+Creality,TPU 95A,TPU,TPU 95A,TPU95-BLK-1K,Black,#111111,"17,17,17",Semi-Gloss,1.75,1000,215,225,235,50,1.05,8,50,8,Flexible,,Active

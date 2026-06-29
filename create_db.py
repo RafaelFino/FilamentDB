@@ -146,7 +146,15 @@ CREATE TABLE filament_profiles (
     -- controle de qualidade
     profile_version INTEGER DEFAULT 1,
     confidence INTEGER DEFAULT 50,
-
+    -- linha / cor / acabamento
+    line TEXT,
+    line_description TEXT,
+    line_positioning TEXT,
+    line_target_use TEXT,
+    line_color_options TEXT,
+    color TEXT,
+    surface_finish TEXT,
+    recommendation TEXT,
     -- físico
     diameter REAL DEFAULT 1.75,
     density REAL,

@@ -2,71 +2,70 @@ manufacturer:
   name: Prusament
   country: Czech Republic
   website: https://www.prusa3d.com
-
 lines:
-
-  - name: Precision Line
-    description: Ultra consistent filaments with tight tolerances
-    positioning: premium
-    difficulty: 30
-    target_use: precision_printing
-    notes: "Padrão ouro de consistência global"
-
-  - name: Engineering Line
-    description: Advanced materials like PETG, ASA, PC blends
-    positioning: engineering
-    difficulty: 65
-    target_use: mechanical_heat_resistant
-    notes: "Altíssima confiabilidade técnica"
-
+- name: Precision Line
+  description: Ultra consistent filaments with tight tolerances
+  positioning: premium
+  difficulty: 30
+  target_use: precision_printing
+  notes: Padrão ouro de consistência global
+  color_options:
+  - Natural
+  - Black
+- name: Engineering Line
+  description: Advanced materials like PETG, ASA, PC blends
+  positioning: engineering
+  difficulty: 65
+  target_use: mechanical_heat_resistant
+  notes: Altíssima confiabilidade técnica
+  color_options:
+  - Black
+  - White
+  - Natural
 materials:
-
   PLA:
-
     profiles:
-
-      - line: Precision Line
-        commercial_name: PLA
-        profile_name: Prusament PLA K2
-
-        inherits: Hyper PLA @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 215
-          min: 205
-          max: 230
-
-        bed:
-          initial: 55
-          temp: 55
-
-        flow_ratio: 1.00
-        max_volumetric_speed: 18
-        confidence: 99
-
-        recommendation: "Consistência quase perfeita entre lotes"
-
+    - line: Precision Line
+      commercial_name: PLA
+      profile_name: Prusament PLA K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 215
+        min: 205
+        max: 230
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 18
+      confidence: 99
+      recommendation: Consistência quase perfeita entre lotes
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
   PETG:
-
     profiles:
-
-      - line: Engineering Line
-        commercial_name: PETG
-        profile_name: Prusament PETG K2
-
-        inherits: Hyper PETG @Creality K2 0.4 nozzle
-
-        nozzle:
-          initial: 240
-          min: 230
-          max: 255
-
-        bed:
-          initial: 80
-          temp: 80
-
-        flow_ratio: 0.98
-        max_volumetric_speed: 16
-        confidence: 99
-
-        recommendation: "Referência mundial em PETG confiável"
+    - line: Engineering Line
+      commercial_name: PETG
+      profile_name: Prusament PETG K2
+      inherits: Hyper PETG @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 240
+        min: 230
+        max: 255
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      max_volumetric_speed: 16
+      confidence: 99
+      recommendation: Referência mundial em PETG confiável
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30

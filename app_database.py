@@ -1,3 +1,4 @@
+import json
 import os
 import sqlite3
 from pathlib import Path
@@ -11,8 +12,17 @@ def get_db_connection():
     return conn
 
 
+def parse_row(item):
+    if "line_color_options" in item and isinstance(item["line_color_options"], str):
+        try:
+            item["line_color_options"] = json.loads(item["line_color_options"])
+        except json.JSONDecodeError:
+            item["line_color_options"] = [item["line_color_options"]]
+    return item
+
+
 def rows_to_dicts(rows):
-    return [dict(row) for row in rows]
+    return [parse_row(dict(row)) for row in rows]
 
 
 def list_manufacturers():
@@ -55,6 +65,14 @@ def list_filament_profiles():
             fp.max_volumetric_speed,
             fp.profile_version,
             fp.confidence,
+            fp.line,
+            fp.line_description,
+            fp.line_positioning,
+            fp.line_target_use,
+            fp.line_color_options,
+            fp.color,
+            fp.surface_finish,
+            fp.recommendation,
             fp.diameter,
             fp.density,
             fp.drying_temperature,
@@ -95,6 +113,14 @@ def get_filament_profile(profile_id):
             fp.max_volumetric_speed,
             fp.profile_version,
             fp.confidence,
+            fp.line,
+            fp.line_description,
+            fp.line_positioning,
+            fp.line_target_use,
+            fp.line_color_options,
+            fp.color,
+            fp.surface_finish,
+            fp.recommendation,
             fp.diameter,
             fp.density,
             fp.drying_temperature,
@@ -111,7 +137,7 @@ def get_filament_profile(profile_id):
         (profile_id,),
     ).fetchone()
     conn.close()
-    return dict(row) if row else None
+    return parse_row(dict(row)) if row else None
 
 
 def list_materials_by_manufacturer(manufacturer_id):
@@ -213,6 +239,14 @@ def build_tree():
             fp.max_volumetric_speed,
             fp.profile_version,
             fp.confidence,
+            fp.line,
+            fp.line_description,
+            fp.line_positioning,
+            fp.line_target_use,
+            fp.line_color_options,
+            fp.color,
+            fp.surface_finish,
+            fp.recommendation,
             fp.diameter,
             fp.density,
             fp.drying_temperature,
@@ -293,12 +327,20 @@ def build_tree():
             "max_volumetric_speed": row[34],
             "profile_version": row[35],
             "confidence": row[36],
-            "diameter": row[37],
-            "density": row[38],
-            "drying_temperature": row[39],
-            "drying_time": row[40],
-            "notes": row[41],
-            "active": row[42],
+            "line": row[37],
+            "line_description": row[38],
+            "line_positioning": row[39],
+            "line_target_use": row[40],
+            "line_color_options": json.loads(row[41]) if row[41] else [],
+            "color": row[42],
+            "surface_finish": row[43],
+            "recommendation": row[44],
+            "diameter": row[45],
+            "density": row[46],
+            "drying_temperature": row[47],
+            "drying_time": row[48],
+            "notes": row[49],
+            "active": row[50],
             "download_url": f"/download/creality-print/{manufacturer}/{material}?profile={profile_name}",
         })
 
