@@ -56,14 +56,14 @@ Perfis Creality Print 7.0 (.json + .info)
 ```text
 FilamentDB/
 ├── creality-print/
-    ├── MaterialX_BrandA_NameW.yaml
-    ...
-    └── MaterialY_BrandN_NameZ.yaml
+|   ├── MaterialX_BrandA_NameW.yaml
+|   ...
+|   └── MaterialY_BrandN_NameZ.yaml
 ├── data/
-    ├── brandA.yaml
-    ├── brandB.yaml
-    ...
-    └── brandN.yaml
+|   ├── brandA.yaml
+|   ├── brandB.yaml
+|   ...
+|   └── brandN.yaml
 ├── .gitignore
 ├── LICENSE
 ├── README.md
