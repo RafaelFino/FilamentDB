@@ -1,10 +1,10 @@
-import sqlite3
 import os
+import sqlite3
 import json
 import time
 
-DB_PATH = "filament.db"
-OUTPUT_DIR = "./creality-print"
+DB_PATH = os.environ.get("FILAMENT_DB_PATH", "filament.db")
+OUTPUT_DIR = os.environ.get("CREALITY_OUTPUT_DIR", "./creality-print")
 
 NOZZLE_BASE = "Hyper PLA @Creality K2 0.4 nozzle"
 

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+import os
 import sqlite3
 import yaml
 from pathlib import Path
 
-DB_PATH = "filament.db"
+DB_PATH = os.environ.get("FILAMENT_DB_PATH", "filament.db")
 DATA_DIR = Path("data")
 
 conn = sqlite3.connect(DB_PATH)

@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FilamentDB Explorer</title>
+    <style>
+        :root {
+            --bg: #05070a;
+            --panel: #11151b;
+            --panel-2: #171d26;
+            --text: #f5f7fa;
+            --muted: #9aa4b2;
+            --yellow: #ffd84d;
+            --blue: #3dd6ff;
+            --green: #55f2a1;
+            --border: #2a3240;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #05070a 0%, #0d1218 100%);
+            color: var(--text);
+        }
+        .app {
+            display: grid;
+            grid-template-columns: 290px 1fr;
+            min-height: 100vh;
+        }
+        .sidebar {
+            background: rgba(5,7,10,0.9);
+            border-right: 1px solid var(--border);
+            padding: 20px 16px;
+        }
+        .sidebar h2 {
+            margin: 0 0 8px;
+            color: var(--yellow);
+            font-size: 1.1rem;
+        }
+        .sidebar p {
+            color: var(--muted);
+            font-size: 0.92rem;
+            margin: 0 0 16px;
+        }
+        .tree-item {
+            margin: 6px 0;
+        }
+        .tree-item button {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .tree-item button:hover, .tree-item button.active {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 1px var(--blue);
+            color: var(--blue);
+        }
+        .content {
+            padding: 24px;
+        }
+        .hero {
+            background: linear-gradient(90deg, rgba(61,214,255,0.12), rgba(255,216,77,0.08));
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px 20px;
+            margin-bottom: 18px;
+        }
+        .hero h1 { margin: 0 0 8px; color: var(--yellow); }
+        .hero p { margin: 0; color: var(--muted); }
+        .summary-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+        }
+        .summary-card h3 { margin: 0 0 8px; color: var(--blue); }
+        .summary-card p { margin: 4px 0; color: var(--muted); }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .actions button {
+            background: linear-gradient(90deg, var(--blue), #6ee7ff);
+            color: #041018;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .actions button.secondary {
+            background: #232a34;
+            color: var(--yellow);
+            border: 1px solid var(--border);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--panel);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        }
+        th, td {
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th { color: var(--yellow); background: #0f151c; }
+        tr:hover { background: rgba(61,214,255,0.06); }
+        .chip {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(85,242,161,.12);
+            color: var(--green);
+            font-size: 0.82rem;
+        }
+        .checkbox-cell { width: 40px; }
+        input[type="checkbox"] { accent-color: var(--blue); transform: scale(1.1); }
+        .row-item { cursor: pointer; }
+        .row-item:hover { background: rgba(61,214,255,0.06); }
+        .details-row td { background: #0c1118; padding: 0; }
+        .details-panel {
+            padding: 16px;
+            display: grid;
+            gap: 12px;
+        }
+        .report-block {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .report-block-header {
+            padding: 10px 12px;
+            background: linear-gradient(90deg, rgba(61,214,255,0.14), rgba(255,216,77,0.1));
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            color: var(--yellow);
+        }
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+            padding: 12px;
+        }
+        .report-item {
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+        .report-item .label {
+            display: block;
+            color: var(--muted);
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .report-item .value {
+            color: var(--text);
+            font-weight: 600;
+        }
+        .empty { color: var(--muted); padding: 16px; background: var(--panel); border: 1px dashed var(--border); border-radius: 10px; }
+        @media (max-width: 900px) {
+            .app { grid-template-columns: 1fr; }
+            .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <h2>Fabricantes</h2>
+            <p>Selecione um fabricante para ver seus materiais e perfis.</p>
+            {% for manufacturer in tree.keys() %}
+            <div class="tree-item">
+                <button type="button" class="manufacturer-btn" data-manufacturer="{{ manufacturer }}">{{ manufacturer }}</button>
+            </div>
+            {% endfor %}
+        </aside>
+        <main class="content">
+            <div class="hero">
+                <h1>FilamentDB Explorer</h1>
+                <p>Escolha um fabricante, marque os materiais desejados e baixe vários perfis em lote.</p>
+            </div>
+            <div id="manufacturer-summary" class="summary-card">
+                <h3>Resumo do fabricante</h3>
+                <p>Selecione um fabricante para ver país, site, observações e materiais associados.</p>
+            </div>
+            <div class="toolbar">
+                <div id="current-label">Selecione um fabricante para visualizar os produtos.</div>
+                <div class="actions">
+                    <button type="button" id="download-selected">Baixar selecionados</button>
+                    <button type="button" id="select-all" class="secondary">Marcar todos</button>
+                </div>
+            </div>
+            <div id="table-container">
+                <div class="empty">Nenhum fabricante selecionado ainda.</div>
+            </div>
+        </main>
+    </div>
+    <script>
+        window.treeData = {{ tree | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>

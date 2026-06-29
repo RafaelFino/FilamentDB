@@ -4,113 +4,95 @@ FilamentDB é um sistema centralizado baseado em SQLite para gerenciamento, estr
 
 O projeto elimina a fragmentação de configurações de filamentos presentes em fatiadores. Ele centraliza as variáveis em um banco de dados relacional e gera perfis prontos para importação, com foco inicial no Creality Print 7.0.
 
-## Problema e Solução
+## Visão geral
 
-### Cenário Atual
-* Configurações espalhadas por múltiplos presets nos fatiadores.
-* Inconsistência de parâmetros entre marcas do mesmo material.
-* Ajustes manuais repetitivos por impressora e bico.
-* Dificuldade de migração e controle de versão de perfis.
+* Fonte única de verdade: banco SQLite centralizado.
+* UI web para navegar fabricantes, materiais e baixar perfis em lote.
+* Exportação para Creality Print 7.0 em `.json` + `.info` dentro de `.zip`.
+* Estrutura modular: `app.py` como host, `app_database.py` para SQLite, `services.py` para exportação e `web.py` para rotas.
 
-### Solução do FilamentDB
-* Banco de dados SQLite como única fonte de verdade.
-* Vinculação direta entre material, impressora, bico e perfil.
-* Geração automatizada de arquivos de configuração prontos para o fatiador.
-
-## Arquitetura do Sistema
-
-```text
-SQLite Database
-│
-├── Marcas (Manufacturers)
-├── Materiais (Materials)
-├── Impressoras (Printers)
-├── Bicos (Nozzles)
-└── Perfis de Filamento (Filament Profiles)
-│
-▼
-Mecanismo de Exportação (Exporter Engine)
-│
-▼
-Perfis Creality Print 7.0 (.json + .info)
-```
-
-## Conceitos Estruturais
-
-* **Marcas**: Cadastro de fabricantes de filamentos (ex: Creality, Sunlu, Bambu Lab).
-* **Materiais**: Taxonomia de polímeros (PLA, PETG, ABS, TPU, ASA) e suas variações (Plus, Silk, Matte).
-* **Impressoras**: Abstração do hardware físico (foco inicial na Creality K2 Combo).
-* **Bicos**: Definição de diâmetros de saída do hardware (0.4mm, 0.6mm, 0.8mm).
-* **Perfis de Filamento**: Parâmetros finais calculados (temperaturas, fluxo, velocidade volumétrica e regras de compatibilidade).
-
-## Recursos Principais
-
-* Banco de dados SQLite centralizado para todos os perfis.
-* Taxonomia estruturada por marca, linha e material.
-* Geração de perfis ciente das limitações da impressora e do bico.
-* Exportação direta para o formato nativo do Creality Print 7.0.
-* Reprodutibilidade total sem necessidade de ajustes manuais na interface do fatiador.
-
-## Estrutura do Repositório
+## Estrutura do repositório
 
 ```text
 FilamentDB/
-├── creality-print/
-|   ├── MaterialX_BrandA_NameW.yaml
-|   ...
-|   └── MaterialY_BrandN_NameZ.yaml
-├── data/
-|   ├── brandA.yaml
-|   ├── brandB.yaml
-|   ...
-|   └── brandN.yaml
-├── .gitignore
-├── LICENSE
-├── README.md
+├── app.py
+├── app_database.py
+├── services.py
+├── web.py
+├── requirements.txt
+├── templates/
+│   └── tree.html
+├── static/
+│   └── main.js
 ├── create_db.py
+├── seed.py
 ├── export-creality-print.py
-├── filament.db
-└── seed.py
+├── data/
+├── creality-print/
+└── filament.db
 ```
 
-## Instruções de Uso
+## Instalação
 
-### 1. Inicializar e popular o banco de dados
+```bash
+python -m pip install -r requirements.txt
+```
+
+## Uso
+
+### 1. Criar o banco de dados
+
 ```bash
 python create_db.py
+```
+
+### 2. Popular o banco de dados
+
+```bash
 python seed.py
 ```
 
-### 2. Exportar os perfis
+### 3. Executar a aplicação web
+
+```bash
+python app.py
+```
+
+Abra `http://localhost:5000/tree` no navegador.
+
+### 4. Exportar os perfis em arquivos
+
 ```bash
 python export-creality-print.py
 ```
 
-### 3. Importar no Creality Print 7.0
-Copie os arquivos gerados para a pasta de usuário do seu fatiador:
+## Variáveis de ambiente opcionais
+
+* `FILAMENT_DB_PATH` — caminho do arquivo SQLite usado pelos scripts e pela aplicação.
+* `CREALITY_OUTPUT_DIR` — diretório de saída para `export-creality-print.py`.
+* `PORT` — porta usada pelo servidor Flask.
+* `FLASK_DEBUG` — `1` ativa modo debug.
+
+## API disponíveis
+
+* `GET /health`
+* `GET /manufacturers`
+* `GET /materials`
+* `GET /filament-profiles`
+* `GET /filament-profiles/<id>`
+* `GET /manufacturers/<id>/materials`
+* `GET /download/creality-print?manufacturer=<name>&material=<name>`
+* `GET /download/creality-print/<manufacturer>/<material>`
+* `GET /download/creality-print/options`
+* `GET /tree`
+
+## Exportação para Creality Print
+
+Copie os arquivos gerados para a pasta de usuário do fatiador:
+
 ```text
 ~/.config/Creality/Creality Print/7.0/user/<USER_ID>/filament
 ```
-
-## Diretrizes de Design
-
-* **Fonte Única de Verdade**: Sem duplicidade de dados ou presets órfãos.
-* **Foco no Hardware**: Perfis dependem do conjunto impressora + bico, não apenas do filamento isolado.
-* **Reprodutibilidade**: Qualquer perfil pode ser reconstruído do zero através do banco de dados.
-
-## Escopo e Suporte do Projeto
-
-### Suporte Atual
-* Fatiador: Creality Print 7.0
-* Impressora principal: Creality K2 Combo
-* Materiais: PLA, PETG, ABS, ASA, TPU
-
-### Planejamento de Recursos Futuros
-* Exportação multiplataforma (OrcaSlicer, PrusaSlicer).
-* Compatibilidade com novas impressoras (Série K1, Ender, Bambu Lab).
-* Interface web para gerenciamento visual dos perfis.
-* Sistema de versionamento de perfis de filamento.
-* Motor de recomendação automática com base em histórico de calibração.
 
 ## Licença
 

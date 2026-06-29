@@ -5,10 +5,11 @@ create_db.py
 Banco SQLite simples para perfis de filamentos do Creality Print.
 """
 
+import os
 import sqlite3
 from pathlib import Path
 
-DB_PATH = "filament.db"
+DB_PATH = os.environ.get("FILAMENT_DB_PATH", "filament.db")
 
 # Remove banco antigo (recriação limpa)
 if Path(DB_PATH).exists():
