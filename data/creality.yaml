@@ -1,0 +1,259 @@
+manufacturer:
+  name: Creality
+  country: China
+  website: https://www.creality.com
+
+lines:
+
+  - name: Hyper Series
+    description: High-speed optimized filaments for K1/K2/Hi series
+    positioning: performance
+    difficulty: 25
+    target_use: production_speed
+    notes: "Linha principal moderna da Creality para alta velocidade"
+
+  - name: CR Series
+    description: Balanced general-purpose filaments (legacy + stable)
+    positioning: balanced
+    difficulty: 50
+    target_use: general_printing
+    notes: "Linha tradicional com boa estabilidade e ampla compatibilidade"
+
+  - name: Ender Series
+    description: Entry-level filaments for Ender printers
+    positioning: beginner
+    difficulty: 40
+    target_use: beginner_low_cost
+    notes: "Mais tolerante, menor exigência de tuning"
+
+  - name: Hyper PLA+ Line
+    description: Enhanced PLA with improved strength and speed
+    positioning: performance_plus
+    difficulty: 30
+    target_use: functional_pla
+    notes: "PLA reforçado otimizado para velocidade"
+
+  - name: CR PETG Line
+    description: Standard PETG for mechanical parts
+    positioning: functional
+    difficulty: 55
+    target_use: mechanical_parts
+    notes: "Boa resistência química e mecânica"
+
+  - name: Hyper PETG Line
+    description: High-speed PETG optimized for K2 platform
+    positioning: performance
+    difficulty: 45
+    target_use: high_speed_petg
+    notes: "PETG otimizado para fluxo alto"
+
+  - name: ABS Industrial Line
+    description: Engineering ABS for durable parts
+    positioning: engineering
+    difficulty: 70
+    target_use: mechanical_heat_resistant
+    notes: "Requer ambiente fechado"
+
+  - name: ASA Outdoor Line
+    description: UV resistant outdoor engineering filament
+    positioning: engineering_outdoor
+    difficulty: 75
+    target_use: outdoor_parts
+    notes: "Substituto do ABS para uso externo"
+
+  - name: TPU Flex Line
+    description: Flexible materials for soft parts
+    positioning: flexible
+    difficulty: 80
+    target_use: flexible_parts
+    notes: "Baixa velocidade, alta elasticidade"
+
+materials:
+
+  PLA:
+
+    profiles:
+
+      - line: Hyper Series
+        commercial_name: Hyper PLA
+        profile_name: Creality Hyper PLA K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 220
+          min: 210
+          max: 230
+
+        bed:
+          initial: 60
+          temp: 60
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 18
+        confidence: 95
+
+        recommendation: "Melhor PLA da Creality para velocidade e produção"
+
+      - line: CR Series
+        commercial_name: CR PLA
+        profile_name: Creality CR PLA K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 215
+          min: 205
+          max: 225
+
+        bed:
+          initial: 60
+          temp: 60
+
+        flow_ratio: 0.98
+        max_volumetric_speed: 14
+        confidence: 85
+
+        recommendation: "PLA equilibrado para uso geral"
+
+      - line: Ender Series
+        commercial_name: Ender PLA
+        profile_name: Creality Ender PLA K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 210
+          min: 200
+          max: 220
+
+        bed:
+          initial: 55
+          temp: 55
+
+        flow_ratio: 1.02
+        max_volumetric_speed: 12
+        confidence: 80
+
+        recommendation: "PLA mais tolerante e fácil de imprimir"
+
+  PETG:
+
+    profiles:
+
+      - line: CR PETG Line
+        commercial_name: CR PETG
+        profile_name: Creality CR PETG K2
+
+        inherits: Hyper PETG @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 245
+          min: 235
+          max: 255
+
+        bed:
+          initial: 80
+          temp: 80
+
+        flow_ratio: 0.98
+        max_volumetric_speed: 15
+        confidence: 90
+
+        recommendation: "PETG padrão para peças mecânicas"
+
+      - line: Hyper PETG Line
+        commercial_name: Hyper PETG
+        profile_name: Creality Hyper PETG K2
+
+        inherits: Hyper PETG @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 250
+          min: 240
+          max: 260
+
+        bed:
+          initial: 85
+          temp: 85
+
+        flow_ratio: 0.97
+        max_volumetric_speed: 18
+        confidence: 92
+
+        recommendation: "PETG otimizado para alta velocidade"
+
+  ABS:
+
+    profiles:
+
+      - line: ABS Industrial Line
+        commercial_name: ABS
+        profile_name: Creality ABS K2
+
+        inherits: ABS @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 250
+          min: 240
+          max: 265
+
+        bed:
+          initial: 100
+          temp: 100
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 12
+        confidence: 90
+
+        recommendation: "ABS industrial para peças resistentes"
+
+  ASA:
+
+    profiles:
+
+      - line: ASA Outdoor Line
+        commercial_name: ASA
+        profile_name: Creality ASA K2
+
+        inherits: ASA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 255
+          min: 245
+          max: 270
+
+        bed:
+          initial: 100
+          temp: 100
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 12
+        confidence: 90
+
+        recommendation: "Ideal para uso externo e UV"
+
+  TPU:
+
+    profiles:
+
+      - line: TPU Flex Line
+        commercial_name: TPU 95A
+        profile_name: Creality TPU K2
+
+        inherits: TPU @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 225
+          min: 215
+          max: 235
+
+        bed:
+          initial: 50
+          temp: 50
+
+        flow_ratio: 1.05
+        max_volumetric_speed: 10
+        confidence: 90
+
+        recommendation: "Flexível padrão, baixa velocidade"

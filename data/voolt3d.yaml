@@ -1,0 +1,206 @@
+manufacturer:
+  name: Voolt3D
+  country: Brazil
+  website: null
+
+lines:
+
+  - name: Standard Line
+    description: General purpose filaments for everyday printing
+    positioning: balanced
+    difficulty: 40
+    target_use: general_printing
+    notes: "Linha base da Voolt3D, boa estabilidade e custo equilibrado"
+
+  - name: Velvet Line
+    description: Aesthetic PLA with matte/velvet finish
+    positioning: aesthetic
+    difficulty: 35
+    target_use: visual_quality
+    notes: "Foco em acabamento visual e toque fosco"
+
+  - name: High Speed Line
+    description: Optimized for fast printing on modern printers
+    positioning: performance
+    difficulty: 45
+    target_use: high_speed_printing
+    notes: "Ajustado para K2 / K1 / Bambu-like speeds"
+
+  - name: Engineering Line
+    description: Functional materials for mechanical parts
+    positioning: functional
+    difficulty: 60
+    target_use: mechanical_parts
+    notes: "Maior resistência mecânica e térmica"
+
+  - name: Flexible Line
+    description: TPU flexible materials
+    positioning: flexible
+    difficulty: 80
+    target_use: flexible_parts
+    notes: "Baixa velocidade e alta elasticidade"
+
+materials:
+
+  PLA:
+
+    profiles:
+
+      - line: Velvet Line
+        commercial_name: PLA Velvet
+        profile_name: Voolt3D PLA Velvet K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 225
+          min: 218
+          max: 230
+
+        bed:
+          initial: 65
+          temp: 60
+
+        flow_ratio: 1.04
+        max_volumetric_speed: 12
+        confidence: 92
+
+        recommendation: "Melhor acabamento estético da Voolt3D"
+
+      - line: Standard Line
+        commercial_name: PLA Standard
+        profile_name: Voolt3D PLA Standard K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 220
+          min: 210
+          max: 235
+
+        bed:
+          initial: 60
+          temp: 60
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 15
+        confidence: 88
+
+        recommendation: "PLA equilibrado para uso geral"
+
+      - line: High Speed Line
+        commercial_name: PLA High Speed
+        profile_name: Voolt3D PLA High Speed K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 225
+          min: 215
+          max: 240
+
+        bed:
+          initial: 60
+          temp: 60
+
+        flow_ratio: 0.98
+        max_volumetric_speed: 20
+        confidence: 85
+
+        recommendation: "Otimizado para alta velocidade"
+
+  PETG:
+
+    profiles:
+
+      - line: Engineering Line
+        commercial_name: PETG Standard
+        profile_name: Voolt3D PETG K2
+
+        inherits: Hyper PETG @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 245
+          min: 235
+          max: 255
+
+        bed:
+          initial: 80
+          temp: 80
+
+        flow_ratio: 0.98
+        max_volumetric_speed: 12
+        confidence: 85
+
+        recommendation: "Boa resistência mecânica e química"
+
+      - line: Engineering Line
+        commercial_name: PETG CF
+        profile_name: Voolt3D PETG CF K2
+
+        inherits: Hyper PETG CF @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 260
+          min: 250
+          max: 270
+
+        bed:
+          initial: 90
+          temp: 90
+
+        flow_ratio: 0.95
+        max_volumetric_speed: 10
+        confidence: 80
+
+        recommendation: "Alta rigidez com fibra de carbono"
+
+  ABS:
+
+    profiles:
+
+      - line: Engineering Line
+        commercial_name: ABS Standard
+        profile_name: Voolt3D ABS K2
+
+        inherits: ABS @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 250
+          min: 240
+          max: 260
+
+        bed:
+          initial: 100
+          temp: 100
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 10
+        confidence: 80
+
+        recommendation: "Peças funcionais com resistência térmica"
+
+  TPU:
+
+    profiles:
+
+      - line: Flexible Line
+        commercial_name: TPU 95A
+        profile_name: Voolt3D TPU K2
+
+        inherits: TPU @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 225
+          min: 215
+          max: 235
+
+        bed:
+          initial: 50
+          temp: 50
+
+        flow_ratio: 1.05
+        max_volumetric_speed: 8
+        confidence: 80
+
+        recommendation: "Flexível padrão, baixa velocidade"

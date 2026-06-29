@@ -1,0 +1,79 @@
+manufacturer:
+  name: 3DLab
+  country: Brazil
+  website: null
+
+lines:
+
+  - name: Standard Line
+    description: Balanced PLA for general printing
+    positioning: balanced
+    difficulty: 45
+    target_use: general_printing
+    notes: "Mais estável que 3DFila em alguns lotes"
+
+  - name: Premium Line
+    description: Improved surface finish PLA/PETG
+    positioning: improved_quality
+    difficulty: 50
+    target_use: better_surface_finish
+    notes: "Acabamento mais consistente"
+
+  - name: Engineering Line
+    description: Functional materials for mechanical use
+    positioning: functional
+    difficulty: 65
+    target_use: mechanical_parts
+    notes: "PETG e ABS mais confiáveis"
+
+materials:
+
+  PLA:
+
+    profiles:
+
+      - line: Premium Line
+        commercial_name: PLA Premium
+        profile_name: 3DLab PLA K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 220
+          min: 210
+          max: 235
+
+        bed:
+          initial: 60
+          temp: 60
+
+        flow_ratio: 1.01
+        max_volumetric_speed: 14
+        confidence: 82
+
+        recommendation: "PLA com melhor acabamento e estabilidade"
+
+  PETG:
+
+    profiles:
+
+      - line: Engineering Line
+        commercial_name: PETG
+        profile_name: 3DLab PETG K2
+
+        inherits: Hyper PETG @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 245
+          min: 235
+          max: 255
+
+        bed:
+          initial: 80
+          temp: 80
+
+        flow_ratio: 0.98
+        max_volumetric_speed: 11
+        confidence: 80
+
+        recommendation: "Boa estabilidade mecânica"

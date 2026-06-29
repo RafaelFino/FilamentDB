@@ -1,0 +1,86 @@
+manufacturer:
+  name: 3DFila
+  country: Brazil
+  website: https://3dfila.com.br
+
+lines:
+
+  - name: Standard Line
+    description: General purpose PLA for everyday printing
+    positioning: budget
+    difficulty: 45
+    target_use: general_printing
+    notes: "Linha mais comum, foco em custo e acessibilidade"
+
+  - name: Plus Line
+    description: Improved PLA with slightly better consistency
+    positioning: improved_quality
+    difficulty: 50
+    target_use: general_printing
+    notes: "Leve melhoria de estabilidade entre lotes"
+
+  - name: PETG Line
+    description: Functional PETG for mechanical parts
+    positioning: functional
+    difficulty: 60
+    target_use: mechanical_parts
+    notes: "Uso técnico leve"
+
+  - name: Flex Line
+    description: TPU flexible materials
+    positioning: flexible
+    difficulty: 80
+    target_use: flexible_parts
+    notes: "Baixa velocidade e alta elasticidade"
+
+materials:
+
+  PLA:
+
+    profiles:
+
+      - line: Standard Line
+        commercial_name: PLA
+        profile_name: 3DFila PLA K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 220
+          min: 210
+          max: 235
+
+        bed:
+          initial: 60
+          temp: 60
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 12
+        confidence: 75
+
+        recommendation: "PLA básico para uso geral"
+
+  PETG:
+
+    profiles:
+
+      - line: PETG Line
+        commercial_name: PETG
+        profile_name: 3DFila PETG K2
+
+        inherits: Hyper PETG @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 245
+          min: 235
+          max: 255
+
+        bed:
+          initial: 80
+          temp: 80
+
+        flow_ratio: 0.98
+        max_volumetric_speed: 10
+        confidence: 75
+
+        recommendation: "PETG funcional simples"

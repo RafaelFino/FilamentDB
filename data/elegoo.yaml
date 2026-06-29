@@ -1,0 +1,213 @@
+manufacturer:
+  name: Elegoo
+  country: China
+  website: https://www.elegoo.com
+
+lines:
+
+  - name: PLA Standard Line
+    description: Entry and general-purpose PLA filaments
+    positioning: balanced
+    difficulty: 40
+    target_use: general_printing
+    notes: "Linha base PLA, fácil de imprimir e confiável"
+
+  - name: PLA+ Line
+    description: Enhanced PLA with improved strength and toughness
+    positioning: improved_quality
+    difficulty: 45
+    target_use: functional_pla
+    notes: "PLA mais resistente, melhor impacto e estabilidade"
+
+  - name: Rapid Line
+    description: High-speed optimized filaments for fast printing
+    positioning: performance
+    difficulty: 35
+    target_use: high_speed_printing
+    notes: "Otimizado para impressões rápidas"
+
+  - name: Matte Line
+    description: PLA with matte finish for aesthetic parts
+    positioning: aesthetic
+    difficulty: 40
+    target_use: visual_quality
+    notes: "Acabamento fosco, foco em estética"
+
+  - name: Engineering Line
+    description: Functional PETG/ABS materials for mechanical parts
+    positioning: functional
+    difficulty: 60
+    target_use: mechanical_parts
+    notes: "Maior resistência mecânica e térmica"
+
+  - name: Flex Line
+    description: TPU flexible materials
+    positioning: flexible
+    difficulty: 80
+    target_use: flexible_parts
+    notes: "Baixa velocidade, alta elasticidade"
+
+materials:
+
+  PLA:
+
+    profiles:
+
+      - line: PLA Standard Line
+        commercial_name: PLA
+        profile_name: Elegoo PLA K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 215
+          min: 205
+          max: 230
+
+        bed:
+          initial: 60
+          temp: 60
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 14
+        confidence: 85
+
+        recommendation: "PLA básico confiável e fácil de imprimir"
+
+      - line: PLA+ Line
+        commercial_name: PLA+
+        profile_name: Elegoo PLA+ K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 220
+          min: 210
+          max: 235
+
+        bed:
+          initial: 60
+          temp: 60
+
+        flow_ratio: 1.02
+        max_volumetric_speed: 15
+        confidence: 88
+
+        recommendation: "Mais resistente que PLA padrão"
+
+      - line: Rapid Line
+        commercial_name: PLA Rapid
+        profile_name: Elegoo PLA Rapid K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 225
+          min: 215
+          max: 240
+
+        bed:
+          initial: 60
+          temp: 60
+
+        flow_ratio: 0.98
+        max_volumetric_speed: 20
+        confidence: 85
+
+        recommendation: "Otimizado para alta velocidade"
+
+      - line: Matte Line
+        commercial_name: PLA Matte
+        profile_name: Elegoo PLA Matte K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 220
+          min: 210
+          max: 235
+
+        bed:
+          initial: 60
+          temp: 60
+
+        flow_ratio: 1.01
+        max_volumetric_speed: 14
+        confidence: 85
+
+        recommendation: "Melhor acabamento estético fosco"
+
+  PETG:
+
+    profiles:
+
+      - line: Engineering Line
+        commercial_name: PETG
+        profile_name: Elegoo PETG K2
+
+        inherits: Hyper PETG @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 245
+          min: 235
+          max: 255
+
+        bed:
+          initial: 80
+          temp: 80
+
+        flow_ratio: 0.98
+        max_volumetric_speed: 12
+        confidence: 85
+
+        recommendation: "Boa resistência mecânica e química"
+
+  ABS:
+
+    profiles:
+
+      - line: Engineering Line
+        commercial_name: ABS
+        profile_name: Elegoo ABS K2
+
+        inherits: ABS @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 250
+          min: 240
+          max: 265
+
+        bed:
+          initial: 100
+          temp: 100
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 10
+        confidence: 80
+
+        recommendation: "Peças estruturais e resistentes ao calor"
+
+  TPU:
+
+    profiles:
+
+      - line: Flex Line
+        commercial_name: TPU 95A
+        profile_name: Elegoo TPU K2
+
+        inherits: TPU @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 225
+          min: 215
+          max: 235
+
+        bed:
+          initial: 50
+          temp: 50
+
+        flow_ratio: 1.05
+        max_volumetric_speed: 8
+        confidence: 75
+
+        recommendation: "Flexível padrão, baixa velocidade obrigatória"

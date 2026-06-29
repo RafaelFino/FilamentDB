@@ -1,0 +1,86 @@
+manufacturer:
+  name: Fiberlogy
+  country: Poland
+  website: https://fiberlogy.com
+
+lines:
+
+  - name: Standard Line
+    description: Reliable PLA/PETG for general use
+    positioning: balanced
+    difficulty: 40
+    target_use: general_printing
+    notes: "Muito consistente para uso diário"
+
+  - name: HD Line
+    description: High durability materials for functional parts
+    positioning: functional
+    difficulty: 60
+    target_use: mechanical_parts
+    notes: "PETG e ASA de alta qualidade"
+
+  - name: Easy PLA Line
+    description: Easy printing PLA with high surface quality
+    positioning: improved_quality
+    difficulty: 35
+    target_use: visual_quality
+    notes: "Muito fácil de imprimir"
+
+  - name: Flex Line
+    description: TPU flexible materials
+    positioning: flexible
+    difficulty: 80
+    target_use: flexible_parts
+    notes: "Alta qualidade em TPU"
+
+materials:
+
+  PLA:
+
+    profiles:
+
+      - line: Easy PLA Line
+        commercial_name: Easy PLA
+        profile_name: Fiberlogy PLA K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 215
+          min: 205
+          max: 230
+
+        bed:
+          initial: 55
+          temp: 55
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 18
+        confidence: 95
+
+        recommendation: "PLA extremamente consistente e fácil"
+
+  PETG:
+
+    profiles:
+
+      - line: HD Line
+        commercial_name: PETG
+        profile_name: Fiberlogy PETG K2
+
+        inherits: Hyper PETG @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 240
+          min: 230
+          max: 255
+
+        bed:
+          initial: 80
+          temp: 80
+
+        flow_ratio: 0.98
+        max_volumetric_speed: 15
+        confidence: 95
+
+        recommendation: "PETG premium com alta confiabilidade"

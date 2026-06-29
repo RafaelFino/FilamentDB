@@ -1,0 +1,242 @@
+manufacturer:
+  name: Bambu Lab
+  country: China
+  website: https://bambulab.com
+
+lines:
+
+  - name: Basic Line
+    description: Standard PLA/PETG materials for general use
+    positioning: balanced
+    difficulty: 35
+    target_use: general_printing
+    notes: "Linha base com excelente consistência e controle de qualidade"
+
+  - name: Tough Line
+    description: Reinforced materials with higher impact resistance
+    positioning: functional
+    difficulty: 45
+    target_use: functional_parts
+    notes: "Maior resistência mecânica que materiais básicos"
+
+  - name: Matte Line
+    description: PLA with matte finish for aesthetic parts
+    positioning: aesthetic
+    difficulty: 40
+    target_use: visual_quality
+    notes: "Acabamento fosco premium"
+
+  - name: Silk Line
+    description: Glossy PLA for decorative parts
+    positioning: aesthetic
+    difficulty: 45
+    target_use: visual_quality
+    notes: "Alto brilho, foco estético"
+
+  - name: Engineering Line
+    description: Advanced materials like PA, PC, ABS blends
+    positioning: engineering
+    difficulty: 75
+    target_use: mechanical_heat_resistant
+    notes: "Materiais técnicos de alta exigência"
+
+  - name: Support Line
+    description: Dedicated support materials (PVA, breakaway)
+    positioning: support
+    difficulty: 70
+    target_use: support_material
+    notes: "Materiais auxiliares de suporte"
+
+materials:
+
+  PLA:
+
+    profiles:
+
+      - line: Basic Line
+        commercial_name: PLA Basic
+        profile_name: Bambu PLA Basic K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 220
+          min: 210
+          max: 230
+
+        bed:
+          initial: 55
+          temp: 55
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 20
+        confidence: 98
+
+        recommendation: "Altíssima consistência e facilidade de impressão"
+
+      - line: Matte Line
+        commercial_name: PLA Matte
+        profile_name: Bambu PLA Matte K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 215
+          min: 205
+          max: 230
+
+        bed:
+          initial: 55
+          temp: 55
+
+        flow_ratio: 1.01
+        max_volumetric_speed: 18
+        confidence: 97
+
+        recommendation: "Acabamento premium fosco com alta consistência"
+
+      - line: Silk Line
+        commercial_name: PLA Silk
+        profile_name: Bambu PLA Silk K2
+
+        inherits: Hyper PLA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 225
+          min: 215
+          max: 235
+
+        bed:
+          initial: 60
+          temp: 60
+
+        flow_ratio: 1.05
+        max_volumetric_speed: 15
+        confidence: 95
+
+        recommendation: "Acabamento brilhante altamente estético"
+
+  PETG:
+
+    profiles:
+
+      - line: Basic Line
+        commercial_name: PETG Basic
+        profile_name: Bambu PETG K2
+
+        inherits: Hyper PETG @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 240
+          min: 230
+          max: 255
+
+        bed:
+          initial: 70
+          temp: 70
+
+        flow_ratio: 0.98
+        max_volumetric_speed: 18
+        confidence: 98
+
+        recommendation: "PETG extremamente consistente e confiável"
+
+  ABS:
+
+    profiles:
+
+      - line: Engineering Line
+        commercial_name: ABS
+        profile_name: Bambu ABS K2
+
+        inherits: ABS @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 250
+          min: 240
+          max: 270
+
+        bed:
+          initial: 100
+          temp: 100
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 15
+        confidence: 98
+
+        recommendation: "ABS de alta estabilidade dimensional"
+
+  ASA:
+
+    profiles:
+
+      - line: Engineering Line
+        commercial_name: ASA
+        profile_name: Bambu ASA K2
+
+        inherits: ASA @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 255
+          min: 245
+          max: 270
+
+        bed:
+          initial: 100
+          temp: 100
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 15
+        confidence: 98
+
+        recommendation: "Excelente resistência UV e estabilidade externa"
+
+  TPU:
+
+    profiles:
+
+      - line: Tough Line
+        commercial_name: TPU 95A
+        profile_name: Bambu TPU K2
+
+        inherits: TPU @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 220
+          min: 210
+          max: 235
+
+        bed:
+          initial: 45
+          temp: 45
+
+        flow_ratio: 1.05
+        max_volumetric_speed: 10
+        confidence: 95
+
+        recommendation: "Flexível com alta consistência e controle de extrusão"
+
+  SUPPORT:
+
+    profiles:
+
+      - line: Support Line
+        commercial_name: Support Material
+        profile_name: Bambu Support K2
+
+        inherits: Generic Support @Creality K2 0.4 nozzle
+
+        nozzle:
+          initial: 210
+          min: 200
+          max: 220
+
+        bed:
+          initial: 50
+          temp: 50
+
+        flow_ratio: 1.00
+        max_volumetric_speed: 12
+        confidence: 95
+
+        recommendation: "Material de suporte dedicado para geometrias complexas"
