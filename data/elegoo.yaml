@@ -10,36 +10,171 @@ lines:
   target_use: general_printing
   notes: Linha base PLA, fácil de imprimir e confiável
   color_options:
-  - Natural
   - Black
+  - White
+  - Grey
+  - Green
+  - Blue
+  - Red
+  - Yellow
+  - Orange
+  - Pink
+  - Purple
+  - Translucent
+  - Sky Blue
+  - Sea Green
+  - Space Grey
+  - Wood color
+  - Brown
+  - Beige
+- name: PLA Basic Line
+  description: Budget-friendly PLA with wide color selection
+  positioning: entry_level
+  difficulty: 38
+  target_use: general_printing
+  notes: Linha econômica com ampla gama de cores
+  color_options:
+  - Black
+  - Red
+  - Yellow
+  - Cyan
+  - Purple
+  - Cocoa Brown
+  - Hot Pink
+  - Sunflower Yellow
+  - Cobalt Blue
+  - Apple Green
+  - Turquoise Green
+  - White
+  - Grey
+  - Beige
+  - Pink
+  - Translucent
+  - Green
+  - Misty Blue
 - name: PLA+ Line
   description: Enhanced PLA with improved strength and toughness
   positioning: improved_quality
   difficulty: 45
   target_use: functional_pla
-  notes: PLA mais resistente, melhor impacto e estabilidade
+  notes: PLA mais resistente, melhor impacto e estabilidade. Specs oficiais 190-230°C, bed 35-65°C, density 1.26 g/cm³, Vicat 63°C
   color_options:
-  - Natural
   - Black
-- name: Rapid Line
-  description: High-speed optimized filaments for fast printing
+  - White
+  - Grey
+  - Green
+  - Blue
+  - Red
+  - Yellow
+  - Orange
+  - Sky Blue
+  - Space Grey
+  - Purple
+  - Beige
+  - Sea Green
+  - Translucent
+  - Pink
+  - Wood color
+  - Brown
+- name: PLA Pro Line
+  description: Professional-grade PLA with enhanced mechanical properties
+  positioning: professional
+  difficulty: 48
+  target_use: functional_pla
+  notes: PLA de alta performance para uso profissional
+  color_options:
+  - Black
+  - White
+  - Grey
+  - Burgundy Red
+  - Blue
+  - Light Blue
+  - Green
+  - Yellow
+  - Purple
+  - Silver
+- name: Rapid PLA Plus Line
+  description: High-speed optimized PLA+ for fast printing up to 600mm/s
   positioning: performance
   difficulty: 35
   target_use: high_speed_printing
-  notes: Otimizado para impressões rápidas
+  notes: Otimizado para impressões rápidas até 600mm/s. Specs oficiais 190-230°C, bed 35-65°C
   color_options:
-  - Natural
   - Black
+  - White
+  - Grey
+  - Green
+  - Blue
+  - Red
+  - Yellow
+  - Orange
+  - Silver
+  - Brown
+  - Beige
 - name: Matte Line
   description: PLA with matte finish for aesthetic parts
   positioning: aesthetic
   difficulty: 40
   target_use: visual_quality
-  notes: Acabamento fosco, foco em estética
+  notes: Acabamento fosco, foco em estética. Specs oficiais 190-220°C, bed 50-65°C, Vicat 64°C, spool 160g
+  color_options:
+  - Matte Black
+  - Matte White
+  - Slate Grey
+  - Ruby Red
+  - Navy Blue
+  - Teal Green
+  - Sunshine Yellow
+  - Lavender Purple
+  - Sakura Pink
+  - Ice Blue
+  - Beige
+  - Mint Green
+- name: PLA Silk Line
+  description: Glossy silk-like finish PLA for visual and decorative parts
+  positioning: aesthetic
+  difficulty: 45
+  target_use: visual_quality
+  notes: Acabamento sedoso, cores metálicas e bicolores
+  color_options:
+  - Silk Gold
+  - Silk Green Red
+  - Silk Silver
+  - Silk Blue Purple
+  - Silk Coral Pink
+  - Silk Mint Green
+  - Silk Holly Green
+  - Silk Copper
+  - Silk Black Red
+  - Silk Blue Green Orange
+  - Silk White
+  - Silk Blue Green
+  - Silk Black Purple
+  - Silk Blue Magenta
+  - Silk True Red
+  - Silk Black Green
+  - Silk Yellow Purple
+  - Silk Sky Blue
+  - Silk Bluish Purple
+  - Silk Peach Pink
+- name: PLA Galaxy Line
+  description: PLA with sparkling galaxy effect for unique visual parts
+  positioning: aesthetic
+  difficulty: 42
+  target_use: visual_quality
+  notes: Efeito galáxia com partículas brilhantes
+  color_options:
+  - Galaxy Black
+  - Galaxy Purple
+  - Galaxy Peacock Blue
+- name: PLA CF Line
+  description: Carbon fiber reinforced PLA for stiff structural parts
+  positioning: engineering
+  difficulty: 55
+  target_use: structural_parts
+  notes: Reforço em fibra de carbono, maior rigidez, requer bico endurecido
   color_options:
   - Black
-  - Natural
-  - White
 - name: Engineering Line
   description: Functional PETG/ABS materials for mechanical parts
   positioning: functional
@@ -78,15 +213,167 @@ materials:
       max_volumetric_speed: 14
       confidence: 85
       recommendation: PLA básico confiável e fácil de imprimir
-      color: Natural
       surface_finish: Standard
       material_strength: 60
       material_flexibility: 50
       material_temperature_resistance: 50
       material_uv_resistance: 30
+      variants:
+      - color: Black
+        hex: "#1C1C1C"
+      - color: White
+        hex: "#F5F5F5"
+      - color: Grey
+        hex: "#808080"
+      - color: Green
+        hex: "#2E8B57"
+      - color: Blue
+        hex: "#1E56A0"
+      - color: Red
+        hex: "#CC2200"
+      - color: Yellow
+        hex: "#F5C518"
+      - color: Orange
+        hex: "#E8732A"
+      - color: Pink
+        hex: "#FF91A4"
+      - color: Purple
+        hex: "#6A0DAD"
+      - color: Translucent
+        hex: "#DDEEFF"
+        transparent: true
+      - color: Sky Blue
+        hex: "#87CEEB"
+      - color: Sea Green
+        hex: "#2E8B57"
+      - color: Space Grey
+        hex: "#6D6D6D"
+      - color: Wood color
+        hex: "#A0522D"
+      - color: Brown
+        hex: "#8B4513"
+      - color: Beige
+        hex: "#F5F0DC"
+    - line: PLA Basic Line
+      commercial_name: PLA Basic
+      profile_name: Elegoo PLA Basic K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 215
+        min: 200
+        max: 230
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 13
+      confidence: 82
+      recommendation: PLA econômico com ampla seleção de cores
+      surface_finish: Standard
+      material_strength: 55
+      material_flexibility: 50
+      material_temperature_resistance: 45
+      material_uv_resistance: 28
+      variants:
+      - color: Black
+        hex: "#1C1C1C"
+      - color: Red
+        hex: "#CC2200"
+      - color: Yellow
+        hex: "#F5C518"
+      - color: Cyan
+        hex: "#00CED1"
+      - color: Purple
+        hex: "#6A0DAD"
+      - color: Cocoa Brown
+        hex: "#4A2C2A"
+      - color: Hot Pink
+        hex: "#FF69B4"
+      - color: Sunflower Yellow
+        hex: "#FFD700"
+      - color: Cobalt Blue
+        hex: "#0047AB"
+      - color: Apple Green
+        hex: "#8DB600"
+      - color: Turquoise Green
+        hex: "#00CED1"
+      - color: White
+        hex: "#F5F5F5"
+      - color: Grey
+        hex: "#808080"
+      - color: Beige
+        hex: "#F5F0DC"
+      - color: Pink
+        hex: "#FF91A4"
+      - color: Translucent
+        hex: "#DDEEFF"
+        transparent: true
+      - color: Green
+        hex: "#2E8B57"
+      - color: Misty Blue
+        hex: "#B0C4DE"
     - line: PLA+ Line
       commercial_name: PLA+
       profile_name: Elegoo PLA+ K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 220
+        min: 190
+        max: 230
+      bed:
+        initial: 50
+        temp: 50
+      flow_ratio: 1.02
+      max_volumetric_speed: 15
+      density: 1.26
+      glass_transition_temp: 63
+      diameter_tolerance: "1.75±0.02mm"
+      confidence: 88
+      recommendation: Mais resistente que PLA padrão, specs verificadas no site oficial
+      surface_finish: Standard
+      material_strength: 68
+      material_flexibility: 52
+      material_temperature_resistance: 55
+      material_uv_resistance: 32
+      variants:
+      - color: Black
+        hex: "#1C1C1C"
+      - color: White
+        hex: "#F5F5F5"
+      - color: Grey
+        hex: "#808080"
+      - color: Green
+        hex: "#2E8B57"
+      - color: Blue
+        hex: "#1E56A0"
+      - color: Red
+        hex: "#CC2200"
+      - color: Yellow
+        hex: "#F5C518"
+      - color: Orange
+        hex: "#E8732A"
+      - color: Sky Blue
+        hex: "#87CEEB"
+      - color: Space Grey
+        hex: "#6D6D6D"
+      - color: Purple
+        hex: "#6A0DAD"
+      - color: Beige
+        hex: "#F5F0DC"
+      - color: Sea Green
+        hex: "#2E8B57"
+      - color: Translucent
+        hex: "#DDEEFF"
+        transparent: true
+      - color: Pink
+        hex: "#FF91A4"
+      - color: Wood color
+        hex: "#A0522D"
+      - color: Brown
+        hex: "#8B4513"
+    - line: PLA Pro Line
+      commercial_name: PLA Pro
+      profile_name: Elegoo PLA Pro K2
       inherits: Hyper PLA @Creality K2 0.4 nozzle
       nozzle:
         initial: 220
@@ -96,18 +383,129 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.02
-      max_volumetric_speed: 15
-      confidence: 88
-      recommendation: Mais resistente que PLA padrão
-      color: Natural
+      max_volumetric_speed: 16
+      confidence: 86
+      recommendation: PLA profissional com melhor acabamento e resistência
       surface_finish: Standard
+      material_strength: 70
+      material_flexibility: 52
+      material_temperature_resistance: 55
+      material_uv_resistance: 33
+      variants:
+      - color: Black
+        hex: "#1C1C1C"
+      - color: White
+        hex: "#F5F5F5"
+      - color: Grey
+        hex: "#808080"
+      - color: Burgundy Red
+        hex: "#800020"
+      - color: Blue
+        hex: "#1E56A0"
+      - color: Light Blue
+        hex: "#ADD8E6"
+      - color: Green
+        hex: "#2E8B57"
+      - color: Yellow
+        hex: "#F5C518"
+      - color: Purple
+        hex: "#6A0DAD"
+      - color: Silver
+        hex: "#C0C0C0"
+    - line: Rapid PLA Plus Line
+      commercial_name: Rapid PLA+
+      profile_name: Elegoo Rapid PLA+ K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 220
+        min: 190
+        max: 230
+      bed:
+        initial: 50
+        temp: 50
+      flow_ratio: 0.98
+      max_volumetric_speed: 22
+      diameter_tolerance: "1.75±0.02mm"
+      confidence: 87
+      recommendation: Otimizado para alta velocidade até 600mm/s, specs verificadas no site oficial
+      surface_finish: Standard
+      material_strength: 65
+      material_flexibility: 50
+      material_temperature_resistance: 52
+      material_uv_resistance: 30
+      variants:
+      - color: Black
+        hex: "#1C1C1C"
+      - color: White
+        hex: "#F5F5F5"
+      - color: Grey
+        hex: "#808080"
+      - color: Green
+        hex: "#2E8B57"
+      - color: Blue
+        hex: "#1E56A0"
+      - color: Red
+        hex: "#CC2200"
+      - color: Yellow
+        hex: "#F5C518"
+      - color: Orange
+        hex: "#E8732A"
+      - color: Silver
+        hex: "#C0C0C0"
+      - color: Brown
+        hex: "#8B4513"
+      - color: Beige
+        hex: "#F5F0DC"
+    - line: Matte Line
+      commercial_name: PLA Matte
+      profile_name: Elegoo PLA Matte K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 205
+        min: 190
+        max: 220
+      bed:
+        initial: 57
+        temp: 57
+      flow_ratio: 1.01
+      max_volumetric_speed: 14
+      glass_transition_temp: 64
+      diameter_tolerance: "1.75±0.02mm"
+      confidence: 85
+      recommendation: Melhor acabamento estético fosco, specs verificadas no site oficial
+      surface_finish: Matte
       material_strength: 60
       material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
-    - line: Rapid Line
-      commercial_name: PLA Rapid
-      profile_name: Elegoo PLA Rapid K2
+      material_temperature_resistance: 52
+      material_uv_resistance: 35
+      variants:
+      - color: Matte Black
+        hex: "#2C2C2C"
+      - color: Matte White
+        hex: "#F2F2F2"
+      - color: Slate Grey
+        hex: "#708090"
+      - color: Ruby Red
+        hex: "#9B111E"
+      - color: Navy Blue
+        hex: "#001F5B"
+      - color: Teal Green
+        hex: "#008080"
+      - color: Sunshine Yellow
+        hex: "#F5BD1F"
+      - color: Lavender Purple
+        hex: "#8A7FB0"
+      - color: Sakura Pink
+        hex: "#FF91A4"
+      - color: Ice Blue
+        hex: "#99C5C4"
+      - color: Beige
+        hex: "#F5F0DC"
+      - color: Mint Green
+        hex: "#98FF98"
+    - line: PLA Silk Line
+      commercial_name: PLA Silk
+      profile_name: Elegoo PLA Silk K2
       inherits: Hyper PLA @Creality K2 0.4 nozzle
       nozzle:
         initial: 225
@@ -116,19 +514,59 @@ materials:
       bed:
         initial: 60
         temp: 60
-      flow_ratio: 0.98
-      max_volumetric_speed: 20
+      flow_ratio: 1.03
+      max_volumetric_speed: 12
       confidence: 85
-      recommendation: Otimizado para alta velocidade
-      color: Natural
-      surface_finish: Standard
-      material_strength: 60
+      recommendation: Acabamento sedoso, ideal para peças decorativas
+      surface_finish: Silky
+      material_strength: 58
       material_flexibility: 50
-      material_temperature_resistance: 50
+      material_temperature_resistance: 48
       material_uv_resistance: 30
-    - line: Matte Line
-      commercial_name: PLA Matte
-      profile_name: Elegoo PLA Matte K2
+      variants:
+      - color: Silk Gold
+        hex: "#D4AF37"
+      - color: Silk Silver
+        hex: "#C0C0C0"
+      - color: Silk Copper
+        hex: "#B87333"
+      - color: Silk White
+        hex: "#F8F8F8"
+      - color: Silk True Red
+        hex: "#CC0000"
+      - color: Silk Sky Blue
+        hex: "#87CEEB"
+      - color: Silk Bluish Purple
+        hex: "#7B68EE"
+      - color: Silk Peach Pink
+        hex: "#FFCBA4"
+      - color: Silk Mint Green
+        hex: "#98FF98"
+      - color: Silk Holly Green
+        hex: "#009150"
+      - color: Silk Coral Pink
+        hex: "#F88379"
+      - color: Silk Blue Green
+        hex: "#00827F"
+      - color: Silk Green Red
+        hex: "#8B0000"
+      - color: Silk Blue Purple
+        hex: "#8A2BE2"
+      - color: Silk Black Red
+        hex: "#1C0A0A"
+      - color: Silk Blue Green Orange
+        hex: "#FF8C00"
+      - color: Silk Black Purple
+        hex: "#1C001C"
+      - color: Silk Blue Magenta
+        hex: "#8B008B"
+      - color: Silk Black Green
+        hex: "#001C00"
+      - color: Silk Yellow Purple
+        hex: "#9400D3"
+    - line: PLA Galaxy Line
+      commercial_name: PLA Galaxy
+      profile_name: Elegoo PLA Galaxy K2
       inherits: Hyper PLA @Creality K2 0.4 nozzle
       nozzle:
         initial: 220
@@ -137,16 +575,45 @@ materials:
       bed:
         initial: 60
         temp: 60
-      flow_ratio: 1.01
-      max_volumetric_speed: 14
-      confidence: 85
-      recommendation: Melhor acabamento estético fosco
-      color: Natural
-      surface_finish: Matte
-      material_strength: 60
+      flow_ratio: 1.02
+      max_volumetric_speed: 13
+      confidence: 83
+      recommendation: Efeito galáxia com partículas brilhantes para peças decorativas
+      surface_finish: Sparkle
+      material_strength: 58
       material_flexibility: 50
-      material_temperature_resistance: 50
+      material_temperature_resistance: 48
       material_uv_resistance: 30
+      variants:
+      - color: Galaxy Black
+        hex: "#1C1C1C"
+      - color: Galaxy Purple
+        hex: "#5B2C6F"
+      - color: Galaxy Peacock Blue
+        hex: "#0D6E8A"
+    - line: PLA CF Line
+      commercial_name: PLA-CF
+      profile_name: Elegoo PLA CF K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 225
+        min: 215
+        max: 240
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 0.97
+      max_volumetric_speed: 10
+      confidence: 82
+      recommendation: Maior rigidez com fibra de carbono, requer bico endurecido (hardened nozzle)
+      surface_finish: Matte
+      material_strength: 80
+      material_flexibility: 35
+      material_temperature_resistance: 58
+      material_uv_resistance: 35
+      variants:
+      - color: Black
+        hex: "#1C1C1C"
   PETG:
     profiles:
     - line: Engineering Line

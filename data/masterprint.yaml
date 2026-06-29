@@ -1,7 +1,8 @@
 manufacturer:
   name: Masterprint
   country: Brazil
-  website: null
+  website: https://masterprint3d.com.br
+  notes: Fabricante brasileiro de filamentos 3D. Catálogo completo de filamentos para uso geral e industrial.
 lines:
 - name: Standard Line
   description: General purpose filaments for everyday printing

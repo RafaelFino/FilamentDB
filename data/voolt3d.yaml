@@ -1,10 +1,11 @@
 manufacturer:
   name: Voolt3D
   country: Brazil
-  website: null
+  website: https://voolt3d.com.br
+  notes: Maior fabricante nacional de filamentos para impressão 3D, 100% desenvolvidos e produzidos no Brasil. Sede em São Bernardo do Campo, SP.
 lines:
 - name: Standard Line
-  description: General purpose filaments for everyday printing
+  description: PLA de uso geral com boa estabilidade e custo equilibrado
   positioning: balanced
   difficulty: 40
   target_use: general_printing
@@ -12,26 +13,49 @@ lines:
   color_options:
   - Natural
   - Black
+  - White
 - name: Velvet Line
-  description: Aesthetic PLA with matte/velvet finish
+  description: PLA estético com acabamento aveludado/matte, tecnologia de expansão exclusiva
   positioning: aesthetic
   difficulty: 35
   target_use: visual_quality
-  notes: Foco em acabamento visual e toque fosco
+  notes: Foco em acabamento visual e toque fosco. Reduz visibilidade de camadas, pode ser lixado. High Speed Premium.
   color_options:
-  - Natural
-  - Black
+  - Preto
+  - Branco
+  - Bege Caucasiano
+  - Vermelho
+  - Azul
+  - Cinza Claro
+  - Verde Oliva
+  - Amarelo
+  - Branco Off White
+  - Marrom
+  - Verde
+  - Marrom Cappuccino
+  - Cinza Grafite
+  - Verde Macaron
+- name: V-Silk Line
+  description: PLA com acabamento sedoso/metálico
+  positioning: aesthetic
+  difficulty: 38
+  target_use: visual_quality
+  notes: Acabamento silk com reflexo metálico
+  color_options:
+  - Dourado
+  - Inox
 - name: High Speed Line
-  description: Optimized for fast printing on modern printers
+  description: PLA otimizado para alta velocidade em impressoras modernas
   positioning: performance
   difficulty: 45
   target_use: high_speed_printing
-  notes: Ajustado para K2 / K1 / Bambu-like speeds
+  notes: Ajustado para K2 / K1 / Bambu-like speeds. Max volumetric speed até 25 mm³/s.
   color_options:
   - Natural
   - Black
+  - White
 - name: Engineering Line
-  description: Functional materials for mechanical parts
+  description: Materiais funcionais para peças mecânicas (PETG, ABS, PETG CF)
   positioning: functional
   difficulty: 60
   target_use: mechanical_parts
@@ -41,7 +65,7 @@ lines:
   - White
   - Natural
 - name: Flexible Line
-  description: TPU flexible materials
+  description: TPU flexível
   positioning: flexible
   difficulty: 80
   target_use: flexible_parts
@@ -58,18 +82,21 @@ materials:
       profile_name: Voolt3D PLA Velvet K2
       inherits: Hyper PLA @Creality K2 0.4 nozzle
       nozzle:
-        initial: 225
-        min: 218
+        initial: 220
+        min: 190
         max: 230
       bed:
-        initial: 65
+        initial: 60
         temp: 60
       flow_ratio: 1.04
-      max_volumetric_speed: 12
+      max_volumetric_speed: 25
+      density: 1.24
+      glass_transition_temp: 55
+      diameter_tolerance: 0.02
       confidence: 92
-      recommendation: Melhor acabamento estético da Voolt3D
+      recommendation: Melhor acabamento estético da Voolt3D. Acabamento aveludado, reduz visibilidade de camadas, pode ser lixado.
       color: Natural
-      surface_finish: Standard
+      surface_finish: Velvet
       material_strength: 60
       material_flexibility: 50
       material_temperature_resistance: 50
@@ -80,25 +107,19 @@ materials:
       - sku: VLT-PLV-WHT-1K
         color_name: White
         hex: '#F4F4F2'
-        rgb:
-        - 244
-        - 244
-        - 242
+        rgb: [244, 244, 242]
         finish: Velvet
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 50
         dry_hours: 8.0
         recommended_use: Decorative models
-        notes: Excellent surface finish
+        notes: Acabamento aveludado, pode ser lixado
         status: Active
       - sku: VLT-PLV-BLK-1K
-        color_name: Black
-        hex: '#1A1A1A'
-        rgb:
-        - 26
-        - 26
-        - 26
+        color_name: Preto
+        hex: '#0D0D0D'
+        rgb: [13, 13, 13]
         finish: Velvet
         diameter_mm: 1.75
         weight_g: 1000
@@ -109,17 +130,134 @@ materials:
       - sku: VLT-PLV-SKN-1K
         color_name: Bege Caucasiano
         hex: '#D8B596'
-        rgb:
-        - 216
-        - 181
-        - 150
+        rgb: [216, 181, 150]
         finish: Velvet
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 50
         dry_hours: 8.0
         recommended_use: Decorative models
-        notes: Found on official website
+        status: Active
+      - sku: VLT-PLV-RED-1K
+        color_name: Vermelho
+        hex: '#C41E3A'
+        rgb: [196, 30, 58]
+        finish: Velvet
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
+      - sku: VLT-PLV-BLU-1K
+        color_name: Azul
+        hex: '#1565C0'
+        rgb: [21, 101, 192]
+        finish: Velvet
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
+      - sku: VLT-PLV-LGR-1K
+        color_name: Cinza Claro
+        hex: '#B0BEC5'
+        rgb: [176, 190, 197]
+        finish: Velvet
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
+      - sku: VLT-PLV-OLV-1K
+        color_name: Verde Oliva
+        hex: '#556B2F'
+        rgb: [85, 107, 47]
+        finish: Velvet
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
+      - sku: VLT-PLV-YLW-1K
+        color_name: Amarelo
+        hex: '#FFD700'
+        rgb: [255, 215, 0]
+        finish: Velvet
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
+      - sku: VLT-PLV-OFW-1K
+        color_name: Branco Off White
+        hex: '#F5F0E8'
+        rgb: [245, 240, 232]
+        finish: Velvet
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
+      - sku: VLT-PLV-BRW-1K
+        color_name: Marrom
+        hex: '#6D4C41'
+        rgb: [109, 76, 65]
+        finish: Velvet
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
+      - sku: VLT-PLV-GRN-1K
+        color_name: Verde
+        hex: '#2E7D32'
+        rgb: [46, 125, 50]
+        finish: Velvet
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
+      - sku: VLT-PLV-CAP-1K
+        color_name: Marrom Cappuccino
+        hex: '#7B5E57'
+        rgb: [123, 94, 87]
+        finish: Velvet
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
+      - sku: VLT-PLV-DGR-1K
+        color_name: Cinza Grafite
+        hex: '#455A64'
+        rgb: [69, 90, 100]
+        finish: Velvet
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
+      - sku: VLT-PLV-MCR-1K
+        color_name: Verde Macaron
+        hex: '#A8D8A8'
+        rgb: [168, 216, 168]
+        finish: Velvet
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
         status: Active
     - line: Standard Line
       commercial_name: PLA Standard
@@ -133,7 +271,7 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.0
-      max_volumetric_speed: 15
+      max_volumetric_speed: 20
       confidence: 88
       recommendation: PLA equilibrado para uso geral
       color: Natural
@@ -146,72 +284,119 @@ materials:
       drying_time: 8.0
       variants:
       - sku: VLT-PLA-WHT-1K
-        color_name: White
+        color_name: Branco
         hex: '#F5F5F5'
-        rgb:
-        - 245
-        - 245
-        - 245
+        rgb: [245, 245, 245]
         finish: Gloss
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 50
         dry_hours: 8.0
         recommended_use: General purpose
-        notes: High Speed Premium
         status: Active
       - sku: VLT-PLA-BLK-1K
-        color_name: Black
+        color_name: Preto
         hex: '#111111'
-        rgb:
-        - 17
-        - 17
-        - 17
+        rgb: [17, 17, 17]
         finish: Gloss
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 50
         dry_hours: 8.0
         recommended_use: General purpose
-        notes: High Speed Premium
         status: Active
       - sku: VLT-PLA-RED-1K
-        color_name: Red
-        hex: '#C62828'
-        rgb:
-        - 198
-        - 40
-        - 40
+        color_name: Vermelho
+        hex: '#C41E3A'
+        rgb: [196, 30, 58]
         finish: Gloss
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 50
         dry_hours: 8.0
         recommended_use: General purpose
-        notes: Found on official website
+        status: Active
+      - sku: VLT-PLA-BLU-1K
+        color_name: Azul
+        hex: '#1565C0'
+        rgb: [21, 101, 192]
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: VLT-PLA-PNK-1K
+        color_name: Rosa
+        hex: '#F48FB1'
+        rgb: [244, 143, 177]
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: VLT-PLA-LGR-1K
+        color_name: Cinza Claro
+        hex: '#B0BEC5'
+        rgb: [176, 190, 197]
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
         status: Active
       - sku: VLT-PLA-PUR-1K
-        color_name: Purple
+        color_name: Roxo
         hex: '#6A1B9A'
-        rgb:
-        - 106
-        - 27
-        - 154
+        rgb: [106, 27, 154]
         finish: Gloss
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 50
         dry_hours: 8.0
         recommended_use: General purpose
-        notes: Found on official website
+        status: Active
+      - sku: VLT-PLA-BRW-1K
+        color_name: Marrom
+        hex: '#6D4C41'
+        rgb: [109, 76, 65]
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: VLT-PLA-GRN-1K
+        color_name: Verde
+        hex: '#2E7D32'
+        rgb: [46, 125, 50]
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: VLT-PLA-ORG-1K
+        color_name: Laranja
+        hex: '#E65100'
+        rgb: [230, 81, 0]
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
         status: Active
       - sku: VLT-PLA-DNT-1K
         color_name: Branco Dental
         hex: '#F8F8F4'
-        rgb:
-        - 248
-        - 248
-        - 244
+        rgb: [248, 248, 244]
         finish: Gloss
         diameter_mm: 1.75
         weight_g: 1000
@@ -232,7 +417,7 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 0.98
-      max_volumetric_speed: 20
+      max_volumetric_speed: 25
       confidence: 85
       recommendation: Otimizado para alta velocidade
       color: Natural
@@ -244,87 +429,83 @@ materials:
       drying_temperature: 50
       drying_time: 8.0
       variants:
-      - sku: VLT-PLA-WHT-1K
-        color_name: White
+      - sku: VLT-PHS-WHT-1K
+        color_name: Branco
         hex: '#F5F5F5'
-        rgb:
-        - 245
-        - 245
-        - 245
+        rgb: [245, 245, 245]
         finish: Gloss
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 50
         dry_hours: 8.0
-        recommended_use: General purpose
-        notes: High Speed Premium
+        recommended_use: High speed printing
         status: Active
-      - sku: VLT-PLA-BLK-1K
-        color_name: Black
+      - sku: VLT-PHS-BLK-1K
+        color_name: Preto
         hex: '#111111'
-        rgb:
-        - 17
-        - 17
-        - 17
+        rgb: [17, 17, 17]
         finish: Gloss
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 50
         dry_hours: 8.0
-        recommended_use: General purpose
-        notes: High Speed Premium
+        recommended_use: High speed printing
         status: Active
-      - sku: VLT-PLA-RED-1K
-        color_name: Red
-        hex: '#C62828'
-        rgb:
-        - 198
-        - 40
-        - 40
-        finish: Gloss
+    - line: V-Silk Line
+      commercial_name: PLA V-Silk
+      profile_name: Voolt3D PLA V-Silk K2
+      inherits: Hyper PLA @Creality K2 0.4 nozzle
+      nozzle:
+        initial: 220
+        min: 210
+        max: 230
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.02
+      max_volumetric_speed: 15
+      confidence: 85
+      recommendation: PLA com acabamento sedoso/metálico, ótimo reflexo
+      color: Natural
+      surface_finish: Silk
+      material_strength: 55
+      material_flexibility: 50
+      material_temperature_resistance: 45
+      material_uv_resistance: 30
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: VLT-SLK-GLD-1K
+        color_name: Dourado
+        hex: '#FFD700'
+        rgb: [255, 215, 0]
+        finish: Silk
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 50
         dry_hours: 8.0
-        recommended_use: General purpose
-        notes: Found on official website
+        recommended_use: Decorative models
+        notes: Acabamento metalizado dourado
         status: Active
-      - sku: VLT-PLA-PUR-1K
-        color_name: Purple
-        hex: '#6A1B9A'
-        rgb:
-        - 106
-        - 27
-        - 154
-        finish: Gloss
+      - sku: VLT-SLK-INX-1K
+        color_name: Inox
+        hex: '#CFD8DC'
+        rgb: [207, 216, 220]
+        finish: Silk
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 50
         dry_hours: 8.0
-        recommended_use: General purpose
-        notes: Found on official website
-        status: Active
-      - sku: VLT-PLA-DNT-1K
-        color_name: Branco Dental
-        hex: '#F8F8F4'
-        rgb:
-        - 248
-        - 248
-        - 244
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: Dental prototypes
-        notes: Official color
+        recommended_use: Decorative models
+        notes: Acabamento metalizado prata/inox
         status: Active
   PETG:
     profiles:
     - line: Engineering Line
-      commercial_name: PETG Standard
-      profile_name: Voolt3D PETG K2
+      commercial_name: PETG HF
+      profile_name: Voolt3D PETG HF K2
       inherits: Hyper PETG @Creality K2 0.4 nozzle
+      notes: High Fluidity - linha PETG otimizada para fluxo alto
       nozzle:
         initial: 245
         min: 235
@@ -335,80 +516,263 @@ materials:
       flow_ratio: 0.98
       max_volumetric_speed: 12
       confidence: 85
-      recommendation: Boa resistência mecânica e química
+      recommendation: PETG com fluxo otimizado, boa resistência mecânica e química
       color: Natural
-      surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
+      surface_finish: Semi-Gloss
+      material_strength: 65
+      material_flexibility: 55
+      material_temperature_resistance: 65
+      material_uv_resistance: 50
       drying_temperature: 65
       drying_time: 8.0
       variants:
-      - sku: VLT-PET-BLK-1K
-        color_name: Black
-        hex: '#111111'
-        rgb:
-        - 17
-        - 17
-        - 17
+      - sku: VLT-PEH-BLK-1K
+        color_name: Preto
+        hex: '#0D0D0D'
+        rgb: [13, 13, 13]
         finish: Semi-Gloss
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 65
         dry_hours: 8.0
         recommended_use: Mechanical parts
-        notes: HF Series
         status: Active
-      - sku: VLT-PET-WHT-1K
-        color_name: White
-        hex: '#F5F5F5'
-        rgb:
-        - 245
-        - 245
-        - 245
+      - sku: VLT-PEH-DNT-1K
+        color_name: Branco Dental
+        hex: '#F8F8F4'
+        rgb: [248, 248, 244]
         finish: Semi-Gloss
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 65
         dry_hours: 8.0
         recommended_use: Mechanical parts
-        notes: HF Series
         status: Active
-      - sku: VLT-PET-OLV-1K
-        color_name: Verde Oliva
-        hex: '#556B2F'
-        rgb:
-        - 85
-        - 107
-        - 47
+      - sku: VLT-PEH-NAT-1K
+        color_name: Natural Translúcido
+        hex: '#E8E8D8'
+        rgb: [232, 232, 216]
         finish: Semi-Gloss
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 65
         dry_hours: 8.0
         recommended_use: Mechanical parts
-        notes: Official color
         status: Active
-      - sku: VLT-PET-SKN-1K
+      - sku: VLT-PEH-LGR-1K
+        color_name: Cinza Claro
+        hex: '#B0BEC5'
+        rgb: [176, 190, 197]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: VLT-PEH-DGR-1K
+        color_name: Cinza Grafite
+        hex: '#455A64'
+        rgb: [69, 90, 100]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: VLT-PEH-YLW-1K
+        color_name: Amarelo
+        hex: '#FFD700'
+        rgb: [255, 215, 0]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: VLT-PEH-BLU-1K
+        color_name: Azul
+        hex: '#1565C0'
+        rgb: [21, 101, 192]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: VLT-PEH-SKN-1K
         color_name: Bege Caucasiano
         hex: '#D8B596'
-        rgb:
-        - 216
-        - 181
-        - 150
+        rgb: [216, 181, 150]
         finish: Semi-Gloss
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 65
         dry_hours: 8.0
         recommended_use: Mechanical parts
-        notes: Official color
         status: Active
+      - sku: VLT-PEH-RED-1K
+        color_name: Vermelho
+        hex: '#C41E3A'
+        rgb: [196, 30, 58]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-GRN-1K
+        color_name: Verde
+        hex: '#2E7D32'
+        rgb: [46, 125, 50]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-ORG-1K
+        color_name: Laranja
+        hex: '#E65100'
+        rgb: [230, 81, 0]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-BRW-1K
+        color_name: Marrom
+        hex: '#6D4C41'
+        rgb: [109, 76, 65]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-OLV-1K
+        color_name: Verde Oliva
+        hex: '#556B2F'
+        rgb: [85, 107, 47]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-CAP-1K
+        color_name: Marrom Cappuccino
+        hex: '#7B5E57'
+        rgb: [123, 94, 87]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-GNE-1K
+        color_name: Verde Neon Translúcido
+        hex: '#39FF14'
+        rgb: [57, 255, 20]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-RDT-1K
+        color_name: Vermelho Translúcido
+        hex: '#FF4040'
+        rgb: [255, 64, 64]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-GOT-1K
+        color_name: Amarelo Ouro Translúcido
+        hex: '#FFD700'
+        rgb: [255, 215, 0]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-BMT-1K
+        color_name: Azul Marinho Translúcido
+        hex: '#003366'
+        rgb: [0, 51, 102]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-ORT-1K
+        color_name: Laranja Translúcido
+        hex: '#FF7700'
+        rgb: [255, 119, 0]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-ONE-1K
+        color_name: Laranja Neon Translúcido
+        hex: '#FF6600'
+        rgb: [255, 102, 0]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-PCN-1K
+        color_name: Rosa Cereja Neon Translúcido
+        hex: '#FF2D78'
+        rgb: [255, 45, 120]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
+      - sku: VLT-PEH-PRT-1K
+        color_name: Roxo Translúcido
+        hex: '#8B00FF'
+        rgb: [139, 0, 255]
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Discontinued
     - line: Engineering Line
       commercial_name: PETG CF
       profile_name: Voolt3D PETG CF K2
       inherits: Hyper PETG CF @Creality K2 0.4 nozzle
+      notes: PETG com fibra de carbono para alta rigidez. Produto confirmado (esgotado).
       nozzle:
         initial: 260
         min: 250
@@ -419,76 +783,28 @@ materials:
       flow_ratio: 0.95
       max_volumetric_speed: 10
       confidence: 80
-      recommendation: Alta rigidez com fibra de carbono
-      color: Natural
-      surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
+      recommendation: Alta rigidez com fibra de carbono - usar bico endurecido
+      color: Black
+      surface_finish: Matte
+      material_strength: 80
+      material_flexibility: 35
+      material_temperature_resistance: 70
+      material_uv_resistance: 50
       drying_temperature: 65
       drying_time: 8.0
       variants:
-      - sku: VLT-PET-BLK-1K
-        color_name: Black
-        hex: '#111111'
-        rgb:
-        - 17
-        - 17
-        - 17
-        finish: Semi-Gloss
+      - sku: VLT-PCF-BLK-1K
+        color_name: Preto
+        hex: '#0D0D0D'
+        rgb: [13, 13, 13]
+        finish: Matte
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 65
         dry_hours: 8.0
-        recommended_use: Mechanical parts
-        notes: HF Series
-        status: Active
-      - sku: VLT-PET-WHT-1K
-        color_name: White
-        hex: '#F5F5F5'
-        rgb:
-        - 245
-        - 245
-        - 245
-        finish: Semi-Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 65
-        dry_hours: 8.0
-        recommended_use: Mechanical parts
-        notes: HF Series
-        status: Active
-      - sku: VLT-PET-OLV-1K
-        color_name: Verde Oliva
-        hex: '#556B2F'
-        rgb:
-        - 85
-        - 107
-        - 47
-        finish: Semi-Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 65
-        dry_hours: 8.0
-        recommended_use: Mechanical parts
-        notes: Official color
-        status: Active
-      - sku: VLT-PET-SKN-1K
-        color_name: Bege Caucasiano
-        hex: '#D8B596'
-        rgb:
-        - 216
-        - 181
-        - 150
-        finish: Semi-Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 65
-        dry_hours: 8.0
-        recommended_use: Mechanical parts
-        notes: Official color
-        status: Active
+        recommended_use: Structural parts
+        notes: Requer bico de metal endurecido (hardened steel ou similar)
+        status: Discontinued
   ABS:
     profiles:
     - line: Engineering Line
@@ -508,20 +824,17 @@ materials:
       recommendation: Peças funcionais com resistência térmica
       color: Black
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
+      material_strength: 65
+      material_flexibility: 45
+      material_temperature_resistance: 75
+      material_uv_resistance: 25
       drying_temperature: 80
       drying_time: 6.0
       variants:
       - sku: VLT-ABS-BLK-1K
-        color_name: Black
+        color_name: Preto
         hex: '#111111'
-        rgb:
-        - 17
-        - 17
-        - 17
+        rgb: [17, 17, 17]
         finish: Gloss
         diameter_mm: 1.75
         weight_g: 1000
@@ -548,20 +861,17 @@ materials:
       recommendation: Flexível padrão, baixa velocidade
       color: Natural
       surface_finish: Flexible
-      material_strength: 60
-      material_flexibility: 50
+      material_strength: 40
+      material_flexibility: 90
       material_temperature_resistance: 50
-      material_uv_resistance: 30
+      material_uv_resistance: 40
       drying_temperature: 50
       drying_time: 8.0
       variants:
       - sku: VLT-TPU-BLK-1K
-        color_name: Black
+        color_name: Preto
         hex: '#111111'
-        rgb:
-        - 17
-        - 17
-        - 17
+        rgb: [17, 17, 17]
         finish: Semi-Gloss
         diameter_mm: 1.75
         weight_g: 1000

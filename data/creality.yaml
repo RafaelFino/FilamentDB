@@ -94,22 +94,29 @@ materials:
       commercial_name: Hyper PLA
       profile_name: Creality Hyper PLA K2
       inherits: Hyper PLA @Creality K2 0.4 nozzle
+      notes: >
+        Specs oficiais confirmadas: nozzle 190-230°C, bed 25-60°C, speed 40-600mm/s,
+        density 1.24 g/cm³, tensile 52.99 MPa, elongation 6.3%, tolerância ±0.02mm.
       nozzle:
         initial: 220
-        min: 210
+        min: 190
         max: 230
       bed:
         initial: 60
         temp: 60
       flow_ratio: 1.0
       max_volumetric_speed: 18
+      density: 1.24
+      tensile_strength_mpa: 52.99
+      elongation_at_break_pct: 6.3
+      diameter_tolerance: "1.75±0.02mm"
       confidence: 95
-      recommendation: Melhor PLA da Creality para velocidade e produção
+      recommendation: Melhor PLA da Creality para velocidade e produção. Suporta até 600mm/s.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
+      material_strength: 65
+      material_flexibility: 48
+      material_temperature_resistance: 52
       material_uv_resistance: 30
       drying_temperature: 50
       drying_time: 8.0

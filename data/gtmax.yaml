@@ -1,7 +1,8 @@
 manufacturer:
   name: GTMax
   country: Brazil
-  website: null
+  website: https://gtmax3d.com.br
+  notes: Fabricante brasileiro de filamentos 3D com ampla linha para uso geral. Um dos pioneiros do mercado nacional.
 lines:
 - name: Standard Line
   description: General purpose filaments for everyday printing

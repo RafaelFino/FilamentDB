@@ -1,7 +1,8 @@
 manufacturer:
   name: F3D
   country: Brazil
-  website: null
+  website: https://f3d.com.br
+  notes: Fabricante brasileiro de filamentos para impressão 3D. Linha ampla de materiais para uso geral e engenharia.
 lines:
 - name: Standard Line
   description: General purpose filaments with good balance between cost and quality
