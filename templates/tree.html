@@ -5,219 +5,451 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>FilamentDB Explorer</title>
     <style>
+        /* ── Design tokens ─────────────────────────────────────────────────── */
         :root {
-            --bg: #05070a;
-            --panel: #11151b;
-            --panel-2: #171d26;
-            --text: #f5f7fa;
-            --muted: #9aa4b2;
-            --yellow: #ffd84d;
-            --blue: #3dd6ff;
-            --green: #55f2a1;
-            --border: #2a3240;
+            --bg:       #05070a;
+            --panel:    #0f141b;
+            --panel-2:  #161d27;
+            --text:     #eef1f6;
+            --muted:    #8a95a8;
+            --yellow:   #ffd84d;
+            --blue:     #3dd6ff;
+            --green:    #50e8a0;
+            --red:      #ff7b72;
+            --purple:   #c792ff;
+            --orange:   #ffaa4d;
+            --border:   #222d3a;
+            --sel-bg:   rgba(61,214,255,.09);
+            --sel-ring: rgba(61,214,255,.35);
         }
 
-        * { box-sizing: border-box; }
+        /* ── Reset / base ───────────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; }
         body {
             margin: 0;
-            font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
-            background: linear-gradient(135deg, #05070a 0%, #0d1218 100%);
+            font-family: Inter, 'Segoe UI', system-ui, sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+            background: var(--bg);
             color: var(--text);
         }
+        a { color: var(--blue); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* ── Layout ─────────────────────────────────────────────────────────── */
         .app {
             display: grid;
-            grid-template-columns: 290px 1fr;
+            grid-template-columns: 240px 1fr;
             min-height: 100vh;
         }
+
+        /* ── Sidebar ────────────────────────────────────────────────────────── */
         .sidebar {
-            background: rgba(5,7,10,0.9);
+            background: #07090d;
             border-right: 1px solid var(--border);
-            padding: 20px 16px;
+            padding: 20px 12px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
-        .sidebar h2 {
-            margin: 0 0 8px;
+        .sidebar-title {
+            font-size: .95rem;
+            font-weight: 700;
             color: var(--yellow);
-            font-size: 1.1rem;
+            margin-bottom: 4px;
+            padding: 0 4px;
         }
-        .sidebar p {
+        .sidebar-sub {
+            font-size: .75rem;
             color: var(--muted);
-            font-size: 0.92rem;
-            margin: 0 0 16px;
+            margin-bottom: 12px;
+            padding: 0 4px;
         }
-        .tree-item {
-            margin: 6px 0;
-        }
-        .tree-item button {
+        .mfr-btn {
+            display: block;
             width: 100%;
-            border: 1px solid var(--border);
-            background: var(--panel);
-            color: var(--text);
-            padding: 10px 12px;
-            border-radius: 8px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--muted);
+            padding: 8px 10px;
+            border-radius: 7px;
             text-align: left;
             cursor: pointer;
+            font-size: .83rem;
             font-weight: 600;
+            transition: all .12s;
         }
-        .tree-item button:hover, .tree-item button.active {
-            border-color: var(--blue);
-            box-shadow: 0 0 0 1px var(--blue);
-            color: var(--blue);
-        }
+        .mfr-btn:hover { background: var(--panel); color: var(--text); border-color: var(--border); }
+        .mfr-btn.active { background: var(--sel-bg); color: var(--blue); border-color: var(--sel-ring); }
+
+        /* ── Content ────────────────────────────────────────────────────────── */
         .content {
-            padding: 24px;
+            padding: 24px 28px 48px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            min-width: 0;
         }
-        .hero {
-            background: linear-gradient(90deg, rgba(61,214,255,0.12), rgba(255,216,77,0.08));
+
+        /* ── Page header ────────────────────────────────────────────────────── */
+        .page-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .page-header h1 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--yellow);
+        }
+        .page-header .badge {
+            font-size: .73rem;
+            color: var(--muted);
+            background: var(--panel);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 18px 20px;
-            margin-bottom: 18px;
+            padding: 3px 8px;
+            border-radius: 999px;
         }
-        .hero h1 { margin: 0 0 8px; color: var(--yellow); }
-        .hero p { margin: 0; color: var(--muted); }
-        .summary-card {
-            background: rgba(255,255,255,0.03);
+
+        /* ── Manufacturer card ──────────────────────────────────────────────── */
+        #mfr-card {
+            background: var(--panel);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 12px 14px;
-            margin-bottom: 14px;
+            padding: 14px 18px;
         }
-        .summary-card h3 { margin: 0 0 8px; color: var(--blue); }
-        .summary-card p { margin: 4px 0; color: var(--muted); }
-        .toolbar {
+        .mfr-card-row {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 18px 32px;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 14px;
+        }
+        .mfr-name { font-size: 1rem; font-weight: 700; color: var(--text); }
+        .mfr-meta { font-size: .8rem; color: var(--muted); }
+        .mfr-meta strong { color: var(--text); }
+        .mfr-stats {
+            display: flex;
+            gap: 14px;
+            margin-top: 10px;
             flex-wrap: wrap;
         }
-        .actions button {
-            background: linear-gradient(90deg, var(--blue), #6ee7ff);
-            color: #041018;
+        .mfr-stat {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: .78rem;
+            color: var(--muted);
+        }
+        .mfr-stat strong { color: var(--blue); font-size: .95rem; display: block; }
+
+        /* ── Section label ──────────────────────────────────────────────────── */
+        .section-lbl {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .section-lbl::after { content:''; flex:1; height:1px; background: var(--border); }
+
+        /* ── Toolbar ────────────────────────────────────────────────────────── */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .toolbar-label { font-size: .82rem; color: var(--muted); }
+        .actions { display: flex; gap: 8px; }
+        .btn {
             border: none;
-            padding: 10px 14px;
+            padding: 7px 14px;
             border-radius: 999px;
             font-weight: 700;
+            font-size: .78rem;
             cursor: pointer;
+            transition: opacity .12s;
         }
-        .actions button.secondary {
-            background: #232a34;
-            color: var(--yellow);
-            border: 1px solid var(--border);
-        }
-        table {
+        .btn:hover { opacity: .82; }
+        .btn-primary  { background: linear-gradient(90deg,var(--blue),#6ee7ff); color:#041018; }
+        .btn-secondary{ background: var(--panel-2); color:var(--yellow); border:1px solid var(--border); }
+        .btn-ghost    { background: transparent; color:var(--muted); border:1px solid var(--border); }
+
+        /* ── Table (shared) ─────────────────────────────────────────────────── */
+        .table-wrap {
             width: 100%;
-            border-collapse: collapse;
-            background: var(--panel);
+            overflow-x: auto;
+            border: 1px solid var(--border);
             border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
         }
-        th, td {
-            padding: 12px 14px;
-            text-align: left;
+        table { width:100%; border-collapse:collapse; background:var(--panel); }
+        th, td { padding: 9px 12px; text-align:left; }
+        th {
+            background: #0b1018;
+            color: var(--yellow);
+            font-size: .71rem;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
             border-bottom: 1px solid var(--border);
+            white-space: nowrap;
         }
-        th { color: var(--yellow); background: #0f151c; }
-        tr:hover { background: rgba(61,214,255,0.06); }
+        td { border-bottom: 1px solid rgba(34,45,58,.6); vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+
+        /* ── Profile list rows ──────────────────────────────────────────────── */
+        .row-item { cursor: pointer; transition: background .1s; }
+        .row-item:hover { background: rgba(61,214,255,.04); }
+        .row-item.row-selected { background: var(--sel-bg); outline: 1px solid var(--sel-ring); outline-offset:-1px; }
+
+        /* ── Material chips ─────────────────────────────────────────────────── */
         .chip {
             display: inline-block;
-            padding: 4px 8px;
+            padding: 2px 7px;
             border-radius: 999px;
-            background: rgba(85,242,161,.12);
-            color: var(--green);
-            font-size: 0.82rem;
+            font-size: .72rem;
+            font-weight: 700;
         }
-        .checkbox-cell { width: 40px; }
-        input[type="checkbox"] { accent-color: var(--blue); transform: scale(1.1); }
-        .row-item { cursor: pointer; }
-        .row-item:hover { background: rgba(61,214,255,0.06); }
-        .details-row td { background: #0c1118; padding: 0; }
-        .details-panel {
-            padding: 16px;
+        .chip-PLA         { background:rgba(80,232,160,.13); color:#50e8a0; }
+        .chip-PLA\ Matte  { background:rgba(80,232,160,.08); color:#90f0c4; }
+        .chip-PLA\ Silk   { background:rgba(255,216,77,.14);  color:#ffd84d; }
+        .chip-PETG        { background:rgba(61,214,255,.12);  color:#3dd6ff; }
+        .chip-PETG\ CF    { background:rgba(61,214,255,.07);  color:#9ee8ff; }
+        .chip-ABS         { background:rgba(255,123,114,.12); color:#ff9080; }
+        .chip-ASA         { background:rgba(255,170,77,.12);  color:#ffaa4d; }
+        .chip-TPU         { background:rgba(199,146,255,.12); color:#c792ff; }
+
+        /* ── Confidence bar ─────────────────────────────────────────────────── */
+        .conf-wrap { display:flex; align-items:center; gap:7px; }
+        .conf-bar  { width:60px; height:5px; background:var(--border); border-radius:99px; overflow:hidden; flex-shrink:0; }
+        .conf-fill { height:100%; border-radius:99px; }
+        .conf-val  { font-size:.78rem; color:var(--muted); }
+
+        /* ── Temp range ─────────────────────────────────────────────────────── */
+        .temp-range { font-size:.82rem; white-space:nowrap; }
+        .temp-range .ideal { color:var(--text); font-weight:700; }
+        .temp-range .lim   { color:var(--muted); }
+
+        /* ── Misc inline ─────────────────────────────────────────────────────── */
+        .muted-txt  { color:var(--muted); }
+        .mono       { font-family:'Menlo','Consolas',monospace; font-size:.79rem; color:var(--muted); }
+        .bool-yes   { color:var(--green); }
+        .bool-no    { color:var(--border); }
+        .dl-link    { font-size:.78rem; }
+        .checkbox-cell { width:36px; text-align:center; }
+        input[type="checkbox"] { accent-color:var(--blue); transform:scale(1.1); cursor:pointer; }
+
+        /* ── Empty / placeholder ────────────────────────────────────────────── */
+        .empty {
+            color:var(--muted);
+            padding:28px;
+            border:1px dashed var(--border);
+            border-radius:10px;
+            text-align:center;
+            font-size:.85rem;
+        }
+
+        /* ── Expanded detail panel (inside top table) ───────────────────────── */
+        .detail-row td { padding:0; background:#080d13; }
+        .detail-panel {
+            padding: 16px 20px 20px;
             display: grid;
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 14px;
         }
-        .report-block {
-            background: rgba(255,255,255,0.03);
+
+        .info-block {
+            background: var(--panel);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
         }
-        .report-block-header {
-            padding: 10px 12px;
-            background: linear-gradient(90deg, rgba(61,214,255,0.14), rgba(255,216,77,0.1));
+        .info-block-header {
+            padding: 8px 12px;
+            background: linear-gradient(90deg, rgba(61,214,255,.10), rgba(255,216,77,.06));
             border-bottom: 1px solid var(--border);
+            font-size: .72rem;
             font-weight: 700;
+            letter-spacing: .07em;
+            text-transform: uppercase;
             color: var(--yellow);
         }
-        .report-grid {
+        .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 10px;
-            padding: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 1px;
+            background: var(--border);
         }
-        .report-item {
-            padding: 10px 12px;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 8px;
+        .info-cell {
+            background: var(--panel);
+            padding: 8px 10px;
         }
-        .report-item .label {
+        .info-cell .lbl {
             display: block;
-            color: var(--muted);
-            font-size: 0.8rem;
-            margin-bottom: 4px;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .06em;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-bottom: 2px;
         }
-        .report-item .value {
-            color: var(--text);
+        .info-cell .v { font-size: .82rem; }
+
+        /* Wide cells that span full row */
+        .info-cell.wide { grid-column: 1 / -1; }
+
+        /* ── Variants strip ─────────────────────────────────────────────────── */
+        .variants-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 12px;
+        }
+        .variant-card {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: .78rem;
+            min-width: 130px;
+        }
+        .color-swatch {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,.15);
+            flex-shrink: 0;
+        }
+        .variant-info { display:flex; flex-direction:column; gap:1px; }
+        .variant-name { font-weight:600; color:var(--text); }
+        .variant-sku  { color:var(--muted); font-size:.72rem; font-family:monospace; }
+        .variant-meta { color:var(--muted); font-size:.72rem; }
+
+        /* ── Score bar ──────────────────────────────────────────────────────── */
+        .score-row { display:flex; align-items:center; gap:8px; margin:3px 0; }
+        .score-lbl { font-size:.72rem; color:var(--muted); width:140px; flex-shrink:0; }
+        .score-track { flex:1; height:4px; background:var(--border); border-radius:99px; overflow:hidden; }
+        .score-fill  { height:100%; border-radius:99px; background:var(--blue); }
+        .score-val   { font-size:.72rem; color:var(--muted); width:28px; text-align:right; }
+
+        /* ── Compare panel ──────────────────────────────────────────────────── */
+        #compare-panel { display:flex; flex-direction:column; gap:10px; }
+        .compare-header { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+
+        #compare-table th { min-width:200px; }
+        #compare-table td.row-lbl {
+            color: var(--muted);
+            font-size: .73rem;
             font-weight: 600;
+            background: #0b1018;
+            min-width: 160px;
+            max-width: 160px;
+            position: sticky;
+            left: 0;
+            z-index: 1;
         }
-        .empty { color: var(--muted); padding: 16px; background: var(--panel); border: 1px dashed var(--border); border-radius: 10px; }
-        @media (max-width: 900px) {
-            .app { grid-template-columns: 1fr; }
-            .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+        #compare-table tr.sec-div td {
+            background: linear-gradient(90deg,rgba(61,214,255,.10),transparent);
+            color: var(--yellow);
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-top: 1px solid var(--border);
+        }
+        #compare-table thead th { position:sticky; top:0; z-index:2; }
+        #compare-table th.corner { background:#0b1018; position:sticky; left:0; z-index:3; min-width:160px; }
+
+        .col-hdr { display:flex; flex-direction:column; gap:2px; padding:2px 0; }
+        .col-hdr-name { font-size:.85rem; font-weight:700; color:var(--text); text-transform:none; letter-spacing:0; }
+        .col-hdr-sub  { font-size:.72rem; color:var(--muted); font-weight:400; }
+        .remove-col { background:none; border:none; color:var(--muted); cursor:pointer; font-size:.82rem; padding:0; }
+        .remove-col:hover { color:var(--red); }
+
+        /* ── Responsive ─────────────────────────────────────────────────────── */
+        @media (max-width:820px) {
+            .app { grid-template-columns:1fr; }
+            .sidebar { position:static; height:auto; border-right:none; border-bottom:1px solid var(--border); }
+            .detail-panel { grid-template-columns:1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="app">
-        <aside class="sidebar">
-            <h2>Fabricantes</h2>
-            <p>Selecione um fabricante para ver seus materiais e perfis.</p>
-            {% for manufacturer in tree.keys() %}
-            <div class="tree-item">
-                <button type="button" class="manufacturer-btn" data-manufacturer="{{ manufacturer }}">{{ manufacturer }}</button>
+<div class="app">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+        <div class="sidebar-title">FilamentDB</div>
+        <div class="sidebar-sub">Selecione um fabricante</div>
+        {% for manufacturer in tree.keys() %}
+        <button type="button" class="mfr-btn manufacturer-btn" data-manufacturer="{{ manufacturer }}">
+            {{ manufacturer }}
+        </button>
+        {% endfor %}
+    </aside>
+
+    <!-- ── Main ── -->
+    <main class="content">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <h1>FilamentDB Explorer</h1>
+            <span class="badge">K2 Combo · Creality Print 7.0</span>
+        </div>
+
+        <!-- Manufacturer card -->
+        <div id="mfr-card">
+            <div class="muted-txt" style="font-size:.85rem">Selecione um fabricante na barra lateral.</div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <span class="toolbar-label" id="current-label">—</span>
+            <div class="actions">
+                <button type="button" id="select-all"        class="btn btn-secondary">Marcar todos</button>
+                <button type="button" id="download-selected" class="btn btn-primary">↓ Baixar selecionados</button>
             </div>
-            {% endfor %}
-        </aside>
-        <main class="content">
-            <div class="hero">
-                <h1>FilamentDB Explorer</h1>
-                <p>Escolha um fabricante, marque os materiais desejados e baixe vários perfis em lote.</p>
+        </div>
+
+        <!-- Profile list -->
+        <div class="section-lbl">Perfis de impressão</div>
+        <div id="table-container">
+            <div class="empty">Nenhum fabricante selecionado.</div>
+        </div>
+
+        <!-- Comparison -->
+        <div id="compare-panel">
+            <div class="section-lbl">Comparação lado a lado</div>
+            <div class="compare-header">
+                <span class="muted-txt" style="font-size:.8rem">
+                    Clique em uma linha da tabela acima para adicionar o perfil à comparação.
+                </span>
+                <button type="button" id="clear-compare" class="btn btn-ghost">Limpar</button>
             </div>
-            <div id="manufacturer-summary" class="summary-card">
-                <h3>Resumo do fabricante</h3>
-                <p>Selecione um fabricante para ver país, site, observações e materiais associados.</p>
+            <div id="compare-placeholder" class="empty">Nenhum perfil selecionado para comparar.</div>
+            <div id="compare-table-wrap" class="table-wrap" style="display:none">
+                <table id="compare-table"></table>
             </div>
-            <div class="toolbar">
-                <div id="current-label">Selecione um fabricante para visualizar os produtos.</div>
-                <div class="actions">
-                    <button type="button" id="download-selected">Baixar selecionados</button>
-                    <button type="button" id="select-all" class="secondary">Marcar todos</button>
-                </div>
-            </div>
-            <div id="table-container">
-                <div class="empty">Nenhum fabricante selecionado ainda.</div>
-            </div>
-        </main>
-    </div>
-    <script>
-        window.treeData = {{ tree | tojson }};
-    </script>
-    <script src="{{ url_for('static', filename='main.js') }}"></script>
+        </div>
+
+    </main>
+</div>
+
+<script>window.treeData = {{ tree | tojson }};</script>
+<script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>

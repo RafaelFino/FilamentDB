@@ -134,6 +134,38 @@ def insert_profile(manufacturer_id, material_id, profile):
         profile.get("active", 1)
     ))
 
+    profile_id = cur.lastrowid
+
+    # Inserir variantes (cores / SKUs)
+    for variant in profile.get("variants", []):
+        rgb = variant.get("rgb")
+        cur.execute("""
+            INSERT INTO filament_variants(
+                filament_id, sku, color_name, hex_color,
+                rgb_r, rgb_g, rgb_b,
+                finish, diameter_mm, weight_g,
+                dry_temp, dry_hours,
+                recommended_use, notes, status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            profile_id,
+            variant.get("sku"),
+            variant.get("color_name"),
+            variant.get("hex"),
+            rgb[0] if rgb and len(rgb) >= 3 else None,
+            rgb[1] if rgb and len(rgb) >= 3 else None,
+            rgb[2] if rgb and len(rgb) >= 3 else None,
+            variant.get("finish"),
+            variant.get("diameter_mm", 1.75),
+            variant.get("weight_g", 1000),
+            variant.get("dry_temp"),
+            variant.get("dry_hours"),
+            variant.get("recommended_use"),
+            variant.get("notes"),
+            variant.get("status", "Active"),
+        ))
+
 
 # ============================================================================
 # LOAD YAML FILES

@@ -65,6 +65,122 @@ materials:
       material_flexibility: 50
       material_temperature_resistance: 50
       material_uv_resistance: 30
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: MPR-PLA-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        notes: Easy printing
+        status: Active
+      - sku: MPR-PLA-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: MPR-PLA-GRY-1K
+        color_name: Gray
+        hex: '#808080'
+        rgb:
+        - 128
+        - 128
+        - 128
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Functional parts
+        status: Active
+      - sku: MPR-PLA-RED-1K
+        color_name: Red
+        hex: '#C62828'
+        rgb:
+        - 198
+        - 40
+        - 40
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: MPR-PLA-BLU-1K
+        color_name: Blue
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: MPR-PLA-GRN-1K
+        color_name: Green
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: MPR-PLA-YLW-1K
+        color_name: Yellow
+        hex: '#FBC02D'
+        rgb:
+        - 251
+        - 192
+        - 45
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: MPR-PLA-ORG-1K
+        color_name: Orange
+        hex: '#F57C00'
+        rgb:
+        - 245
+        - 124
+        - 0
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
     - line: Premium Line
       commercial_name: PLA Premium
       profile_name: Masterprint PLA Premium K2
@@ -86,6 +202,122 @@ materials:
       material_flexibility: 50
       material_temperature_resistance: 50
       material_uv_resistance: 30
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: MPR-PLA-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        notes: Easy printing
+        status: Active
+      - sku: MPR-PLA-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: MPR-PLA-GRY-1K
+        color_name: Gray
+        hex: '#808080'
+        rgb:
+        - 128
+        - 128
+        - 128
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Functional parts
+        status: Active
+      - sku: MPR-PLA-RED-1K
+        color_name: Red
+        hex: '#C62828'
+        rgb:
+        - 198
+        - 40
+        - 40
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: MPR-PLA-BLU-1K
+        color_name: Blue
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: MPR-PLA-GRN-1K
+        color_name: Green
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: MPR-PLA-YLW-1K
+        color_name: Yellow
+        hex: '#FBC02D'
+        rgb:
+        - 251
+        - 192
+        - 45
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: MPR-PLA-ORG-1K
+        color_name: Orange
+        hex: '#F57C00'
+        rgb:
+        - 245
+        - 124
+        - 0
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
   PETG:
     profiles:
     - line: Industrial Line
@@ -109,6 +341,65 @@ materials:
       material_flexibility: 50
       material_temperature_resistance: 50
       material_uv_resistance: 30
+      drying_temperature: 65
+      drying_time: 8.0
+      variants:
+      - sku: MPR-PET-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: MPR-PET-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: MPR-PET-CLR-1K
+        color_name: Transparent
+        hex: '#F8F8F8'
+        rgb:
+        - 248
+        - 248
+        - 248
+        finish: Transparent
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: MPR-PET-BLU-1K
+        color_name: Blue
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
   ABS:
     profiles:
     - line: Industrial Line
@@ -132,6 +423,51 @@ materials:
       material_flexibility: 50
       material_temperature_resistance: 50
       material_uv_resistance: 30
+      drying_temperature: 80
+      drying_time: 6.0
+      variants:
+      - sku: MPR-ABS-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        recommended_use: Engineering
+        status: Active
+      - sku: MPR-ABS-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        recommended_use: Engineering
+        status: Active
+      - sku: MPR-ABS-GRY-1K
+        color_name: Gray
+        hex: '#808080'
+        rgb:
+        - 128
+        - 128
+        - 128
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        recommended_use: Engineering
+        status: Active
   TPU:
     profiles:
     - line: Flex Line
@@ -155,3 +491,48 @@ materials:
       material_flexibility: 50
       material_temperature_resistance: 50
       material_uv_resistance: 30
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: MPR-TPU-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Flexible parts
+        status: Active
+      - sku: MPR-TPU-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Flexible parts
+        status: Active
+      - sku: MPR-TPU-RED-1K
+        color_name: Red
+        hex: '#C62828'
+        rgb:
+        - 198
+        - 40
+        - 40
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Flexible parts
+        status: Active

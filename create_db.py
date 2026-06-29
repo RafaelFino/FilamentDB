@@ -175,6 +175,40 @@ CREATE TABLE filament_profiles (
 """)
 
 # ============================================================================
+# VARIANTES DE FILAMENTO (cores / SKUs por perfil de impressão)
+# ============================================================================
+
+cur.execute("""
+CREATE TABLE filament_variants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    filament_id INTEGER NOT NULL,
+
+    sku TEXT,
+    color_name TEXT,
+    hex_color TEXT,
+    rgb_r INTEGER,
+    rgb_g INTEGER,
+    rgb_b INTEGER,
+    finish TEXT,
+    diameter_mm REAL DEFAULT 1.75,
+    weight_g INTEGER DEFAULT 1000,
+    dry_temp INTEGER,
+    dry_hours REAL,
+    recommended_use TEXT,
+    notes TEXT,
+    status TEXT DEFAULT 'Active',
+
+    FOREIGN KEY(filament_id) REFERENCES filament_profiles(id)
+);
+""")
+
+cur.execute("""
+CREATE INDEX idx_variant_filament
+ON filament_variants(filament_id);
+""")
+
+# ============================================================================
 # RELAÇÃO PERFIL <-> TAG
 # ============================================================================
 

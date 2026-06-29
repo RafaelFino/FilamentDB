@@ -199,32 +199,34 @@ def list_creality_print_download_options():
 
 def build_tree():
     conn = get_db_connection()
-    rows = conn.execute(
+
+    # ── Profiles ──────────────────────────────────────────────────────────────
+    profile_rows = conn.execute(
         """
         SELECT
-            mf.name AS manufacturer,
-            mf.country AS manufacturer_country,
-            mf.website AS manufacturer_website,
-            mf.notes AS manufacturer_notes,
-            m.name AS material,
-            m.description AS material_description,
-            m.average_cost AS material_average_cost,
-            m.difficulty AS material_difficulty,
-            m.strength AS material_strength,
-            m.flexibility AS material_flexibility,
+            mf.name              AS manufacturer,
+            mf.country           AS manufacturer_country,
+            mf.website           AS manufacturer_website,
+            mf.notes             AS manufacturer_notes,
+            m.name               AS material,
+            m.description        AS material_description,
+            m.average_cost       AS material_average_cost,
+            m.difficulty         AS material_difficulty,
+            m.strength           AS material_strength,
+            m.flexibility        AS material_flexibility,
             m.temperature_resistance AS material_temperature_resistance,
-            m.uv_resistance AS material_uv_resistance,
-            m.food_safe AS material_food_safe,
-            m.indoor AS material_indoor,
-            m.outdoor AS material_outdoor,
-            m.abrasive AS material_abrasive,
+            m.uv_resistance      AS material_uv_resistance,
+            m.food_safe          AS material_food_safe,
+            m.indoor             AS material_indoor,
+            m.outdoor            AS material_outdoor,
+            m.abrasive           AS material_abrasive,
             m.requires_enclosure AS material_requires_enclosure,
             m.recommended_nozzle_temp AS material_recommended_nozzle_temp,
-            m.recommended_bed_temp AS material_recommended_bed_temp,
-            m.notes AS material_notes,
-            fp.commercial_name AS commercial_name,
-            fp.profile_name AS profile_name,
-            fp.id AS profile_id,
+            m.recommended_bed_temp    AS material_recommended_bed_temp,
+            m.notes              AS material_notes,
+            fp.id                AS profile_id,
+            fp.commercial_name,
+            fp.profile_name,
             fp.printer_model,
             fp.nozzle_size,
             fp.inherits,
@@ -235,6 +237,8 @@ def build_tree():
             fp.nozzle_temp_max,
             fp.bed_temp_initial,
             fp.bed_temp,
+            fp.textured_bed_initial,
+            fp.textured_bed,
             fp.flow_ratio,
             fp.max_volumetric_speed,
             fp.profile_version,
@@ -252,96 +256,122 @@ def build_tree():
             fp.drying_temperature,
             fp.drying_time,
             fp.notes,
-            fp.active
+            fp.active,
+            fp.created_at,
+            fp.updated_at
         FROM filament_profiles fp
         JOIN manufacturers mf ON mf.id = fp.manufacturer_id
-        JOIN materials m ON m.id = fp.material_id
+        JOIN materials     m  ON m.id  = fp.material_id
         ORDER BY mf.name, m.name, fp.commercial_name, fp.profile_name
+        """
+    ).fetchall()
+
+    # ── Variants (all, indexed by filament_id) ────────────────────────────────
+    variant_rows = conn.execute(
+        """
+        SELECT id, filament_id, sku, color_name, hex_color,
+               rgb_r, rgb_g, rgb_b, finish,
+               diameter_mm, weight_g,
+               dry_temp, dry_hours,
+               recommended_use, notes, status
+        FROM filament_variants
+        ORDER BY filament_id, id
         """
     ).fetchall()
     conn.close()
 
-    tree = {}
-    for row in rows:
-        manufacturer = row[0]
-        manufacturer_country = row[1]
-        manufacturer_website = row[2]
-        manufacturer_notes = row[3]
-        material = row[4]
-        material_description = row[5]
-        material_average_cost = row[6]
-        material_difficulty = row[7]
-        material_strength = row[8]
-        material_flexibility = row[9]
-        material_temperature_resistance = row[10]
-        material_uv_resistance = row[11]
-        material_food_safe = row[12]
-        material_indoor = row[13]
-        material_outdoor = row[14]
-        material_abrasive = row[15]
-        material_requires_enclosure = row[16]
-        material_recommended_nozzle_temp = row[17]
-        material_recommended_bed_temp = row[18]
-        material_notes = row[19]
-        commercial_name = row[20]
-        profile_name = row[21]
+    # Build variants index: filament_id -> list[dict]
+    variants_by_profile: dict[int, list] = {}
+    for vr in variant_rows:
+        fid = vr["filament_id"]
+        variants_by_profile.setdefault(fid, []).append({
+            "id":             vr["id"],
+            "sku":            vr["sku"],
+            "color_name":     vr["color_name"],
+            "hex_color":      vr["hex_color"],
+            "rgb":            [vr["rgb_r"], vr["rgb_g"], vr["rgb_b"]]
+                              if vr["rgb_r"] is not None else None,
+            "finish":         vr["finish"],
+            "diameter_mm":    vr["diameter_mm"],
+            "weight_g":       vr["weight_g"],
+            "dry_temp":       vr["dry_temp"],
+            "dry_hours":      vr["dry_hours"],
+            "recommended_use": vr["recommended_use"],
+            "notes":          vr["notes"],
+            "status":         vr["status"],
+        })
+
+    # ── Assemble tree ─────────────────────────────────────────────────────────
+    tree: dict = {}
+    for row in profile_rows:
+        manufacturer = row["manufacturer"]
+        material     = row["material"]
+        profile_id   = row["profile_id"]
+
         tree.setdefault(manufacturer, {
-            "country": manufacturer_country,
-            "website": manufacturer_website,
-            "notes": manufacturer_notes,
+            "country":  row["manufacturer_country"],
+            "website":  row["manufacturer_website"],
+            "notes":    row["manufacturer_notes"],
             "materials": {},
         })
         tree[manufacturer]["materials"].setdefault(material, {
-            "description": material_description,
-            "average_cost": material_average_cost,
-            "difficulty": material_difficulty,
-            "strength": material_strength,
-            "flexibility": material_flexibility,
-            "temperature_resistance": material_temperature_resistance,
-            "uv_resistance": material_uv_resistance,
-            "food_safe": material_food_safe,
-            "indoor": material_indoor,
-            "outdoor": material_outdoor,
-            "abrasive": material_abrasive,
-            "requires_enclosure": material_requires_enclosure,
-            "recommended_nozzle_temp": material_recommended_nozzle_temp,
-            "recommended_bed_temp": material_recommended_bed_temp,
-            "notes": material_notes,
+            "description":              row["material_description"],
+            "average_cost":             row["material_average_cost"],
+            "difficulty":               row["material_difficulty"],
+            "strength":                 row["material_strength"],
+            "flexibility":              row["material_flexibility"],
+            "temperature_resistance":   row["material_temperature_resistance"],
+            "uv_resistance":            row["material_uv_resistance"],
+            "food_safe":                bool(row["material_food_safe"]),
+            "indoor":                   bool(row["material_indoor"]),
+            "outdoor":                  bool(row["material_outdoor"]),
+            "abrasive":                 bool(row["material_abrasive"]),
+            "requires_enclosure":       bool(row["material_requires_enclosure"]),
+            "recommended_nozzle_temp":  row["material_recommended_nozzle_temp"],
+            "recommended_bed_temp":     row["material_recommended_bed_temp"],
+            "notes":                    row["material_notes"],
             "profiles": [],
         })
+
         tree[manufacturer]["materials"][material]["profiles"].append({
-            "commercial_name": commercial_name,
-            "profile_name": profile_name,
-            "profile_id": row[22],
-            "printer_model": row[23],
-            "nozzle_size": row[24],
-            "inherits": row[25],
-            "base_id": row[26],
-            "creality_print_version": row[27],
-            "nozzle_temp_initial": row[28],
-            "nozzle_temp_min": row[29],
-            "nozzle_temp_max": row[30],
-            "bed_temp_initial": row[31],
-            "bed_temp": row[32],
-            "flow_ratio": row[33],
-            "max_volumetric_speed": row[34],
-            "profile_version": row[35],
-            "confidence": row[36],
-            "line": row[37],
-            "line_description": row[38],
-            "line_positioning": row[39],
-            "line_target_use": row[40],
-            "line_color_options": json.loads(row[41]) if row[41] else [],
-            "color": row[42],
-            "surface_finish": row[43],
-            "recommendation": row[44],
-            "diameter": row[45],
-            "density": row[46],
-            "drying_temperature": row[47],
-            "drying_time": row[48],
-            "notes": row[49],
-            "active": row[50],
-            "download_url": f"/download/creality-print/{manufacturer}/{material}?profile={profile_name}",
+            "profile_id":               profile_id,
+            "commercial_name":          row["commercial_name"],
+            "profile_name":             row["profile_name"],
+            "printer_model":            row["printer_model"],
+            "nozzle_size":              row["nozzle_size"],
+            "inherits":                 row["inherits"],
+            "base_id":                  row["base_id"],
+            "creality_print_version":   row["creality_print_version"],
+            "nozzle_temp_initial":      row["nozzle_temp_initial"],
+            "nozzle_temp_min":          row["nozzle_temp_min"],
+            "nozzle_temp_max":          row["nozzle_temp_max"],
+            "bed_temp_initial":         row["bed_temp_initial"],
+            "bed_temp":                 row["bed_temp"],
+            "textured_bed_initial":     row["textured_bed_initial"],
+            "textured_bed":             row["textured_bed"],
+            "flow_ratio":               row["flow_ratio"],
+            "max_volumetric_speed":     row["max_volumetric_speed"],
+            "profile_version":          row["profile_version"],
+            "confidence":               row["confidence"],
+            "line":                     row["line"],
+            "line_description":         row["line_description"],
+            "line_positioning":         row["line_positioning"],
+            "line_target_use":          row["line_target_use"],
+            "line_color_options":       json.loads(row["line_color_options"])
+                                        if row["line_color_options"] else [],
+            "color":                    row["color"],
+            "surface_finish":           row["surface_finish"],
+            "recommendation":           row["recommendation"],
+            "diameter":                 row["diameter"],
+            "density":                  row["density"],
+            "drying_temperature":       row["drying_temperature"],
+            "drying_time":              row["drying_time"],
+            "notes":                    row["notes"],
+            "active":                   bool(row["active"]),
+            "created_at":               row["created_at"],
+            "updated_at":               row["updated_at"],
+            "variants":                 variants_by_profile.get(profile_id, []),
+            "download_url":             f"/download/creality-print/{manufacturer}/{material}",
         })
 
     return tree
