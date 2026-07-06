@@ -83,6 +83,9 @@ if [[ ! -f "$DB_PATH" ]]; then
 
     info "Populando banco de dados com seed inicial..."
     FILAMENT_DB_PATH="$DB_PATH" python3 seed.py
+
+    info "Populando banco de dados com perfis de processo..."
+    FILAMENT_DB_PATH="$DB_PATH" python3 seed_process.py
 else
     info "Banco de dados existente encontrado: ${DB_PATH}"
 fi

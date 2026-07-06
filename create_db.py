@@ -244,6 +244,105 @@ CREATE TABLE filament_compatibility (
 """)
 
 # ============================================================================
+# PERFIS DE PROCESSO (PRINT SETTINGS)
+# ============================================================================
+
+cur.execute("""
+CREATE TABLE process_profiles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    material_id INTEGER NOT NULL,
+
+    profile_name TEXT NOT NULL UNIQUE,
+    profile_type TEXT NOT NULL, -- 'fast', 'strong', 'quality'
+
+    -- Configurações básicas
+    layer_height REAL,
+    initial_layer_height REAL,
+
+    -- Velocidades
+    inner_wall_speed REAL,
+    outer_wall_speed REAL,
+    sparse_infill_speed REAL,
+    internal_solid_infill_speed REAL,
+    top_surface_speed REAL,
+    initial_layer_speed REAL,
+    travel_speed REAL,
+    support_speed REAL,
+    gap_infill_speed REAL,
+
+    -- Acelerações
+    default_acceleration INTEGER,
+    inner_wall_acceleration INTEGER,
+    outer_wall_acceleration INTEGER,
+    top_surface_acceleration INTEGER,
+
+    -- Paredes
+    wall_loops INTEGER,
+    wall_generator TEXT,
+    wall_sequence TEXT,
+
+    -- Preenchimento
+    sparse_infill_density TEXT,
+    sparse_infill_pattern TEXT,
+    internal_solid_infill_pattern TEXT,
+    infill_combination INTEGER,
+
+    -- Superfícies
+    top_surface_pattern TEXT,
+    bottom_surface_pattern TEXT,
+    top_shell_layers INTEGER,
+    bottom_shell_layers INTEGER,
+    top_shell_thickness REAL,
+    bottom_shell_thickness REAL,
+
+    -- Suporte
+    enable_support INTEGER,
+    support_type TEXT,
+    support_on_build_plate_only INTEGER,
+    support_top_z_distance REAL,
+    support_interface_spacing REAL,
+    support_interface_top_layers INTEGER,
+    support_object_xy_distance REAL,
+    support_xy_overrides_z TEXT,
+
+    -- Brim
+    brim_width REAL,
+    brim_object_gap REAL,
+
+    -- Outros
+    ironing_type TEXT,
+    seam_position TEXT,
+
+    -- Metadados
+    printer_model TEXT DEFAULT 'Creality K2 Combo',
+    nozzle_size REAL DEFAULT 0.4,
+    base_id TEXT DEFAULT 'GP004',
+    inherits TEXT,
+    version TEXT DEFAULT '26.4.28.18',
+
+    description TEXT,
+    notes TEXT,
+    active INTEGER DEFAULT 1,
+
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY(material_id) REFERENCES materials(id)
+);
+""")
+
+cur.execute("""
+CREATE INDEX idx_process_material
+ON process_profiles(material_id);
+""")
+
+cur.execute("""
+CREATE INDEX idx_process_type
+ON process_profiles(profile_type);
+""")
+
+# ============================================================================
 # ÍNDICES
 # ============================================================================
 

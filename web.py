@@ -57,6 +57,59 @@ def register_routes(app):
     def list_creality_print_download_options():
         return jsonify(app_database.list_creality_print_download_options())
 
+    @app.get("/api/process-profiles")
+    def list_process_profiles():
+        return jsonify(app_database.list_process_profiles())
+
+    @app.get("/api/process-profiles/<int:profile_id>")
+    def get_process_profile(profile_id):
+        profile = app_database.get_process_profile(profile_id)
+        if profile is None:
+            return jsonify({"error": "process profile not found"}), 404
+        return jsonify(profile)
+
+    @app.get("/api/materials/<int:material_id>/process-profiles")
+    def list_process_profiles_by_material(material_id):
+        return jsonify(app_database.list_process_profiles_by_material(material_id))
+
+    @app.get("/download/process")
+    def download_process_files():
+        material = request.args.get("material", "").strip()
+        if not material:
+            return jsonify({"error": "material query parameter is required"}), 400
+
+        data, filename = services.build_process_zip(material)
+        if data is None:
+            return jsonify({"error": "no process profiles found for the requested material"}), 404
+
+        return send_file(data, mimetype="application/zip", as_attachment=True, download_name=filename)
+
+    @app.get("/download/process/<path:material>")
+    def download_process_files_path(material):
+        data, filename = services.build_process_zip(material)
+        if data is None:
+            return jsonify({"error": "no process profiles found for the requested material"}), 404
+        return send_file(data, mimetype="application/zip", as_attachment=True, download_name=filename)
+
+    @app.get("/api/download/process/options")
+    def list_process_download_options():
+        conn = app_database.get_db_connection()
+        rows = conn.execute(
+            """
+            SELECT DISTINCT m.name AS material
+            FROM process_profiles pp
+            JOIN materials m ON m.id = pp.material_id
+            WHERE pp.active = 1
+            ORDER BY m.name
+            """
+        ).fetchall()
+        conn.close()
+        return jsonify([dict(row) for row in rows])
+
+    @app.get("/process-profiles")
+    def process_profiles_page():
+        return render_template("process-profiles.html")
+
     @app.get("/tree")
     def tree_page():
         tree = app_database.build_tree()

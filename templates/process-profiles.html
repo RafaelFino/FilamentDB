@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfis de Processo - FilamentDB</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .material-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .material-tab {
+            padding: 15px 40px;
+            background: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .material-tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .material-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .profiles-container {
+            display: none;
+        }
+
+        .profiles-container.active {
+            display: block;
+        }
+
+        .profiles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .profile-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .profile-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .profile-type {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .profile-type.fast {
+            background: #10b981;
+            color: white;
+        }
+
+        .profile-type.standard {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .profile-type.strong {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .profile-type.quality {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .profile-description {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .download-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .download-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .download-section {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .download-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .download-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .parameters-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .parameter {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .parameter-name {
+            font-size: 0.9em;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .parameter-value {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .comparison-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .comparison-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .comparison-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .comparison-table .highlight-fast {
+            background: #d1fae5;
+        }
+
+        .comparison-table .highlight-strong {
+            background: #fef3c7;
+        }
+
+        .comparison-table .highlight-quality {
+            background: #ede9fe;
+        }
+
+        .explanation-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .explanation-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .explanation-item {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .explanation-parameter {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .explanation-text {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .explanation-diff {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .explanation-diff strong {
+            color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.5em;
+            margin-top: 50px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .profiles-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .parameters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-table {
+                font-size: 0.8em;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 10px 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖨️ Perfis de Processo - Creality K2</h1>
+
+        <div class="material-tabs">
+            <button class="material-tab active" data-material="PLA">PLA</button>
+            <button class="material-tab" data-material="PETG">PETG</button>
+        </div>
+
+        <div id="loading" class="loading">Carregando perfis...</div>
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="profiles-container"></div>
+
+        <div class="download-section">
+            <h3>📥 Baixar Perfis de Processo</h3>
+            <div class="download-buttons">
+                <a href="/download/process/PLA" class="download-button">Baixar Perfis PLA</a>
+                <a href="/download/process/PETG" class="download-button">Baixar Perfis PETG</a>
+            </div>
+            <p style="margin-top: 15px; color: #666; font-size: 0.9em;">
+                Após baixar, use o script <code>install-creality-profiles.py</code> para instalar automaticamente no Creality Print.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const parameterExplanations = {
+            'inner_wall_speed': {
+                name: 'Velocidade da Parede Interna',
+                explanation: 'Controla a velocidade de impressão das paredes internas. Velocidades mais altas aumentam a produção mas podem reduzir a qualidade.',
+                impact: {
+                    fast: 'Máxima velocidade para produção rápida',
+                    strong: 'Velocidade moderada para melhor adesão entre camadas',
+                    quality: 'Velocidade reduzida para acabamento preciso'
+                }
+            },
+            'outer_wall_speed': {
+                name: 'Velocidade da Parede Externa',
+                explanation: 'Velocidade das paredes externas que definem a aparência final. Velocidades menores produzem superfícies mais lisas.',
+                impact: {
+                    fast: 'Alta velocidade, pode deixar marcas visíveis',
+                    strong: 'Velocidade moderada para resistência',
+                    quality: 'Baixa velocidade para superfície perfeita'
+                }
+            },
+            'wall_loops': {
+                name: 'Número de Paredes',
+                explanation: 'Quantidade de perímetros impressos. Mais paredes aumentam a resistência mas também o tempo de impressão.',
+                impact: {
+                    fast: 'Mínimo de paredes para velocidade',
+                    strong: 'Máximo de paredes para resistência estrutural',
+                    quality: 'Paredes extras para acabamento superior'
+                }
+            },
+            'sparse_infill_density': {
+                name: 'Densidade de Preenchimento',
+                explanation: 'Porcentagem de preenchimento interno. Maior densidade = mais resistência, mais material e mais tempo.',
+                impact: {
+                    fast: 'Baixa densidade para economia e velocidade',
+                    strong: 'Alta densidade para máxima resistência',
+                    quality: 'Densidade moderada para equilíbrio'
+                }
+            },
+            'top_shell_layers': {
+                name: 'Camadas Superiores',
+                explanation: 'Número de camadas sólidas no topo. Mais camadas = superfície superior mais lisa e resistente.',
+                impact: {
+                    fast: 'Mínimo de camadas para velocidade',
+                    strong: 'Muitas camadas para resistência',
+                    quality: 'Máximo de camadas para acabamento perfeito'
+                }
+            },
+            'bottom_shell_layers': {
+                name: 'Camadas Inferiores',
+                explanation: 'Número de camadas sólidas na base. Importante para adesão à mesa e resistência da base.',
+                impact: {
+                    fast: 'Mínimo de camadas',
+                    strong: 'Muitas camadas para resistência da base',
+                    quality: 'Camadas extras para base perfeita'
+                }
+            },
+            'default_acceleration': {
+                name: 'Aceleração Padrão',
+                explanation: 'Aceleração dos movimentos. Maior aceleração = mais rápido, mas pode causar vibrações e reduzir qualidade.',
+                impact: {
+                    fast: 'Aceleração máxima para velocidade',
+                    strong: 'Aceleração moderada para precisão',
+                    quality: 'Aceleração reduzida para movimentos suaves'
+                }
+            },
+            'brim_width': {
+                name: 'Largura do Brim',
+                explanation: 'Borda ao redor da peça para melhor adesão à mesa. Maior brim = mais adesão, mas mais desperdício.',
+                impact: {
+                    fast: 'Brim mínimo para economia',
+                    strong: 'Brim largo para máxima adesão',
+                    quality: 'Brim extra para base perfeita'
+                }
+            },
+            'ironing_type': {
+                name: 'Alisamento (Ironing)',
+                explanation: 'Técnica que alisa a superfície superior. Produz acabamento espelhado mas aumenta tempo.',
+                impact: {
+                    fast: 'Desativado para velocidade',
+                    strong: 'Desativado, foco em resistência',
+                    quality: 'Ativado para superfície espelhada'
+                }
+            },
+            'seam_position': {
+                name: 'Posição da Emenda',
+                explanation: 'Onde a impressora começa/termina cada camada. Afeta a visibilidade da linha de emenda.',
+                impact: {
+                    fast: 'Alinhado para consistência',
+                    strong: 'Atrás para esconder emenda',
+                    quality: 'Atrás para melhor aparência'
+                }
+            }
+        };
+
+        async function loadProfiles() {
+            try {
+                const response = await fetch('/api/process-profiles');
+                const profiles = await response.json();
+                
+                const profilesByMaterial = {
+                    'PLA': profiles.filter(p => p.material_name === 'PLA'),
+                    'PETG': profiles.filter(p => p.material_name === 'PETG')
+                };
+
+                renderProfiles(profilesByMaterial);
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 'Erro ao carregar perfis: ' + error.message;
+            }
+        }
+
+        function renderProfiles(profilesByMaterial) {
+            document.getElementById('loading').style.display = 'none';
+            const container = document.getElementById('profiles-container');
+
+            Object.keys(profilesByMaterial).forEach(material => {
+                const profiles = profilesByMaterial[material];
+                const materialDiv = document.createElement('div');
+                materialDiv.className = `profiles-container ${material === 'PLA' ? 'active' : ''}`;
+                materialDiv.id = `profiles-${material}`;
+
+                // Cards dos perfis
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'profiles-grid';
+
+                profiles.forEach(profile => {
+                    const card = createProfileCard(profile);
+                    gridDiv.appendChild(card);
+                });
+
+                materialDiv.appendChild(gridDiv);
+
+                // Tabela de comparação
+                const comparisonDiv = createComparisonTable(profiles, material);
+                materialDiv.appendChild(comparisonDiv);
+
+                // Seção de explicações
+                const explanationDiv = createExplanationSection(profiles, material);
+                materialDiv.appendChild(explanationDiv);
+
+                container.appendChild(materialDiv);
+            });
+
+            // Event listeners para tabs
+            document.querySelectorAll('.material-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.material-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    document.querySelectorAll('.profiles-container').forEach(c => c.classList.remove('active'));
+                    document.getElementById(`profiles-${tab.dataset.material}`).classList.add('active');
+                });
+            });
+        }
+
+        function createProfileCard(profile) {
+            const card = document.createElement('div');
+            card.className = 'profile-card';
+
+            const typeClass = profile.profile_type.toLowerCase();
+
+            card.innerHTML = `
+                <div class="profile-header">
+                    <div class="profile-name">${profile.profile_name}</div>
+                    <div class="profile-type ${typeClass}">${profile.profile_type}</div>
+                </div>
+                <div class="profile-description">${profile.description || ''}</div>
+                <div class="parameters-grid">
+                    <div class="parameter">
+                        <span class="parameter-name">Parede Interna</span>
+                        <span class="parameter-value">${profile.inner_wall_speed} mm/s</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-name">Parede Externa</span>
+                        <span class="parameter-value">${profile.outer_wall_speed} mm/s</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-name">Paredes</span>
+                        <span class="parameter-value">${profile.wall_loops}</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-name">Preenchimento</span>
+                        <span class="parameter-value">${profile.sparse_infill_density}</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-name">Camadas Topo</span>
+                        <span class="parameter-value">${profile.top_shell_layers}</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-name">Camadas Base</span>
+                        <span class="parameter-value">${profile.bottom_shell_layers}</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-name">Aceleração</span>
+                        <span class="parameter-value">${profile.default_acceleration} mm/s²</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-name">Brim</span>
+                        <span class="parameter-value">${profile.brim_width} mm</span>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function createComparisonTable(profiles, material) {
+            const section = document.createElement('div');
+            section.className = 'comparison-section';
+
+            const sortedProfiles = profiles.sort((a, b) => {
+                const order = { 'fast': 1, 'strong': 2, 'quality': 3 };
+                return order[a.profile_type] - order[b.profile_type];
+            });
+
+            let tableHTML = `
+                <h2 class="comparison-title">Comparação de Parâmetros - ${material}</h2>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Parâmetro</th>
+                            ${sortedProfiles.map(p => `<th class="highlight-${p.profile_type}">${p.profile_type}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            const parameters = [
+                { key: 'inner_wall_speed', suffix: ' mm/s' },
+                { key: 'outer_wall_speed', suffix: ' mm/s' },
+                { key: 'wall_loops', suffix: '' },
+                { key: 'sparse_infill_density', suffix: '' },
+                { key: 'top_shell_layers', suffix: '' },
+                { key: 'bottom_shell_layers', suffix: '' },
+                { key: 'default_acceleration', suffix: ' mm/s²' },
+                { key: 'brim_width', suffix: ' mm' },
+                { key: 'top_surface_speed', suffix: ' mm/s' },
+                { key: 'initial_layer_speed', suffix: ' mm/s' }
+            ];
+
+            parameters.forEach(param => {
+                tableHTML += `
+                    <tr>
+                        <td><strong>${parameterExplanations[param.key]?.name || param.key}</strong></td>
+                        ${sortedProfiles.map(p => `<td class="highlight-${p.profile_type}">${p[param.key]}${param.suffix}</td>`).join('')}
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            section.innerHTML = tableHTML;
+            return section;
+        }
+
+        function createExplanationSection(profiles, material) {
+            const section = document.createElement('div');
+            section.className = 'explanation-section';
+
+            let html = `<h2 class="explanation-title">Por que os parâmetros mudam? - ${material}</h2>`;
+
+            Object.keys(parameterExplanations).forEach(paramKey => {
+                const param = parameterExplanations[paramKey];
+                const sortedProfiles = profiles.sort((a, b) => {
+                    const order = { 'fast': 1, 'strong': 2, 'quality': 3 };
+                    return order[a.profile_type] - order[b.profile_type];
+                });
+
+                html += `
+                    <div class="explanation-item">
+                        <div class="explanation-parameter">${param.name}</div>
+                        <div class="explanation-text">${param.explanation}</div>
+                        <div class="explanation-diff">
+                            ${sortedProfiles.map(p => `
+                                <strong>${p.profile_type}:</strong> ${param.impact[p.profile_type]} (${p[paramKey]})
+                            `).join('<br>')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            section.innerHTML = html;
+            return section;
+        }
+
+        // Carregar perfis ao iniciar
+        loadProfiles();
+    </script>
+</body>
+</html>
