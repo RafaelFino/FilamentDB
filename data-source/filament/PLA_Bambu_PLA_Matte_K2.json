@@ -1,0 +1,38 @@
+{
+    "base_id": "GFSA04",
+    "filament_flow_ratio": [
+        "1.01"
+    ],
+    "filament_max_volumetric_speed": [
+        "18.0"
+    ],
+    "filament_settings_id": [
+        "Bambu PLA Matte K2"
+    ],
+    "from": "User",
+    "hot_plate_temp": [
+        "55"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "60"
+    ],
+    "inherits": "Hyper PLA @Creality K2 0.4 nozzle",
+    "is_custom_defined": "0",
+    "name": "Bambu PLA Matte K2",
+    "nozzle_temperature_initial_layer": [
+        "215"
+    ],
+    "nozzle_temperature_range_low": [
+        "205"
+    ],
+    "nozzle_temperature_range_high": [
+        "230"
+    ],
+    "textured_plate_temp": [
+        "55"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "60"
+    ],
+    "version": "26.4.28.18"
+}
