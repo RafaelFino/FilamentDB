@@ -18,6 +18,10 @@ def register_routes(app):
     def list_materials():
         return jsonify(app_database.list_materials())
 
+    @app.get("/api/filaments")
+    def list_filaments():
+        return jsonify(app_database.list_filaments())
+
     @app.get("/filament-profiles")
     def list_filament_profiles():
         return jsonify(app_database.list_filament_profiles())
@@ -106,11 +110,43 @@ def register_routes(app):
         conn.close()
         return jsonify([dict(row) for row in rows])
 
+    @app.get("/api/tree")
+    def tree_api():
+        tree = app_database.build_tree()
+        return jsonify(tree)
+
+    @app.get("/api/process-tree")
+    def process_tree_api():
+        return jsonify(app_database.build_process_tree())
+
+    @app.get("/dashboard")
+    def dashboard_page():
+        return render_template(
+            "dashboard.html",
+            tree=app_database.build_tree(),
+            process_tree=app_database.build_process_tree(),
+        )
+
+    @app.get("/")
+    def index_page():
+        return render_template(
+            "dashboard.html",
+            tree=app_database.build_tree(),
+            process_tree=app_database.build_process_tree(),
+        )
+
     @app.get("/process-profiles")
     def process_profiles_page():
-        return render_template("process-profiles.html")
+        return render_template(
+            "dashboard.html",
+            tree=app_database.build_tree(),
+            process_tree=app_database.build_process_tree(),
+        )
 
     @app.get("/tree")
     def tree_page():
-        tree = app_database.build_tree()
-        return render_template("tree.html", tree=tree)
+        return render_template(
+            "dashboard.html",
+            tree=app_database.build_tree(),
+            process_tree=app_database.build_process_tree(),
+        )
