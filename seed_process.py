@@ -78,10 +78,14 @@ TEXT_COLUMNS = {
 
 def ensure_materials(cur):
     materials = [
-        ("PLA", "Polylactic Acid - Filamento versátil para impressão geral"),
-        ("PETG", "Polyethylene Terephthalate Glycol - Filamento resistente e durável"),
+        ("PLA", "Polylactic Acid - Filamento versátil para impressão geral", 220, 60),
+        ("PETG", "Polyethylene Terephthalate Glycol - Filamento resistente e durável", 230, 75),
+        ("TPU", "Thermoplastic Polyurethane - Filamento flexível e elástico", 220, 50),
+        ("ABS", "Acrylonitrile Butadiene Styrene - Filamento resistente ao calor e impacto", 250, 100),
+        ("PLA-CF", "PLA com fibra de carbono - Filamento reforçado com alta rigidez", 220, 60),
+        ("PETG-CF", "PETG com fibra de carbono - Filamento reforçado com alta resistência", 230, 75),
     ]
-    for name, description in materials:
+    for name, description, nozzle_temp, bed_temp in materials:
         cur.execute("SELECT id FROM materials WHERE name = ?", (name,))
         if not cur.fetchone():
             cur.execute(
@@ -92,16 +96,16 @@ def ensure_materials(cur):
                     indoor, outdoor, abrasive, requires_enclosure,
                     recommended_nozzle_temp, recommended_bed_temp
                 )
-                VALUES (?, ?, 50, 50, 50, 50, 50, 50, 0, 1, 0, 0, 0, 220, 60)
+                VALUES (?, ?, 50, 50, 50, 50, 50, 50, 0, 1, 0, 0, 0, ?, ?)
                 """,
-                (name, description),
+                (name, description, nozzle_temp, bed_temp),
             )
             print(f"Material {name} criado")
 
 
 def extract_material(filename, profile_data):
     name = profile_data.get("name", filename)
-    for token in ("PLA", "PETG"):
+    for token in ("PLA-CF", "PETG-CF", "TPU", "ABS", "PLA", "PETG"):
         if token in name or token in filename:
             return token
     return None
