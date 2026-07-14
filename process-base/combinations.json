@@ -11,12 +11,12 @@
             "materials": ["PLA", "PETG"]
         },
         {
-            "profile_type": "balanced",
+            "profile_type": "standard",
             "layer_heights": ["0.20"],
             "materials": ["PLA", "PETG", "TPU", "ABS", "PLA-CF", "PETG-CF"]
         },
         {
-            "profile_type": "balanced",
+            "profile_type": "standard",
             "layer_heights": ["0.24"],
             "materials": ["PLA", "PETG"]
         },
