@@ -1,0 +1,39 @@
+{
+    "combinations": [
+        {
+            "profile_type": "quality",
+            "layer_heights": ["0.08", "0.12", "0.16", "0.20"],
+            "materials": ["PLA", "PETG"]
+        },
+        {
+            "profile_type": "balanced",
+            "layer_heights": ["0.20"],
+            "materials": ["PLA", "PETG", "TPU", "ABS", "PLA-CF", "PETG-CF"]
+        },
+        {
+            "profile_type": "balanced",
+            "layer_heights": ["0.24"],
+            "materials": ["PLA", "PETG"]
+        },
+        {
+            "profile_type": "standard",
+            "layer_heights": ["0.20", "0.24"],
+            "materials": ["PLA", "PETG"]
+        },
+        {
+            "profile_type": "fast",
+            "layer_heights": ["0.20", "0.24", "0.28", "0.32"],
+            "materials": ["PLA", "PETG"]
+        },
+        {
+            "profile_type": "strong",
+            "layer_heights": ["0.20", "0.24"],
+            "materials": ["PLA", "PETG"]
+        },
+        {
+            "profile_type": "draft",
+            "layer_heights": ["0.32", "0.36"],
+            "materials": ["PLA", "PETG"]
+        }
+    ]
+}

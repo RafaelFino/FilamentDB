@@ -1,0 +1,15 @@
+{
+    "base_id": "GP004",
+    "from": "System",
+    "is_custom_defined": "0",
+    "version": "26.4.28.18",
+    "wall_generator": "arachne",
+    "enable_support": "1",
+    "support_type": "tree(auto)",
+    "support_on_build_plate_only": "1",
+    "support_xy_overrides_z": "z_overrides_xy",
+    "infill_combination": "1",
+    "ironing_type": "no ironing",
+    "printer_model": "Creality K2",
+    "nozzle_size": "0.4"
+}

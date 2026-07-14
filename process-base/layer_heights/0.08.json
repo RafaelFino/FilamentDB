@@ -1,0 +1,10 @@
+{
+    "layer_height": "0.08",
+    "initial_layer_print_height": "0.16",
+    "top_shell_thickness": "0.64",
+    "bottom_shell_thickness": "0.64",
+    "support_top_z_distance": "0.16",
+    "support_interface_spacing": "0.35",
+    "support_interface_top_layers": 5,
+    "support_object_xy_distance": "0.35"
+}

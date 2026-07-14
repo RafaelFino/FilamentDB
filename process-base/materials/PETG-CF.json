@@ -1,0 +1,17 @@
+{
+    "speed_multiplier": 0.55,
+    "acceleration_multiplier": 0.75,
+    "inner_wall_speed": 200.0,
+    "outer_wall_speed": 150.0,
+    "sparse_infill_speed": 220.0,
+    "internal_solid_infill_speed": 180.0,
+    "top_surface_speed": 140.0,
+    "initial_layer_speed": 38.0,
+    "travel_speed": 420.0,
+    "support_speed": 95.0,
+    "gap_infill_speed": 70.0,
+    "default_acceleration": 5500,
+    "inner_wall_acceleration": 4000,
+    "outer_wall_acceleration": 3000,
+    "top_surface_acceleration": 2800
+}

@@ -1,0 +1,14 @@
+{
+    "seam_position": "aligned",
+    "wall_loops": 2,
+    "wall_sequence": "inner wall/outer wall",
+    "sparse_infill_density": "12%",
+    "sparse_infill_pattern": "gyroid",
+    "internal_solid_infill_pattern": "monotonic",
+    "top_surface_pattern": "monotonic",
+    "bottom_surface_pattern": "monotonic",
+    "top_shell_layers": 3,
+    "bottom_shell_layers": 3,
+    "brim_width": 5.0,
+    "brim_object_gap": 0.2
+}

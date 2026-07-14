@@ -1,0 +1,469 @@
+manufacturer:
+  name: Creality
+  country: China
+  website: https://www.creality.com
+lines:
+- name: Hyper Series
+  description: High-speed optimized filaments for modern printers
+  positioning: performance
+  difficulty: 25
+  target_use: production_speed
+  notes: Linha principal moderna da Creality para alta velocidade
+  color_options:
+  - Natural
+  - Black
+- name: CR Series
+  description: Balanced general-purpose filaments (legacy + stable)
+  positioning: balanced
+  difficulty: 50
+  target_use: general_printing
+  notes: Linha tradicional com boa estabilidade e ampla compatibilidade
+  color_options:
+  - Natural
+  - Black
+- name: Ender Series
+  description: Entry-level filaments for Ender printers
+  positioning: beginner
+  difficulty: 40
+  target_use: beginner_low_cost
+  notes: Mais tolerante, menor exigência de tuning
+  color_options:
+  - Natural
+  - Black
+- name: Hyper PLA+ Line
+  description: Enhanced PLA with improved strength and speed
+  positioning: performance_plus
+  difficulty: 30
+  target_use: functional_pla
+  notes: PLA reforçado otimizado para velocidade
+  color_options:
+  - Natural
+  - Black
+- name: CR PETG Line
+  description: Standard PETG for mechanical parts
+  positioning: functional
+  difficulty: 55
+  target_use: mechanical_parts
+  notes: Boa resistência química e mecânica
+  color_options:
+  - Natural
+  - Black
+- name: Hyper PETG Line
+  description: High-speed PETG optimized for fast printing
+  positioning: performance
+  difficulty: 45
+  target_use: high_speed_petg
+  notes: PETG otimizado para fluxo alto
+  color_options:
+  - Natural
+  - Black
+- name: ABS Industrial Line
+  description: Engineering ABS for durable parts
+  positioning: engineering
+  difficulty: 70
+  target_use: mechanical_heat_resistant
+  notes: Requer ambiente fechado
+  color_options:
+  - Black
+  - White
+  - Natural
+- name: ASA Outdoor Line
+  description: UV resistant outdoor engineering filament
+  positioning: engineering_outdoor
+  difficulty: 75
+  target_use: outdoor_parts
+  notes: Substituto do ABS para uso externo
+  color_options:
+  - Black
+  - White
+  - Natural
+- name: TPU Flex Line
+  description: Flexible materials for soft parts
+  positioning: flexible
+  difficulty: 80
+  target_use: flexible_parts
+  notes: Baixa velocidade, alta elasticidade
+  color_options:
+  - Natural
+  - Black
+  - Gray
+materials:
+  PLA:
+    profiles:
+    - line: Hyper Series
+      commercial_name: Hyper PLA
+      profile_name: Creality Hyper PLA
+      notes: >
+        Specs oficiais confirmadas: nozzle 190-230°C, bed 25-60°C, speed 40-600mm/s,
+        density 1.24 g/cm³, tensile 52.99 MPa, elongation 6.3%, tolerância ±0.02mm.
+      nozzle:
+        initial: 220
+        min: 190
+        max: 230
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 18
+      density: 1.24
+      tensile_strength_mpa: 52.99
+      elongation_at_break_pct: 6.3
+      diameter_tolerance: "1.75±0.02mm"
+      confidence: 95
+      recommendation: Melhor PLA da Creality para velocidade e produção. Suporta até 600mm/s.
+      color: Natural
+      surface_finish: Standard
+      material_strength: 65
+      material_flexibility: 48
+      material_temperature_resistance: 52
+      material_uv_resistance: 30
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: HPLA-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: High-speed prototypes
+        notes: High-speed optimized
+        status: Active
+      - sku: HPLA-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        notes: High-speed optimized
+        status: Active
+      - sku: HPLA-GRY-1K
+        color_name: Gray
+        hex: '#808080'
+        rgb:
+        - 128
+        - 128
+        - 128
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Functional parts
+        status: Active
+      - sku: HPLA-RED-1K
+        color_name: Red
+        hex: '#D32F2F'
+        rgb:
+        - 211
+        - 47
+        - 47
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General
+        status: Active
+      - sku: HPLA-BLU-1K
+        color_name: Blue
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General
+        status: Active
+      - sku: HPLA-GRN-1K
+        color_name: Green
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General
+        status: Active
+    - line: CR Series
+      commercial_name: CR PLA
+      profile_name: Creality CR PLA
+      nozzle:
+        initial: 215
+        min: 205
+        max: 225
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 0.98
+      max_volumetric_speed: 14
+      confidence: 85
+      recommendation: PLA equilibrado para uso geral
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+    - line: Ender Series
+      commercial_name: Ender PLA
+      profile_name: Creality Ender PLA
+      nozzle:
+        initial: 210
+        min: 200
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.02
+      max_volumetric_speed: 12
+      confidence: 80
+      recommendation: PLA mais tolerante e fácil de imprimir
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+  PETG:
+    profiles:
+    - line: CR PETG Line
+      commercial_name: CR PETG
+      profile_name: Creality CR PETG
+      nozzle:
+        initial: 245
+        min: 235
+        max: 255
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      max_volumetric_speed: 15
+      confidence: 90
+      recommendation: PETG padrão para peças mecânicas
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+      drying_temperature: 65
+      drying_time: 8.0
+      variants:
+      - sku: PETG-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: PETG-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+    - line: Hyper PETG Line
+      commercial_name: Hyper PETG
+      profile_name: Creality Hyper PETG
+      nozzle:
+        initial: 250
+        min: 240
+        max: 260
+      bed:
+        initial: 85
+        temp: 85
+      flow_ratio: 0.97
+      max_volumetric_speed: 18
+      confidence: 92
+      recommendation: PETG otimizado para alta velocidade
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+      drying_temperature: 65
+      drying_time: 8.0
+      variants:
+      - sku: PETG-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: PETG-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+  ABS:
+    profiles:
+    - line: ABS Industrial Line
+      commercial_name: ABS
+      profile_name: Creality ABS
+      nozzle:
+        initial: 250
+        min: 240
+        max: 265
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 12
+      confidence: 90
+      recommendation: ABS industrial para peças resistentes
+      color: Black
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+      drying_temperature: 80
+      drying_time: 6.0
+      variants:
+      - sku: ABS-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        recommended_use: Engineering
+        status: Active
+  ASA:
+    profiles:
+    - line: ASA Outdoor Line
+      commercial_name: ASA
+      profile_name: Creality ASA
+      nozzle:
+        initial: 255
+        min: 245
+        max: 270
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 12
+      confidence: 90
+      recommendation: Ideal para uso externo e UV
+      color: White
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+      drying_temperature: 80
+      drying_time: 6.0
+      variants:
+      - sku: ASA-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        recommended_use: Outdoor UV
+        status: Active
+  TPU:
+    profiles:
+    - line: TPU Flex Line
+      commercial_name: TPU 95A
+      profile_name: Creality TPU
+      nozzle:
+        initial: 225
+        min: 215
+        max: 235
+      bed:
+        initial: 50
+        temp: 50
+      flow_ratio: 1.05
+      max_volumetric_speed: 10
+      confidence: 90
+      recommendation: Flexível padrão, baixa velocidade
+      color: Natural
+      surface_finish: Flexible
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: TPU95-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Flexible
+        status: Active

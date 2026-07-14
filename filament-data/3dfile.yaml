@@ -1,0 +1,93 @@
+manufacturer:
+  name: 3DFila
+  country: Brazil
+  website: https://3dfila.com.br
+lines:
+- name: Standard Line
+  description: General purpose PLA for everyday printing
+  positioning: budget
+  difficulty: 45
+  target_use: general_printing
+  notes: Linha mais comum, foco em custo e acessibilidade
+  color_options:
+  - Natural
+  - Black
+- name: Plus Line
+  description: Improved PLA with slightly better consistency
+  positioning: improved_quality
+  difficulty: 50
+  target_use: general_printing
+  notes: Leve melhoria de estabilidade entre lotes
+  color_options:
+  - Natural
+  - Black
+- name: PETG Line
+  description: Functional PETG for mechanical parts
+  positioning: functional
+  difficulty: 60
+  target_use: mechanical_parts
+  notes: Uso técnico leve
+  color_options:
+  - Natural
+  - Black
+- name: Flex Line
+  description: TPU flexible materials
+  positioning: flexible
+  difficulty: 80
+  target_use: flexible_parts
+  notes: Baixa velocidade e alta elasticidade
+  color_options:
+  - Natural
+  - Black
+  - Gray
+materials:
+  PLA:
+    profiles:
+    - line: Standard Line
+      commercial_name: PLA
+      profile_name: 3DFila PLA
+      nozzle:
+        initial: 220
+        min: 210
+        max: 235
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 12
+      diameter: 1.75
+      drying_temperature: 50
+      drying_time: 8.0
+      confidence: 75
+      recommendation: PLA básico para uso geral
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+  PETG:
+    profiles:
+    - line: PETG Line
+      commercial_name: PETG
+      profile_name: 3DFila PETG
+      nozzle:
+        initial: 245
+        min: 235
+        max: 255
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      max_volumetric_speed: 10
+      diameter: 1.75
+      drying_temperature: 65
+      drying_time: 8.0
+      confidence: 75
+      recommendation: PETG funcional simples
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30

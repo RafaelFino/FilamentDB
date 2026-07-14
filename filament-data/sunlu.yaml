@@ -1,0 +1,361 @@
+manufacturer:
+  name: Sunlu
+  country: China
+  website: https://www.sunlu.com
+lines:
+- name: PLA Standard Line
+  description: General purpose PLA for everyday printing
+  positioning: balanced
+  difficulty: 40
+  target_use: general_printing
+  notes: PLA base da Sunlu, confiável e fácil de imprimir
+  color_options:
+  - Natural
+  - Black
+- name: PLA+ Line
+  description: Improved strength PLA with better impact resistance
+  positioning: improved_quality
+  difficulty: 45
+  target_use: functional_pla
+  notes: PLA reforçado, bom equilíbrio geral
+  color_options:
+  - Natural
+  - Black
+- name: High Speed Line
+  description: Optimized for high-speed printing up to 600mm/s
+  positioning: performance
+  difficulty: 35
+  target_use: high_speed_printing
+  notes: >
+    Specs oficiais do datasheet: nozzle 210-230°C, bed 50-60°C, density 1.28 g/cm³,
+    Vicat 54°C, HDT 57°C, tensile strength 39±5 MPa, flexural strength 70±5 MPa,
+    impact strength 4.5±2 kJ/m², elongation 12±4%, MFI 7±2.5 g/10min.
+    Suporta até 600mm/s. Tolerância diâmetro 1.75±0.02mm.
+  color_options:
+  - Red
+  - White
+  - Black
+  - Yellow
+  - Green
+  - Grey
+  - Pink
+  - Sunny Orange
+  - Olive Green
+  - Sky Blue
+  - Coral Pink
+  - Jelly Green
+  - Klein Blue
+  - Lavender Purple
+  - Mocha Mousse
+- name: Meta Line
+  description: Advanced PLA with improved flow and surface finish
+  positioning: performance_plus
+  difficulty: 40
+  target_use: advanced_pla
+  notes: Melhor fluidez e acabamento superficial, formulação avançada
+  color_options:
+  - Natural
+  - Black
+  - White
+  - Grey
+  - Red
+  - Blue
+  - Green
+  - Yellow
+- name: Silk Line
+  description: Glossy aesthetic PLA for visual parts
+  positioning: aesthetic
+  difficulty: 45
+  target_use: visual_quality
+  notes: Acabamento brilhante, foco estético
+  color_options:
+  - White
+  - Natural
+  - Silver
+  - Gold
+  - Copper
+  - Rainbow
+- name: PETG Line
+  description: Functional PETG for mechanical parts
+  positioning: functional
+  difficulty: 55
+  target_use: mechanical_parts
+  notes: Boa resistência mecânica e química
+  color_options:
+  - Natural
+  - Black
+- name: ABS Line
+  description: Engineering ABS for high strength parts
+  positioning: engineering
+  difficulty: 70
+  target_use: mechanical_heat_resistant
+  notes: Requer ambiente fechado para melhor resultado
+  color_options:
+  - Natural
+  - Black
+- name: TPU Line
+  description: Flexible TPU materials
+  positioning: flexible
+  difficulty: 80
+  target_use: flexible_parts
+  notes: Baixa velocidade, alta elasticidade
+  color_options:
+  - Natural
+  - Black
+  - Gray
+materials:
+  PLA:
+    profiles:
+    - line: PLA Standard Line
+      commercial_name: PLA
+      profile_name: Sunlu PLA
+      nozzle:
+        initial: 215
+        min: 205
+        max: 230
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      confidence: 85
+      recommendation: PLA confiável e fácil de imprimir
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+    - line: PLA+ Line
+      commercial_name: PLA+
+      profile_name: Sunlu PLA+
+      nozzle:
+        initial: 220
+        min: 210
+        max: 235
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.02
+      max_volumetric_speed: 15
+      confidence: 88
+      recommendation: PLA mais resistente e estável
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+    - line: High Speed Line
+      commercial_name: PLA High Speed
+      profile_name: Sunlu PLA High Speed
+      nozzle:
+        initial: 220
+        min: 210
+        max: 230
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 0.98
+      max_volumetric_speed: 22
+      density: 1.28
+      glass_transition_temp: 54
+      heat_deflection_temp: 57
+      tensile_strength_mpa: 39
+      flexural_strength_mpa: 70
+      impact_strength_kj_m2: 4.5
+      elongation_at_break_pct: 12
+      mfi_g_10min: 7
+      diameter_tolerance: "1.75±0.02mm"
+      confidence: 90
+      recommendation: >
+        Excelente para impressão rápida até 600mm/s. Dados do datasheet oficial:
+        density 1.28 g/cm³, Vicat 54°C, HDT 57°C, tensile 39 MPa, flexural 70 MPa,
+        retraction 0.8-1.2mm a 30-40mm/s.
+      surface_finish: Standard
+      material_strength: 65
+      material_flexibility: 52
+      material_temperature_resistance: 48
+      material_uv_resistance: 30
+      variants:
+      - color: Red
+        hex: "#CC2200"
+      - color: White
+        hex: "#F5F5F5"
+      - color: Black
+        hex: "#1C1C1C"
+      - color: Yellow
+        hex: "#F5C518"
+      - color: Green
+        hex: "#2E8B57"
+      - color: Grey
+        hex: "#808080"
+      - color: Pink
+        hex: "#FF91A4"
+      - color: Sunny Orange
+        hex: "#FF6E31"
+      - color: Olive Green
+        hex: "#808000"
+      - color: Sky Blue
+        hex: "#87CEEB"
+      - color: Coral Pink
+        hex: "#F88379"
+      - color: Jelly Green
+        hex: "#39E75F"
+      - color: Klein Blue
+        hex: "#002FA7"
+      - color: Lavender Purple
+        hex: "#9C64D6"
+      - color: Mocha Mousse
+        hex: "#A67B5B"
+    - line: Meta Line
+      commercial_name: PLA Meta
+      profile_name: Sunlu PLA Meta
+      notes: >
+        Specs oficiais: nozzle 185-195°C a 50-100mm/s ou 195-225°C a 100-200mm/s.
+        Density 1.21 g/cm³, Vicat 54°C, HDT 57°C, tensile 50±5 MPa, flexural 85±6 MPa,
+        MFI 5±2 g/10min. Cores pastéis (macaron). Tolerância 1.75±0.02mm.
+      nozzle:
+        initial: 210
+        min: 185
+        max: 225
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.01
+      max_volumetric_speed: 18
+      density: 1.21
+      glass_transition_temp: 54
+      heat_deflection_temp: 57
+      tensile_strength_mpa: 50
+      flexural_strength_mpa: 85
+      mfi_g_10min: 5
+      diameter_tolerance: "1.75±0.02mm"
+      confidence: 92
+      recommendation: >
+        Excelente acabamento com cores pastéis, fluxo otimizado para impressão rápida
+        em baixas temperaturas. Density mais baixa (1.21) que PLA convencional.
+      surface_finish: Standard
+      material_strength: 68
+      material_flexibility: 52
+      material_temperature_resistance: 52
+      material_uv_resistance: 32
+      variants:
+      - color: Grey
+        hex: "#808080"
+      - color: Black
+        hex: "#1C1C1C"
+      - color: Teal
+        hex: "#008080"
+      - color: Cream White
+        hex: "#FFFDD0"
+      - color: Cherry Red
+        hex: "#DC143C"
+      - color: Sunny Orange
+        hex: "#FF6E31"
+      - color: Lemon Yellow
+        hex: "#FFF44F"
+      - color: Olive Green
+        hex: "#808000"
+      - color: Mint Green
+        hex: "#98FF98"
+      - color: Sky Blue
+        hex: "#87CEEB"
+      - color: Taro Purple
+        hex: "#9C7EB5"
+      - color: Sakura Pink
+        hex: "#FF91A4"
+      - color: Chocolate
+        hex: "#7B3F00"
+      - color: White
+        hex: "#F5F5F5"
+      - color: Ice Blue
+        hex: "#99C5C4"
+      - color: Apple Green
+        hex: "#8DB600"
+    - line: Silk Line
+      commercial_name: PLA Silk
+      profile_name: Sunlu PLA Silk
+      nozzle:
+        initial: 225
+        min: 215
+        max: 240
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.05
+      max_volumetric_speed: 12
+      confidence: 85
+      recommendation: Acabamento brilhante para peças estéticas
+      color: Natural
+      surface_finish: Silky
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+  PETG:
+    profiles:
+    - line: PETG Line
+      commercial_name: PETG
+      profile_name: Sunlu PETG
+      nozzle:
+        initial: 245
+        min: 235
+        max: 255
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      max_volumetric_speed: 12
+      confidence: 85
+      recommendation: Boa resistência mecânica e química
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+  ABS:
+    profiles:
+    - line: ABS Line
+      commercial_name: ABS
+      profile_name: Sunlu ABS
+      nozzle:
+        initial: 250
+        min: 240
+        max: 265
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 10
+      confidence: 80
+      recommendation: Peças resistentes ao calor e impacto
+      color: Black
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+  TPU:
+    profiles:
+    - line: TPU Line
+      commercial_name: TPU 95A
+      profile_name: Sunlu TPU
+      nozzle:
+        initial: 225
+        min: 215
+        max: 235
+      bed:
+        initial: 50
+        temp: 50
+      flow_ratio: 1.05
+      max_volumetric_speed: 8
+      confidence: 80
+      recommendation: Flexível padrão, baixa velocidade obrigatória
+      color: Natural
+      surface_finish: Flexible
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30

@@ -1,0 +1,259 @@
+manufacturer:
+  name: Bambu Lab
+  country: China
+  website: https://bambulab.com
+lines:
+- name: Basic Line
+  description: Standard PLA/PETG materials for general use
+  positioning: balanced
+  difficulty: 35
+  target_use: general_printing
+  notes: Linha base com excelente consistência e controle de qualidade
+  color_options:
+  - Natural
+  - Black
+- name: Tough Line
+  description: Reinforced materials with higher impact resistance
+  positioning: functional
+  difficulty: 45
+  target_use: functional_parts
+  notes: Maior resistência mecânica que materiais básicos
+  color_options:
+  - Natural
+  - Black
+- name: Matte Line
+  description: PLA with matte finish for aesthetic parts
+  positioning: aesthetic
+  difficulty: 40
+  target_use: visual_quality
+  notes: Acabamento fosco premium
+  color_options:
+  - Black
+  - Natural
+  - White
+- name: Silk Line
+  description: Glossy PLA for decorative parts
+  positioning: aesthetic
+  difficulty: 45
+  target_use: visual_quality
+  notes: Alto brilho, foco estético
+  color_options:
+  - White
+  - Natural
+  - Silver
+- name: Engineering Line
+  description: Advanced materials like PA, PC, ABS blends
+  positioning: engineering
+  difficulty: 75
+  target_use: mechanical_heat_resistant
+  notes: Materiais técnicos de alta exigência
+  color_options:
+  - Black
+  - White
+  - Natural
+- name: Support Line
+  description: Dedicated support materials (PVA, breakaway)
+  positioning: support
+  difficulty: 70
+  target_use: support_material
+  notes: Materiais auxiliares de suporte
+  color_options:
+  - Natural
+  - Black
+materials:
+  PLA:
+    profiles:
+    - line: Basic Line
+      commercial_name: PLA Basic
+      profile_name: Bambu PLA Basic
+      nozzle:
+        initial: 220
+        min: 210
+        max: 230
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 20
+      diameter: 1.75
+      drying_temperature: 50
+      drying_time: 8.0
+      confidence: 98
+      recommendation: Altíssima consistência e facilidade de impressão
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+    - line: Matte Line
+      commercial_name: PLA Matte
+      profile_name: Bambu PLA Matte
+      nozzle:
+        initial: 215
+        min: 205
+        max: 230
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.01
+      max_volumetric_speed: 18
+      diameter: 1.75
+      drying_temperature: 50
+      drying_time: 8.0
+      confidence: 97
+      recommendation: Acabamento premium fosco com alta consistência
+      color: Natural
+      surface_finish: Matte
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+    - line: Silk Line
+      commercial_name: PLA Silk
+      profile_name: Bambu PLA Silk
+      nozzle:
+        initial: 225
+        min: 215
+        max: 235
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.05
+      max_volumetric_speed: 15
+      diameter: 1.75
+      drying_temperature: 50
+      drying_time: 8.0
+      confidence: 95
+      recommendation: Acabamento brilhante altamente estético
+      color: Natural
+      surface_finish: Silky
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+  PETG:
+    profiles:
+    - line: Basic Line
+      commercial_name: PETG Basic
+      profile_name: Bambu PETG
+      nozzle:
+        initial: 240
+        min: 230
+        max: 255
+      bed:
+        initial: 70
+        temp: 70
+      flow_ratio: 0.98
+      max_volumetric_speed: 18
+      diameter: 1.75
+      drying_temperature: 65
+      drying_time: 8.0
+      confidence: 98
+      recommendation: PETG extremamente consistente e confiável
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+  ABS:
+    profiles:
+    - line: Engineering Line
+      commercial_name: ABS
+      profile_name: Bambu ABS
+      nozzle:
+        initial: 250
+        min: 240
+        max: 270
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 15
+      diameter: 1.75
+      drying_temperature: 80
+      drying_time: 6.0
+      confidence: 98
+      recommendation: ABS de alta estabilidade dimensional
+      color: Black
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+  ASA:
+    profiles:
+    - line: Engineering Line
+      commercial_name: ASA
+      profile_name: Bambu ASA
+      nozzle:
+        initial: 255
+        min: 245
+        max: 270
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 15
+      diameter: 1.75
+      drying_temperature: 80
+      drying_time: 6.0
+      confidence: 98
+      recommendation: Excelente resistência UV e estabilidade externa
+      color: White
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+  TPU:
+    profiles:
+    - line: Tough Line
+      commercial_name: TPU 95A
+      profile_name: Bambu TPU
+      nozzle:
+        initial: 220
+        min: 210
+        max: 235
+      bed:
+        initial: 45
+        temp: 45
+      flow_ratio: 1.05
+      max_volumetric_speed: 10
+      diameter: 1.75
+      drying_temperature: 50
+      drying_time: 8.0
+      confidence: 95
+      recommendation: Flexível com alta consistência e controle de extrusão
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+  SUPPORT:
+    profiles:
+    - line: Support Line
+      commercial_name: Support Material
+      profile_name: Bambu Support
+      nozzle:
+        initial: 210
+        min: 200
+        max: 220
+      bed:
+        initial: 50
+        temp: 50
+      flow_ratio: 1.0
+      max_volumetric_speed: 12
+      diameter: 1.75
+      drying_temperature: 50
+      drying_time: 4.0
+      confidence: 95
+      recommendation: Material de suporte dedicado para geometrias complexas
+      color: White
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30

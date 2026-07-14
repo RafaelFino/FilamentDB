@@ -704,8 +704,9 @@ function renderProcessTable(material) {
     renderMaterialCard(material);
 
     const rows = (matData.profiles || []).slice().sort((a, b) =>
-        typeRank(a.profile_type) - typeRank(b.profile_type) ||
-        (a.profile_name || '').localeCompare(b.profile_name || '')
+        (a.nozzle_size || 0) - (b.nozzle_size || 0) ||
+        (a.layer_height || 0) - (b.layer_height || 0) ||
+        typeRank(a.profile_type) - typeRank(b.profile_type)
     );
 
     if (!rows.length) {

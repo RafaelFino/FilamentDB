@@ -1,0 +1,554 @@
+manufacturer:
+  name: GTMax
+  country: Brazil
+  website: https://gtmax3d.com.br
+  notes: Fabricante brasileiro de filamentos 3D com ampla linha para uso geral. Um dos pioneiros do mercado nacional.
+lines:
+- name: Standard Line
+  description: General purpose filaments for everyday printing
+  positioning: balanced
+  difficulty: 45
+  target_use: general_printing
+  notes: Linha base mais comum no mercado brasileiro
+  color_options:
+  - Natural
+  - Black
+- name: Economy Line
+  description: Low-cost filaments with higher tolerance variation
+  positioning: budget
+  difficulty: 55
+  target_use: low_cost_printing
+  notes: Mais variação entre lotes, exige ajuste fino de perfil
+  color_options:
+  - Natural
+  - Black
+- name: Plus Line
+  description: Improved PLA/PETG with better consistency
+  positioning: improved_quality
+  difficulty: 50
+  target_use: better_stability
+  notes: Versão mais estável da linha padrão
+  color_options:
+  - Natural
+  - Black
+- name: Industrial Line
+  description: Functional materials for mechanical applications
+  positioning: functional
+  difficulty: 65
+  target_use: mechanical_parts
+  notes: Voltado para peças funcionais e uso técnico
+  color_options:
+  - Black
+  - White
+  - Natural
+- name: Flex Line
+  description: TPU flexible materials
+  positioning: flexible
+  difficulty: 80
+  target_use: flexible_parts
+  notes: Requer baixa velocidade e controle de retração
+  color_options:
+  - Natural
+  - Black
+  - Gray
+materials:
+  PLA:
+    profiles:
+    - line: Standard Line
+      commercial_name: PLA
+      profile_name: GTMax PLA
+      nozzle:
+        initial: 220
+        min: 210
+        max: 235
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 13
+      confidence: 80
+      recommendation: PLA comum, bom custo-benefício
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: GTM-PLA-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        notes: Linha Premium
+        status: Active
+      - sku: GTM-PLA-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: GTM-PLA-GRY-1K
+        color_name: Gray
+        hex: '#808080'
+        rgb:
+        - 128
+        - 128
+        - 128
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Functional parts
+        status: Active
+      - sku: GTM-PLA-RED-1K
+        color_name: Red
+        hex: '#C62828'
+        rgb:
+        - 198
+        - 40
+        - 40
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: GTM-PLA-BLU-1K
+        color_name: Blue
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: GTM-PLA-GRN-1K
+        color_name: Green
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+    - line: Plus Line
+      commercial_name: PLA+
+      profile_name: GTMax PLA+
+      nozzle:
+        initial: 225
+        min: 215
+        max: 240
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.02
+      max_volumetric_speed: 14
+      confidence: 82
+      recommendation: Melhor estabilidade que o PLA padrão
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: GTM-PLA-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        notes: Linha Premium
+        status: Active
+      - sku: GTM-PLA-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: GTM-PLA-GRY-1K
+        color_name: Gray
+        hex: '#808080'
+        rgb:
+        - 128
+        - 128
+        - 128
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Functional parts
+        status: Active
+      - sku: GTM-PLA-RED-1K
+        color_name: Red
+        hex: '#C62828'
+        rgb:
+        - 198
+        - 40
+        - 40
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: GTM-PLA-BLU-1K
+        color_name: Blue
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: GTM-PLA-GRN-1K
+        color_name: Green
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+    - line: Economy Line
+      commercial_name: PLA Economy
+      profile_name: GTMax PLA Economy
+      nozzle:
+        initial: 215
+        min: 205
+        max: 230
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.03
+      max_volumetric_speed: 12
+      confidence: 75
+      recommendation: Mais barato, exige mais calibração
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: GTM-PLA-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        notes: Linha Premium
+        status: Active
+      - sku: GTM-PLA-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: GTM-PLA-GRY-1K
+        color_name: Gray
+        hex: '#808080'
+        rgb:
+        - 128
+        - 128
+        - 128
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Functional parts
+        status: Active
+      - sku: GTM-PLA-RED-1K
+        color_name: Red
+        hex: '#C62828'
+        rgb:
+        - 198
+        - 40
+        - 40
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: GTM-PLA-BLU-1K
+        color_name: Blue
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+      - sku: GTM-PLA-GRN-1K
+        color_name: Green
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        status: Active
+  PETG:
+    profiles:
+    - line: Industrial Line
+      commercial_name: PETG
+      profile_name: GTMax PETG
+      nozzle:
+        initial: 245
+        min: 235
+        max: 255
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      max_volumetric_speed: 11
+      confidence: 80
+      recommendation: Boa resistência mecânica com custo acessível
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+      drying_temperature: 65
+      drying_time: 8.0
+      variants:
+      - sku: GTM-PET-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: GTM-PET-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: GTM-PET-CLR-1K
+        color_name: Transparent
+        hex: '#F8F8F8'
+        rgb:
+        - 248
+        - 248
+        - 248
+        finish: Transparent
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        notes: Good layer adhesion
+        status: Active
+  ABS:
+    profiles:
+    - line: Industrial Line
+      commercial_name: ABS
+      profile_name: GTMax ABS
+      nozzle:
+        initial: 250
+        min: 240
+        max: 265
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 10
+      confidence: 75
+      recommendation: Peças funcionais, requer ambiente controlado
+      color: Black
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+      drying_temperature: 80
+      drying_time: 6.0
+      variants:
+      - sku: GTM-ABS-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        recommended_use: Engineering parts
+        status: Active
+      - sku: GTM-ABS-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        recommended_use: Engineering parts
+        status: Active
+  TPU:
+    profiles:
+    - line: Flex Line
+      commercial_name: TPU 95A
+      profile_name: GTMax TPU
+      nozzle:
+        initial: 225
+        min: 215
+        max: 235
+      bed:
+        initial: 50
+        temp: 50
+      flow_ratio: 1.05
+      max_volumetric_speed: 8
+      confidence: 75
+      recommendation: Flexível padrão, baixa velocidade obrigatória
+      color: Natural
+      surface_finish: Flexible
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 50
+      material_uv_resistance: 30
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: GTM-TPU-BLK-1K
+        color_name: Black
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Flexible parts
+        status: Active
+      - sku: GTM-TPU-WHT-1K
+        color_name: White
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Flexible parts
+        status: Active
