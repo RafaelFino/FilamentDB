@@ -1,8 +1,13 @@
 {
     "combinations": [
         {
-            "profile_type": "quality",
+            "profile_type": "extreme",
             "layer_heights": ["0.08", "0.12", "0.16", "0.20"],
+            "materials": ["PLA", "PETG"]
+        },
+        {
+            "profile_type": "refined",
+            "layer_heights": ["0.12", "0.16", "0.20"],
             "materials": ["PLA", "PETG"]
         },
         {
@@ -13,11 +18,6 @@
         {
             "profile_type": "balanced",
             "layer_heights": ["0.24"],
-            "materials": ["PLA", "PETG"]
-        },
-        {
-            "profile_type": "standard",
-            "layer_heights": ["0.20", "0.24"],
             "materials": ["PLA", "PETG"]
         },
         {

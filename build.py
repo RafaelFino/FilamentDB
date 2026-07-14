@@ -393,13 +393,20 @@ def seed_filaments():
 # =============================================================================
 
 PROFILE_MULTIPLIERS = {
-    "quality": {"speed": 0.5, "accel": 0.35},
-    "balanced": {"speed": 1.1, "accel": 1.15},
-    "standard": {"speed": 1.0, "accel": 1.0},
-    "fast": {"speed": 1.4, "accel": 2.0},
-    "strong": {"speed": 0.3, "accel": 0.4},
-    "draft": {"speed": 1.6, "accel": 1.7},
+    "extreme": {"speed": 0.85, "accel": 0.55},
+    "refined": {"speed": 0.92, "accel": 0.75},
+    "balanced": {"speed": 1.05, "accel": 1.10},
+    "fast": {"speed": 1.30, "accel": 1.50},
+    "strong": {"speed": 0.65, "accel": 0.55},
+    "draft": {"speed": 1.40, "accel": 1.60},
 }
+
+# Nozzle diameter and default line width for volumetric flow calculation
+NOZZLE_DIAMETER = 0.4
+DEFAULT_LINE_WIDTH = 0.45  # Typical line width for 0.4mm nozzle
+
+# Safety margin for volumetric flow (85% of max to account for real-world variance)
+VOLUMETRIC_FLOW_SAFETY = 0.85
 
 SPEED_FIELDS = [
     "inner_wall_speed", "outer_wall_speed", "sparse_infill_speed",
@@ -426,8 +433,23 @@ FLOAT_COLUMNS = {
 }
 
 
+def cap_speed_to_volumetric_flow(speed, layer_height, max_volumetric_speed, line_width=DEFAULT_LINE_WIDTH):
+    """Limita a velocidade para não exceder o fluxo volumétrico máximo do material.
+
+    Formula: volumetric_flow = layer_height × line_width × speed
+    Portanto: max_speed = (max_volumetric_speed × safety) / (layer_height × line_width)
+    """
+    effective_mvs = max_volumetric_speed * VOLUMETRIC_FLOW_SAFETY
+    max_speed = effective_mvs / (float(layer_height) * line_width)
+    return min(speed, max_speed)
+
+
 def generate_process_profile(profile_type, layer_height, material_name):
-    """Gera um perfil de processo combinando base + layer_height + profile_type + material."""
+    """Gera um perfil de processo combinando base + layer_height + profile_type + material.
+
+    Aplica cap de fluxo volumétrico para garantir que as velocidades calculadas
+    não excedam a capacidade real do hotend com o material especificado.
+    """
     base = load_json(PROCESS_BASE_DIR / "base.json")
     layer_data = load_json(PROCESS_BASE_DIR / "layer_heights" / f"{layer_height}.json")
     type_data = load_json(PROCESS_BASE_DIR / "profile_types" / f"{profile_type}.json")
@@ -440,13 +462,35 @@ def generate_process_profile(profile_type, layer_height, material_name):
     mult = PROFILE_MULTIPLIERS.get(profile_type, {"speed": 1.0, "accel": 1.0})
     material_mult = material_data.get("speed_multiplier", 1.0)
     material_accel_mult = material_data.get("acceleration_multiplier", 1.0)
+    max_volumetric_speed = material_data.get("max_volumetric_speed", 25)
+
+    # Fields that extrude material (subject to volumetric flow cap)
+    extrusion_speed_fields = [
+        "inner_wall_speed", "outer_wall_speed", "sparse_infill_speed",
+        "internal_solid_infill_speed", "top_surface_speed", "initial_layer_speed",
+        "support_speed", "gap_infill_speed",
+    ]
+    # Fields that don't extrude (travel) - no volumetric cap needed
+    non_extrusion_speed_fields = ["travel_speed"]
 
     for field in SPEED_FIELDS:
         if field in material_data:
-            profile[field] = str(float(material_data[field]) * mult["speed"] * material_mult)
+            raw_speed = float(material_data[field]) * mult["speed"] * material_mult
+            if field in extrusion_speed_fields:
+                # Apply volumetric flow cap
+                capped_speed = cap_speed_to_volumetric_flow(
+                    raw_speed, layer_height, max_volumetric_speed
+                )
+                profile[field] = str(capped_speed)
+            else:
+                # Travel speed: no volumetric cap, but cap at machine max (800 mm/s)
+                profile[field] = str(min(raw_speed, 800.0))
+
     for field in ACCEL_FIELDS:
         if field in material_data:
-            profile[field] = str(float(material_data[field]) * mult["accel"] * material_accel_mult)
+            raw_accel = float(material_data[field]) * mult["accel"] * material_accel_mult
+            # Cap acceleration at machine maximum (20000 mm/s²)
+            profile[field] = str(min(raw_accel, 20000.0))
 
     nozzle = "0.4"
     profile["name"] = f"{layer_height}mm {profile_type.capitalize()} @Creality K2 {nozzle} nozzle - {material_name}"
@@ -574,6 +618,9 @@ def seed_processes():
 
 NOZZLE_BASE = "Hyper PLA @Creality K2 0.4 nozzle"
 
+# Fabricantes habilitados para exportação Creality Print
+EXPORT_MANUFACTURERS = {"Voolt3D", "Creality", "Sunlu", "F3D", "Elegoo"}
+
 
 def export_filaments():
     """Exporta perfis de filamento do banco para Creality-Print/filaments/."""
@@ -600,8 +647,13 @@ def export_filaments():
     rows = cur.fetchall()
     conn.close()
 
+    exported = 0
     for row in rows:
         brand, material, profile_name, n_init, n_min, n_max, bed, flow, mvs, inherits = row
+
+        # Filtrar apenas fabricantes habilitados
+        if brand not in EXPORT_MANUFACTURERS:
+            continue
 
         payload = {
             "base_id": "GFSA04",
@@ -633,7 +685,9 @@ def export_filaments():
         with open(info_path, "w", encoding="utf-8") as f:
             f.write(f"sync_info = update\nuser_id = 8401264742\nsetting_id = {now}\nbase_id = GFSA04\nupdated_time = {now}\n")
 
-    info(f"Exportados: {len(rows)} perfis de filamento")
+        exported += 1
+
+    info(f"Exportados: {exported} perfis de filamento (de {len(rows)} no banco, filtro: {', '.join(sorted(EXPORT_MANUFACTURERS))})")
 
 
 # =============================================================================
@@ -718,7 +772,15 @@ def export_processes():
 
         for idx, key in field_map:
             if row[idx] is not None:
-                data[key] = str(row[idx])
+                val = row[idx]
+                # Round speed/float values for clean output
+                if isinstance(val, float):
+                    # Round to 1 decimal for speeds, 2 for small values
+                    if val > 10:
+                        val = round(val, 1)
+                    else:
+                        val = round(val, 2)
+                data[key] = str(val)
 
         file_base = profile_name
         json_path = EXPORT_PROCESS_DIR / f"{file_base}.json"
