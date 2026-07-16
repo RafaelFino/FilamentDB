@@ -396,6 +396,7 @@ PROFILE_MULTIPLIERS = {
     "extreme": {"speed": 0.85, "accel": 0.55},
     "refined": {"speed": 0.92, "accel": 0.75},
     "standard": {"speed": 1.05, "accel": 1.10},
+    "safe": {"speed": 0.48, "accel": 0.40},
     "fast": {"speed": 1.30, "accel": 1.50},
     "strong": {"speed": 0.65, "accel": 0.55},
     "draft": {"speed": 1.40, "accel": 1.60},

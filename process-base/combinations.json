@@ -21,6 +21,11 @@
             "materials": ["PLA", "PETG"]
         },
         {
+            "profile_type": "safe",
+            "layer_heights": ["0.20"],
+            "materials": ["PLA", "PETG"]
+        },
+        {
             "profile_type": "fast",
             "layer_heights": ["0.20", "0.24", "0.28", "0.32"],
             "materials": ["PLA", "PETG"]

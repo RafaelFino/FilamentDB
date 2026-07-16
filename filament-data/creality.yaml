@@ -209,23 +209,29 @@ materials:
     - line: CR Series
       commercial_name: CR PLA
       profile_name: Creality CR PLA
+      notes: >
+        Filamento propenso a warping. Requer temperaturas conservadoras (nozzle baixo,
+        bed mais alto) e velocidades reduzidas. Usar perfil Safe recomendado.
+        Sempre usar brim e cola na mesa. Secar antes de usar se armazenado aberto.
       nozzle:
-        initial: 215
-        min: 205
-        max: 225
+        initial: 210
+        min: 200
+        max: 220
       bed:
-        initial: 60
-        temp: 60
-      flow_ratio: 0.98
-      max_volumetric_speed: 14
+        initial: 65
+        temp: 65
+      flow_ratio: 0.96
+      max_volumetric_speed: 12
       confidence: 85
-      recommendation: PLA equilibrado para uso geral
+      recommendation: PLA problemático com warping. Usar perfil Safe, brim obrigatório, bed 65°C+.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
+      material_strength: 55
       material_flexibility: 50
-      material_temperature_resistance: 50
+      material_temperature_resistance: 48
       material_uv_resistance: 30
+      drying_temperature: 50
+      drying_time: 6.0
     - line: Ender Series
       commercial_name: Ender PLA
       profile_name: Creality Ender PLA
