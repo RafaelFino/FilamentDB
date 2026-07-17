@@ -393,13 +393,11 @@ def seed_filaments():
 # =============================================================================
 
 PROFILE_MULTIPLIERS = {
-    "extreme": {"speed": 0.85, "accel": 0.55},
-    "refined": {"speed": 0.92, "accel": 0.75},
-    "standard": {"speed": 1.05, "accel": 1.10},
-    "safe": {"speed": 0.48, "accel": 0.40},
-    "fast": {"speed": 1.30, "accel": 1.50},
-    "strong": {"speed": 0.65, "accel": 0.55},
-    "draft": {"speed": 1.40, "accel": 1.60},
+    "speed": {"speed": 1.45, "accel": 1.70},
+    "standard": {"speed": 1.0, "accel": 1.0},
+    "detail": {"speed": 0.55, "accel": 0.45},
+    "strong": {"speed": 0.70, "accel": 0.60},
+    "safe": {"speed": 0.40, "accel": 0.30},
 }
 
 # Nozzle diameter and default line width for volumetric flow calculation
@@ -496,7 +494,12 @@ def generate_process_profile(profile_type, layer_height, material_name):
     nozzle = "0.4"
     profile["name"] = f"{layer_height}mm {profile_type.capitalize()} @Creality K2 {nozzle} nozzle - {material_name}"
     profile["print_settings_id"] = profile["name"]
-    profile["inherits"] = f"{layer_height}mm Standard @Creality K2 {nozzle} nozzle"
+
+    # Creality Print built-in profiles for K2 0.4 nozzle only go up to 0.28mm.
+    # For layer heights above 0.28, inherit from the highest available built-in.
+    MAX_BUILTIN_LAYER_HEIGHT = "0.28"
+    inherits_height = layer_height if float(layer_height) <= float(MAX_BUILTIN_LAYER_HEIGHT) else MAX_BUILTIN_LAYER_HEIGHT
+    profile["inherits"] = f"{inherits_height}mm Standard @Creality K2 {nozzle} nozzle"
 
     return profile
 
@@ -750,6 +753,7 @@ def export_processes():
 
         # Map indexed fields
         field_map = [
+            (2, "layer_height"),
             (3, "initial_layer_print_height"), (4, "inner_wall_speed"),
             (5, "outer_wall_speed"), (6, "sparse_infill_speed"),
             (7, "internal_solid_infill_speed"), (8, "top_surface_speed"),
