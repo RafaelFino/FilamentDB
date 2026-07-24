@@ -400,12 +400,13 @@ PROFILE_MULTIPLIERS = {
     "safe": {"speed": 0.40, "accel": 0.30},
 }
 
-# Nozzle diameter and default line width for volumetric flow calculation
+# Nozzle diameter and default line width (kept for reference)
 NOZZLE_DIAMETER = 0.4
 DEFAULT_LINE_WIDTH = 0.45  # Typical line width for 0.4mm nozzle
 
-# Safety margin for volumetric flow (85% of max to account for real-world variance)
-VOLUMETRIC_FLOW_SAFETY = 0.85
+# NOTE: Volumetric flow limiting is handled by the slicer at runtime via
+# filament_max_volumetric_speed in each filament profile. Process profiles
+# define target speeds for the printer/profile_type combination.
 
 SPEED_FIELDS = [
     "inner_wall_speed", "outer_wall_speed", "sparse_infill_speed",
@@ -432,22 +433,12 @@ FLOAT_COLUMNS = {
 }
 
 
-def cap_speed_to_volumetric_flow(speed, layer_height, max_volumetric_speed, line_width=DEFAULT_LINE_WIDTH):
-    """Limita a velocidade para não exceder o fluxo volumétrico máximo do material.
-
-    Formula: volumetric_flow = layer_height × line_width × speed
-    Portanto: max_speed = (max_volumetric_speed × safety) / (layer_height × line_width)
-    """
-    effective_mvs = max_volumetric_speed * VOLUMETRIC_FLOW_SAFETY
-    max_speed = effective_mvs / (float(layer_height) * line_width)
-    return min(speed, max_speed)
-
-
 def generate_process_profile(profile_type, layer_height, material_name):
     """Gera um perfil de processo combinando base + layer_height + profile_type + material.
 
-    Aplica cap de fluxo volumétrico para garantir que as velocidades calculadas
-    não excedam a capacidade real do hotend com o material especificado.
+    As velocidades são definidas com base nas capacidades da impressora (K2) e do
+    profile_type. O limite volumétrico real é aplicado pelo Creality Print em runtime,
+    baseado no filament_max_volumetric_speed do perfil de filamento selecionado.
     """
     base = load_json(PROCESS_BASE_DIR / "base.json")
     layer_data = load_json(PROCESS_BASE_DIR / "layer_heights" / f"{layer_height}.json")
@@ -461,29 +452,15 @@ def generate_process_profile(profile_type, layer_height, material_name):
     mult = PROFILE_MULTIPLIERS.get(profile_type, {"speed": 1.0, "accel": 1.0})
     material_mult = material_data.get("speed_multiplier", 1.0)
     material_accel_mult = material_data.get("acceleration_multiplier", 1.0)
-    max_volumetric_speed = material_data.get("max_volumetric_speed", 25)
-
-    # Fields that extrude material (subject to volumetric flow cap)
-    extrusion_speed_fields = [
-        "inner_wall_speed", "outer_wall_speed", "sparse_infill_speed",
-        "internal_solid_infill_speed", "top_surface_speed", "initial_layer_speed",
-        "support_speed", "gap_infill_speed",
-    ]
-    # Fields that don't extrude (travel) - no volumetric cap needed
-    non_extrusion_speed_fields = ["travel_speed"]
 
     for field in SPEED_FIELDS:
         if field in material_data:
             raw_speed = float(material_data[field]) * mult["speed"] * material_mult
-            if field in extrusion_speed_fields:
-                # Apply volumetric flow cap
-                capped_speed = cap_speed_to_volumetric_flow(
-                    raw_speed, layer_height, max_volumetric_speed
-                )
-                profile[field] = str(capped_speed)
-            else:
-                # Travel speed: no volumetric cap, but cap at machine max (800 mm/s)
+            # Cap at machine maximum (800 mm/s for travel, 500 mm/s for extrusion)
+            if field == "travel_speed":
                 profile[field] = str(min(raw_speed, 800.0))
+            else:
+                profile[field] = str(min(raw_speed, 500.0))
 
     for field in ACCEL_FIELDS:
         if field in material_data:
