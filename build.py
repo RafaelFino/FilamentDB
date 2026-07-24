@@ -393,7 +393,7 @@ def seed_filaments():
 # =============================================================================
 
 PROFILE_MULTIPLIERS = {
-    "speed": {"speed": 1.45, "accel": 1.70},
+    "speed": {"speed": 1.70, "accel": 2.00},
     "standard": {"speed": 1.0, "accel": 1.0},
     "detail": {"speed": 0.55, "accel": 0.45},
     "strong": {"speed": 0.70, "accel": 0.60},

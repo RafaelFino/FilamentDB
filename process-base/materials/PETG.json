@@ -1,6 +1,6 @@
 {
-    "speed_multiplier": 0.48,
-    "acceleration_multiplier": 0.65,
+    "speed_multiplier": 0.85,
+    "acceleration_multiplier": 0.80,
     "max_volumetric_speed": 12,
     "inner_wall_speed": 260.0,
     "outer_wall_speed": 200.0,
