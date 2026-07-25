@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 #
-# publish.sh — Publica os perfis gerados para o Creality Print local.
+# publish.sh — Publica perfis do FilamentDB para ~/filament-db/.
 #
-# Copia os filamentos e processos exportados em Creality-Print/ para os
-# diretórios que o Creality Print lê na máquina local.
+# Por padrão exporta apenas os fabricantes habilitados (Voolt3D, Creality,
+# Sunlu, F3D, Elegoo). Use --add para incluir fabricantes extras ou --all
+# para exportar todos.
 #
 # Uso:
-#   ./publish.sh              # build + publish
-#   ./publish.sh --no-build   # apenas publish (sem rodar build.py)
-#   ./publish.sh --clean      # limpa destino antes de copiar
+#   ./publish.sh                           # build + publish (fabricantes padrão)
+#   ./publish.sh --add "Bambu Lab"         # inclui Bambu Lab além dos padrão
+#   ./publish.sh --add 3DLab --add GTMax   # inclui múltiplos extras
+#   ./publish.sh --all                     # exporta TODOS os fabricantes
+#   ./publish.sh --list                    # lista fabricantes disponíveis
+#   ./publish.sh --no-build                # pula o build.py
 #
-# Configuração:
-#   As variáveis FILAMENT_DEST e PROCESS_DEST podem ser sobrescritas
-#   via variáveis de ambiente:
-#     FILAMENT_DEST=~/outro/path ./publish.sh
+# Os perfis de processo são sempre publicados (não dependem de fabricante).
 #
 
 set -euo pipefail
@@ -23,15 +24,21 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_FILAMENTS="${SCRIPT_DIR}/Creality-Print/filaments"
 SOURCE_PROCESS="${SCRIPT_DIR}/Creality-Print/process"
+DB_PATH="${SCRIPT_DIR}/filament.db"
 
 FILAMENT_DEST="${FILAMENT_DEST:-${HOME}/filament-db/filament}"
 PROCESS_DEST="${PROCESS_DEST:-${HOME}/filament-db/process}"
+
+# Fabricantes padrão (sempre exportados)
+DEFAULT_MANUFACTURERS=("Voolt3D" "Creality" "Sunlu" "F3D" "Elegoo")
 
 # --- Cores -------------------------------------------------------------------
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
 NC='\033[0m'
 
 info()  { echo -e "${GREEN}[INFO]${NC}  $*"; }
@@ -41,63 +48,136 @@ error() { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
 # --- Args --------------------------------------------------------------------
 
 RUN_BUILD=true
-CLEAN=false
+EXPORT_ALL=false
+SHOW_LIST=false
+EXTRA_MANUFACTURERS=()
 
-for arg in "$@"; do
-    case "$arg" in
-        --no-build) RUN_BUILD=false ;;
-        --clean)    CLEAN=true ;;
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --no-build)
+            RUN_BUILD=false
+            shift
+            ;;
+        --all)
+            EXPORT_ALL=true
+            shift
+            ;;
+        --list)
+            SHOW_LIST=true
+            shift
+            ;;
+        --add)
+            if [[ -z "${2:-}" ]]; then
+                error "--add requer um nome de fabricante"
+            fi
+            EXTRA_MANUFACTURERS+=("$2")
+            shift 2
+            ;;
         --help|-h)
-            echo "Uso: $0 [--no-build] [--clean] [--help]"
+            echo "Uso: $0 [opções]"
             echo ""
-            echo "  --no-build   Pula o build.py, apenas copia arquivos existentes"
-            echo "  --clean      Remove arquivos antigos no destino antes de copiar"
-            echo "  --help       Mostra esta ajuda"
+            echo "Opções:"
+            echo "  --no-build          Pula o build.py, usa export existente"
+            echo "  --add <fabricante>   Inclui fabricante extra (pode repetir)"
+            echo "  --all               Exporta TODOS os fabricantes do banco"
+            echo "  --list              Lista fabricantes disponíveis e sai"
+            echo "  --help              Mostra esta ajuda"
             echo ""
-            echo "Variáveis de ambiente:"
-            echo "  FILAMENT_DEST   Diretório destino dos filamentos (default: ~/filament/filament)"
-            echo "  PROCESS_DEST    Diretório destino dos processos  (default: ~/filament/process)"
+            echo "Fabricantes padrão: ${DEFAULT_MANUFACTURERS[*]}"
+            echo ""
+            echo "Exemplos:"
+            echo "  $0 --add \"Bambu Lab\" --add 3DLab"
+            echo "  $0 --all --no-build"
             exit 0
             ;;
-        *) error "Argumento desconhecido: $arg" ;;
+        *)
+            error "Argumento desconhecido: $1"
+            ;;
     esac
 done
+
+# --- List (se solicitado) ----------------------------------------------------
+
+if [[ "$SHOW_LIST" == true ]]; then
+    if [[ ! -f "$DB_PATH" ]]; then
+        error "Banco não encontrado: $DB_PATH (rode build.py primeiro)"
+    fi
+
+    echo -e "${BOLD}Fabricantes disponíveis no banco:${NC}"
+    echo ""
+
+    # Query fabricantes com contagem de perfis
+    sqlite3 "$DB_PATH" "
+        SELECT m.name, COUNT(fp.id)
+        FROM manufacturers m
+        JOIN filament_profiles fp ON fp.manufacturer_id = m.id
+        WHERE fp.active = 1
+        GROUP BY m.name
+        ORDER BY m.name;
+    " | while IFS='|' read -r name count; do
+        # Marcar os padrão
+        if printf '%s\n' "${DEFAULT_MANUFACTURERS[@]}" | grep -qx "$name"; then
+            echo -e "  ${GREEN}●${NC} ${name} (${count} perfis) ${CYAN}[padrão]${NC}"
+        else
+            echo -e "  ○ ${name} (${count} perfis)"
+        fi
+    done
+
+    echo ""
+    echo -e "Use ${BOLD}--add \"Nome\"${NC} para incluir extras ou ${BOLD}--all${NC} para todos."
+    exit 0
+fi
 
 # --- Build (opcional) --------------------------------------------------------
 
 if [[ "$RUN_BUILD" == true ]]; then
     info "Executando build.py..."
-    python3 "${SCRIPT_DIR}/build.py"
+
+    # Se há extras ou --all, passa a lista de fabricantes ao build
+    if [[ "$EXPORT_ALL" == true ]]; then
+        MANUFACTURERS_ENV="__ALL__"
+    elif [[ ${#EXTRA_MANUFACTURERS[@]} -gt 0 ]]; then
+        # Junta padrão + extras
+        ALL_MFRS=("${DEFAULT_MANUFACTURERS[@]}" "${EXTRA_MANUFACTURERS[@]}")
+        MANUFACTURERS_ENV=$(printf '%s,' "${ALL_MFRS[@]}")
+        MANUFACTURERS_ENV="${MANUFACTURERS_ENV%,}"  # remove trailing comma
+    else
+        MANUFACTURERS_ENV=""
+    fi
+
+    EXPORT_MANUFACTURERS_OVERRIDE="$MANUFACTURERS_ENV" python3 "${SCRIPT_DIR}/build.py"
     echo ""
 fi
 
 # --- Validação ---------------------------------------------------------------
 
 if [[ ! -d "$SOURCE_FILAMENTS" ]]; then
-    error "Diretório de filamentos não encontrado: $SOURCE_FILAMENTS"
+    error "Diretório de filamentos não encontrado: $SOURCE_FILAMENTS\nRode sem --no-build ou execute build.py primeiro."
 fi
 
 if [[ ! -d "$SOURCE_PROCESS" ]]; then
     error "Diretório de processos não encontrado: $SOURCE_PROCESS"
 fi
 
-# --- Preparação do destino ---------------------------------------------------
+# --- Preparação do destino (sync limpo) --------------------------------------
 
 mkdir -p "$FILAMENT_DEST" "$PROCESS_DEST"
 
-if [[ "$CLEAN" == true ]]; then
-    warn "Limpando destino..."
-    find "$FILAMENT_DEST" -maxdepth 1 -type f -name "*.json" -delete
-    find "$PROCESS_DEST" -maxdepth 1 -type f -name "*.json" -delete
-fi
+# Limpa destino para garantir sync exato (remove antigos)
+warn "Sincronizando destino (removendo perfis antigos)..."
+find "$FILAMENT_DEST" -maxdepth 1 -type f \( -name "*.json" -o -name "*.info" \) -delete
+find "$PROCESS_DEST" -maxdepth 1 -type f \( -name "*.json" -o -name "*.info" \) -delete
 
-# --- Copia -------------------------------------------------------------------
+# --- Copia filamentos --------------------------------------------------------
 
 info "Publicando filamentos..."
 info "  Origem:  $SOURCE_FILAMENTS"
 info "  Destino: $FILAMENT_DEST"
 cp -f "$SOURCE_FILAMENTS"/*.json "$FILAMENT_DEST/" 2>/dev/null || true
+cp -f "$SOURCE_FILAMENTS"/*.info "$FILAMENT_DEST/" 2>/dev/null || true
 FILAMENT_COUNT=$(find "$FILAMENT_DEST" -maxdepth 1 -name "*.json" -type f | wc -l)
+
+# --- Copia processos ---------------------------------------------------------
 
 echo ""
 info "Publicando processos..."
@@ -114,4 +194,12 @@ info "Publicação concluída!"
 echo "==========================================="
 info "Filamentos: ${FILAMENT_COUNT} perfis em ${FILAMENT_DEST}"
 info "Processos:  ${PROCESS_COUNT} perfis em ${PROCESS_DEST}"
+
+if [[ "$EXPORT_ALL" == true ]]; then
+    info "Fabricantes: TODOS"
+elif [[ ${#EXTRA_MANUFACTURERS[@]} -gt 0 ]]; then
+    info "Fabricantes: ${DEFAULT_MANUFACTURERS[*]} + ${EXTRA_MANUFACTURERS[*]}"
+else
+    info "Fabricantes: ${DEFAULT_MANUFACTURERS[*]}"
+fi
 echo ""

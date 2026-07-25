@@ -393,7 +393,7 @@ def seed_filaments():
 # =============================================================================
 
 PROFILE_MULTIPLIERS = {
-    "speed": {"speed": 1.70, "accel": 2.00},
+    "fast": {"speed": 1.70, "accel": 2.00},
     "standard": {"speed": 1.0, "accel": 1.0},
     "detail": {"speed": 0.55, "accel": 0.45},
     "strong": {"speed": 0.70, "accel": 0.60},
@@ -600,7 +600,14 @@ def seed_processes():
 NOZZLE_BASE = "Hyper PLA @Creality K2 0.4 nozzle"
 
 # Fabricantes habilitados para exportação Creality Print
-EXPORT_MANUFACTURERS = {"Voolt3D", "Creality", "Sunlu", "F3D", "Elegoo"}
+# Pode ser sobrescrito via variável de ambiente EXPORT_MANUFACTURERS_OVERRIDE
+_mfr_override = os.environ.get("EXPORT_MANUFACTURERS_OVERRIDE", "")
+if _mfr_override == "__ALL__":
+    EXPORT_MANUFACTURERS = None  # None = exporta todos
+elif _mfr_override:
+    EXPORT_MANUFACTURERS = set(m.strip() for m in _mfr_override.split(","))
+else:
+    EXPORT_MANUFACTURERS = {"Voolt3D", "Creality", "Sunlu", "F3D", "Elegoo"}
 
 
 def export_filaments():
@@ -632,8 +639,8 @@ def export_filaments():
     for row in rows:
         brand, material, profile_name, n_init, n_min, n_max, bed, flow, mvs, inherits = row
 
-        # Filtrar apenas fabricantes habilitados
-        if brand not in EXPORT_MANUFACTURERS:
+        # Filtrar apenas fabricantes habilitados (None = todos)
+        if EXPORT_MANUFACTURERS is not None and brand not in EXPORT_MANUFACTURERS:
             continue
 
         payload = {
@@ -668,7 +675,8 @@ def export_filaments():
 
         exported += 1
 
-    info(f"Exportados: {exported} perfis de filamento (de {len(rows)} no banco, filtro: {', '.join(sorted(EXPORT_MANUFACTURERS))})")
+    filter_desc = "todos" if EXPORT_MANUFACTURERS is None else ', '.join(sorted(EXPORT_MANUFACTURERS))
+    info(f"Exportados: {exported} perfis de filamento (de {len(rows)} no banco, filtro: {filter_desc})")
 
 
 # =============================================================================

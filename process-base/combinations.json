@@ -11,7 +11,7 @@
             "materials": ["PLA", "PETG", "TPU", "ABS", "PLA-CF", "PETG-CF"]
         },
         {
-            "profile_type": "speed",
+            "profile_type": "fast",
             "layer_heights": ["0.20", "0.24", "0.28"],
             "materials": ["PLA", "PETG"]
         },

@@ -24,10 +24,10 @@ Isso garante que filamentos premium (Voolt3D Velvet MVS=25, Sunlu HS MVS=22) apr
 Do mais rápido ao mais caprichado:
 
 ```
-Speed → Standard → Strong → Detail → Safe
+Fast → Standard → Strong → Detail → Safe
 ```
 
-- **Speed**: Velocidade máxima. O mais rápido possível — aceita redução de qualidade em troca de tempo. 3 walls, 12% infill grid, inner-first.
+- **Fast**: Velocidade máxima. O mais rápido possível — aceita redução de qualidade em troca de tempo. 3 walls, 12% infill grid, inner-first.
 - **Standard**: Equilíbrio geral, padrão de uso diário. 4 walls, 15% gyroid, outer-first, bom acabamento. Nome obrigatório — Creality Print requer um perfil "Standard" para iniciar.
 - **Strong**: Resistência mecânica (6 walls, 55% infill). Mais lento, peças funcionais.
 - **Detail**: Qualidade visual máxima. Layer heights baixos (0.08-0.16mm), 5 walls, 20% infill.
@@ -36,7 +36,7 @@ Speed → Standard → Strong → Detail → Safe
 ### Multiplicadores por Profile Type
 
 ```
-Speed:    speed=1.70x  accel=2.00x
+Fast:     speed=1.70x  accel=2.00x
 Standard: speed=1.00x  accel=1.00x
 Strong:   speed=0.70x  accel=0.60x
 Detail:   speed=0.55x  accel=0.45x
@@ -51,16 +51,18 @@ Safe:     speed=0.40x  accel=0.30x
 
 ## Materiais — Velocidades Base (process-base/materials/)
 
-Os arquivos de material definem velocidades base que representam o alvo **Standard** para aquele tipo de material na K2. O `speed_multiplier` ajusta proporcionalmente as velocidades vs. PLA (referência 1.0):
+Os arquivos de material definem velocidades base que representam o alvo **Standard** para aquele tipo de material na K2. Referência: perfis do Orca Slicer para K2 0.4mm.
 
-| Material | speed_mult | accel_mult | Racional |
-|----------|-----------|-----------|----------|
-| PLA      | 1.00      | 1.00      | Referência — velocidades alvo da K2 |
-| PETG     | 0.90      | 0.85      | Leve redução por stringing/cooling |
-| ABS      | 0.75      | 0.80      | Menor por warping/enclosure |
-| PLA-CF   | 0.65      | 0.80      | Menor por abrasividade/rigidez |
-| PETG-CF  | 0.55      | 0.70      | Mais conservador — fibra + PETG |
-| TPU      | 0.20      | 0.25      | Flexível, velocidade muito baixa |
+O `speed_multiplier` ajusta proporcionalmente as velocidades vs. PLA (referência 1.0):
+
+| Material | speed_mult | accel_mult | default_accel | Racional |
+|----------|-----------|-----------|---------------|----------|
+| PLA      | 1.00      | 1.00      | 12000         | Referência Orca — velocidades alvo da K2 |
+| PETG     | 0.85      | 0.85      | 10000         | Levemente menor por stringing/cooling |
+| ABS      | 0.75      | 0.75      | 8000          | Menor por warping/enclosure |
+| PLA-CF   | 0.70      | 0.75      | 8000          | Menor por abrasividade/rigidez |
+| PETG-CF  | 0.60      | 0.70      | 7000          | Mais conservador — fibra + PETG |
+| TPU      | 0.20      | 0.25      | 2500          | Flexível, velocidade muito baixa |
 
 ## Restrições de Materiais Especiais
 

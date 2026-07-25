@@ -25,12 +25,12 @@ Com a separação:
 ### Hierarquia de Perfis de Processo
 
 ```
-Speed → Standard → Strong → Detail → Safe
+Fast → Standard → Strong → Detail → Safe
 ```
 
 | Profile Type | Foco | Walls | Infill | Speed Mult |
 |--------------|------|-------|--------|-----------|
-| **Speed** | Velocidade máxima | 3 | 12% grid | 1.70x |
+| **Fast** | Velocidade máxima | 3 | 12% grid | 1.70x |
 | **Standard** | Equilíbrio geral | 4 | 15% gyroid | 1.00x |
 | **Strong** | Resistência mecânica | 6 | 55% | 0.70x |
 | **Detail** | Qualidade visual (0.08-0.16mm) | 5 | 20% gyroid | 0.55x |
