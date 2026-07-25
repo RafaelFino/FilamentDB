@@ -1,0 +1,52 @@
+{
+    "type": "filament",
+    "name": "PLA - Elegoo - Rapid PLA+ @K2",
+    "inherits": "fdm_filament_pla",
+    "from": "User",
+    "instantiation": "true",
+    "filament_flow_ratio": [
+        "0.98"
+    ],
+    "filament_max_volumetric_speed": [
+        "22"
+    ],
+    "filament_type": [
+        "PLA"
+    ],
+    "filament_vendor": [
+        "Elegoo"
+    ],
+    "nozzle_temperature": [
+        "220"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "220"
+    ],
+    "nozzle_temperature_range_low": [
+        "190"
+    ],
+    "nozzle_temperature_range_high": [
+        "230"
+    ],
+    "hot_plate_temp": [
+        "50"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "55"
+    ],
+    "textured_plate_temp": [
+        "50"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "55"
+    ],
+    "cool_plate_temp": [
+        "50"
+    ],
+    "cool_plate_temp_initial_layer": [
+        "55"
+    ],
+    "compatible_printers": [
+        "Creality K2 0.4 nozzle"
+    ]
+}

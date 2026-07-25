@@ -1,0 +1,30 @@
+{
+    "type": "process",
+    "name": "0.20mm Standard @Creality K2 0.4 nozzle - PETG",
+    "inherits": "0.20mm Standard @Creality K2 0.4 nozzle",
+    "from": "User",
+    "instantiation": "true",
+    "compatible_printers": [
+        "Creality K2 0.4 nozzle"
+    ],
+    "layer_height": "0.2",
+    "inner_wall_speed": "229",
+    "outer_wall_speed": "153",
+    "sparse_infill_speed": "229",
+    "internal_solid_infill_speed": "187",
+    "top_surface_speed": "153",
+    "initial_layer_speed": "42",
+    "travel_speed": "425",
+    "support_speed": "110",
+    "gap_infill_speed": "170",
+    "default_acceleration": "8500",
+    "inner_wall_acceleration": "3825",
+    "outer_wall_acceleration": "3825",
+    "top_surface_acceleration": "3825",
+    "wall_loops": "4",
+    "top_shell_layers": "5",
+    "bottom_shell_layers": "4",
+    "seam_position": "aligned",
+    "sparse_infill_density": "15",
+    "sparse_infill_pattern": "gyroid"
+}

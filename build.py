@@ -32,6 +32,8 @@ DATA_DIR = ROOT_DIR / "filament-data"
 PROCESS_BASE_DIR = ROOT_DIR / "process-base"
 EXPORT_FILAMENTS_DIR = ROOT_DIR / "Creality-Print" / "filaments"
 EXPORT_PROCESS_DIR = ROOT_DIR / "Creality-Print" / "process"
+EXPORT_ORCA_FILAMENTS_DIR = ROOT_DIR / "OrcaSlicer" / "filament"
+EXPORT_ORCA_PROCESS_DIR = ROOT_DIR / "OrcaSlicer" / "process"
 
 
 # =============================================================================
@@ -787,6 +789,229 @@ def export_processes():
 
 
 # =============================================================================
+# STEP 6: EXPORT FILAMENTS (Orca Slicer format)
+# =============================================================================
+
+# Mapping material -> Orca base filament profile to inherit from
+ORCA_FILAMENT_INHERITS = {
+    "PLA": "fdm_filament_pla",
+    "PETG": "fdm_filament_petg",
+    "ABS": "fdm_filament_abs",
+    "ASA": "fdm_filament_asa",
+    "TPU": "fdm_filament_tpu",
+    "PLA-CF": "fdm_filament_pla",
+    "PETG-CF": "fdm_filament_petg",
+    "SUPPORT": "fdm_filament_pla",
+}
+
+# Mapping material -> filament_type field for Orca
+ORCA_FILAMENT_TYPE = {
+    "PLA": "PLA",
+    "PETG": "PETG",
+    "ABS": "ABS",
+    "ASA": "ASA",
+    "TPU": "TPU",
+    "PLA-CF": "PLA-CF",
+    "PETG-CF": "PETG-CF",
+    "SUPPORT": "Support",
+}
+
+
+def export_orca_filaments():
+    """Exporta perfis de filamento do banco para OrcaSlicer/filament/."""
+    info("Exportando filamentos para OrcaSlicer/filament/...")
+
+    if EXPORT_ORCA_FILAMENTS_DIR.exists():
+        for f in EXPORT_ORCA_FILAMENTS_DIR.iterdir():
+            f.unlink()
+    EXPORT_ORCA_FILAMENTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT
+            mf.name as brand, m.name as material, fp.profile_name,
+            fp.nozzle_temp_initial, fp.nozzle_temp_min, fp.nozzle_temp_max,
+            fp.bed_temp, fp.flow_ratio, fp.max_volumetric_speed
+        FROM filament_profiles fp
+        JOIN manufacturers mf ON mf.id = fp.manufacturer_id
+        JOIN materials m ON m.id = fp.material_id
+        WHERE fp.active = 1
+    """)
+    rows = cur.fetchall()
+    conn.close()
+
+    exported = 0
+    for row in rows:
+        brand, material, profile_name, n_init, n_min, n_max, bed, flow, mvs = row
+
+        if EXPORT_MANUFACTURERS is not None and brand not in EXPORT_MANUFACTURERS:
+            continue
+
+        # Orca profile name includes @K2 suffix for printer compatibility
+        orca_name = f"{profile_name} @K2"
+        inherits = ORCA_FILAMENT_INHERITS.get(material, "fdm_filament_pla")
+        filament_type = ORCA_FILAMENT_TYPE.get(material, "PLA")
+
+        bed_temp = int(bed) if bed else 60
+
+        payload = {
+            "type": "filament",
+            "name": orca_name,
+            "inherits": inherits,
+            "from": "User",
+            "instantiation": "true",
+            "filament_flow_ratio": [str(flow or 1.0)],
+            "filament_max_volumetric_speed": [str(int(mvs)) if mvs else "14"],
+            "filament_type": [filament_type],
+            "filament_vendor": [brand],
+            "nozzle_temperature": [str(n_init)],
+            "nozzle_temperature_initial_layer": [str(n_init)],
+            "nozzle_temperature_range_low": [str(n_min)],
+            "nozzle_temperature_range_high": [str(n_max)],
+            "hot_plate_temp": [str(bed_temp)],
+            "hot_plate_temp_initial_layer": [str(bed_temp + 5)],
+            "textured_plate_temp": [str(bed_temp)],
+            "textured_plate_temp_initial_layer": [str(bed_temp + 5)],
+            "cool_plate_temp": [str(bed_temp)],
+            "cool_plate_temp_initial_layer": [str(bed_temp + 5)],
+            "compatible_printers": [
+                "Creality K2 0.4 nozzle",
+            ],
+        }
+
+        json_path = EXPORT_ORCA_FILAMENTS_DIR / f"{orca_name}.json"
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=4, ensure_ascii=False)
+
+        exported += 1
+
+    filter_desc = "todos" if EXPORT_MANUFACTURERS is None else ', '.join(sorted(EXPORT_MANUFACTURERS))
+    info(f"Exportados: {exported} perfis de filamento Orca (filtro: {filter_desc})")
+
+
+# =============================================================================
+# STEP 7: EXPORT PROCESSES (Orca Slicer format)
+# =============================================================================
+
+# Orca process profiles inherit from the built-in K2 Standard profile
+ORCA_PROCESS_BASE = "0.20mm Standard @Creality K2 0.4 nozzle"
+
+
+def export_orca_processes():
+    """Exporta perfis de processo para OrcaSlicer/process/.
+
+    Os perfis herdam do built-in do Orca e sobrescrevem apenas os campos
+    que personalizamos (velocidades, acelerações, estrutura).
+    """
+    info("Exportando processos para OrcaSlicer/process/...")
+
+    if EXPORT_ORCA_PROCESS_DIR.exists():
+        for f in EXPORT_ORCA_PROCESS_DIR.iterdir():
+            f.unlink()
+    EXPORT_ORCA_PROCESS_DIR.mkdir(parents=True, exist_ok=True)
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT
+            pp.profile_name, pp.profile_type, pp.layer_height, pp.initial_layer_height,
+            pp.inner_wall_speed, pp.outer_wall_speed, pp.sparse_infill_speed,
+            pp.internal_solid_infill_speed, pp.top_surface_speed, pp.initial_layer_speed,
+            pp.travel_speed, pp.support_speed, pp.gap_infill_speed,
+            pp.default_acceleration, pp.inner_wall_acceleration,
+            pp.outer_wall_acceleration, pp.top_surface_acceleration,
+            pp.wall_loops, pp.wall_sequence,
+            pp.sparse_infill_density, pp.sparse_infill_pattern,
+            pp.top_shell_layers, pp.bottom_shell_layers,
+            pp.seam_position,
+            m.name AS material_name
+        FROM process_profiles pp
+        JOIN materials m ON m.id = pp.material_id
+        WHERE pp.active = 1
+    """)
+    rows = cur.fetchall()
+    conn.close()
+
+    for row in rows:
+        (profile_name, profile_type, layer_height, initial_layer_height,
+         inner_wall, outer_wall, sparse_infill, solid_infill, top_surface,
+         initial_layer, travel, support, gap_infill,
+         default_accel, inner_accel, outer_accel, top_accel,
+         wall_loops, wall_sequence, infill_density, infill_pattern,
+         top_shell, bottom_shell, seam_position, material_name) = row
+
+        # Orca profile name (same as Creality Print)
+        orca_name = profile_name
+
+        # Determine which built-in to inherit from based on layer height
+        lh = float(layer_height) if layer_height else 0.2
+        if lh <= 0.10:
+            orca_inherits = "0.08mm SuperDetail @Creality K2 0.4 nozzle"
+        elif lh <= 0.14:
+            orca_inherits = "0.12mm Detail @Creality K2 0.4 nozzle"
+        elif lh <= 0.18:
+            orca_inherits = "0.16mm Optimal @Creality K2 0.4 nozzle"
+        elif lh <= 0.22:
+            orca_inherits = "0.20mm Standard @Creality K2 0.4 nozzle"
+        elif lh <= 0.26:
+            orca_inherits = "0.24mm Draft @Creality K2 0.4 nozzle"
+        else:
+            orca_inherits = "0.28mm SuperDraft @Creality K2 0.4 nozzle"
+
+        data = {
+            "type": "process",
+            "name": orca_name,
+            "inherits": orca_inherits,
+            "from": "User",
+            "instantiation": "true",
+            "compatible_printers": ["Creality K2 0.4 nozzle"],
+        }
+
+        # Only set fields we override (Orca inherits the rest from base)
+        def set_val(key, val, as_int=False):
+            if val is not None:
+                if as_int:
+                    data[key] = str(int(float(val)))
+                elif isinstance(val, float):
+                    data[key] = str(int(val)) if val == int(val) else str(round(val, 1))
+                else:
+                    data[key] = str(val)
+
+        set_val("layer_height", layer_height)
+        set_val("inner_wall_speed", inner_wall, as_int=True)
+        set_val("outer_wall_speed", outer_wall, as_int=True)
+        set_val("sparse_infill_speed", sparse_infill, as_int=True)
+        set_val("internal_solid_infill_speed", solid_infill, as_int=True)
+        set_val("top_surface_speed", top_surface, as_int=True)
+        set_val("initial_layer_speed", initial_layer, as_int=True)
+        set_val("travel_speed", travel, as_int=True)
+        set_val("support_speed", support, as_int=True)
+        set_val("gap_infill_speed", gap_infill, as_int=True)
+        set_val("default_acceleration", default_accel, as_int=True)
+        set_val("inner_wall_acceleration", inner_accel, as_int=True)
+        set_val("outer_wall_acceleration", outer_accel, as_int=True)
+        set_val("top_surface_acceleration", top_accel, as_int=True)
+        set_val("wall_loops", wall_loops, as_int=True)
+        set_val("top_shell_layers", top_shell, as_int=True)
+        set_val("bottom_shell_layers", bottom_shell, as_int=True)
+        set_val("seam_position", seam_position)
+
+        if infill_density:
+            # Orca uses "15" not "15%"
+            data["sparse_infill_density"] = str(infill_density).replace("%", "")
+
+        if infill_pattern:
+            data["sparse_infill_pattern"] = str(infill_pattern)
+
+        json_path = EXPORT_ORCA_PROCESS_DIR / f"{orca_name}.json"
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+
+    info(f"Exportados: {len(rows)} perfis de processo Orca")
+
+
+# =============================================================================
 # MAIN
 # =============================================================================
 
@@ -805,6 +1030,8 @@ def main():
     if args.only_export:
         export_filaments()
         export_processes()
+        export_orca_filaments()
+        export_orca_processes()
     elif args.only_db:
         create_schema()
         seed_filaments()
@@ -815,6 +1042,8 @@ def main():
         seed_processes()
         export_filaments()
         export_processes()
+        export_orca_filaments()
+        export_orca_processes()
 
     print()
     info("Build concluido com sucesso!")

@@ -24,10 +24,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_FILAMENTS="${SCRIPT_DIR}/Creality-Print/filaments"
 SOURCE_PROCESS="${SCRIPT_DIR}/Creality-Print/process"
+SOURCE_ORCA_FILAMENTS="${SCRIPT_DIR}/OrcaSlicer/filament"
+SOURCE_ORCA_PROCESS="${SCRIPT_DIR}/OrcaSlicer/process"
 DB_PATH="${SCRIPT_DIR}/filament.db"
 
 FILAMENT_DEST="${FILAMENT_DEST:-${HOME}/filament-db/filament}"
 PROCESS_DEST="${PROCESS_DEST:-${HOME}/filament-db/process}"
+ORCA_FILAMENT_DEST="${ORCA_FILAMENT_DEST:-${HOME}/filament-db/orca/filament}"
+ORCA_PROCESS_DEST="${ORCA_PROCESS_DEST:-${HOME}/filament-db/orca/process}"
 
 # Fabricantes padrão (sempre exportados)
 DEFAULT_MANUFACTURERS=("Voolt3D" "Creality" "Sunlu" "F3D" "Elegoo")
@@ -161,12 +165,14 @@ fi
 
 # --- Preparação do destino (sync limpo) --------------------------------------
 
-mkdir -p "$FILAMENT_DEST" "$PROCESS_DEST"
+mkdir -p "$FILAMENT_DEST" "$PROCESS_DEST" "$ORCA_FILAMENT_DEST" "$ORCA_PROCESS_DEST"
 
 # Limpa destino para garantir sync exato (remove antigos)
 warn "Sincronizando destino (removendo perfis antigos)..."
 find "$FILAMENT_DEST" -maxdepth 1 -type f \( -name "*.json" -o -name "*.info" \) -delete
 find "$PROCESS_DEST" -maxdepth 1 -type f \( -name "*.json" -o -name "*.info" \) -delete
+find "$ORCA_FILAMENT_DEST" -maxdepth 1 -type f -name "*.json" -delete
+find "$ORCA_PROCESS_DEST" -maxdepth 1 -type f -name "*.json" -delete
 
 # --- Copia filamentos --------------------------------------------------------
 
@@ -186,14 +192,34 @@ info "  Destino: $PROCESS_DEST"
 cp -f "$SOURCE_PROCESS"/*.json "$PROCESS_DEST/" 2>/dev/null || true
 PROCESS_COUNT=$(find "$PROCESS_DEST" -maxdepth 1 -name "*.json" -type f | wc -l)
 
+# --- Copia Orca Slicer -------------------------------------------------------
+
+echo ""
+info "Publicando filamentos Orca..."
+info "  Origem:  $SOURCE_ORCA_FILAMENTS"
+info "  Destino: $ORCA_FILAMENT_DEST"
+cp -f "$SOURCE_ORCA_FILAMENTS"/*.json "$ORCA_FILAMENT_DEST/" 2>/dev/null || true
+ORCA_FILAMENT_COUNT=$(find "$ORCA_FILAMENT_DEST" -maxdepth 1 -name "*.json" -type f | wc -l)
+
+echo ""
+info "Publicando processos Orca..."
+info "  Origem:  $SOURCE_ORCA_PROCESS"
+info "  Destino: $ORCA_PROCESS_DEST"
+cp -f "$SOURCE_ORCA_PROCESS"/*.json "$ORCA_PROCESS_DEST/" 2>/dev/null || true
+ORCA_PROCESS_COUNT=$(find "$ORCA_PROCESS_DEST" -maxdepth 1 -name "*.json" -type f | wc -l)
+
 # --- Resumo ------------------------------------------------------------------
 
 echo ""
 echo "==========================================="
 info "Publicação concluída!"
 echo "==========================================="
-info "Filamentos: ${FILAMENT_COUNT} perfis em ${FILAMENT_DEST}"
-info "Processos:  ${PROCESS_COUNT} perfis em ${PROCESS_DEST}"
+info "Creality Print:"
+info "  Filamentos: ${FILAMENT_COUNT} perfis em ${FILAMENT_DEST}"
+info "  Processos:  ${PROCESS_COUNT} perfis em ${PROCESS_DEST}"
+info "Orca Slicer:"
+info "  Filamentos: ${ORCA_FILAMENT_COUNT} perfis em ${ORCA_FILAMENT_DEST}"
+info "  Processos:  ${ORCA_PROCESS_COUNT} perfis em ${ORCA_PROCESS_DEST}"
 
 if [[ "$EXPORT_ALL" == true ]]; then
     info "Fabricantes: TODOS"
