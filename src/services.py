@@ -595,3 +595,126 @@ def get_simulation_options():
         "processes": [dict(r) for r in processes],
         "filaments": [dict(r) for r in filaments],
     }
+
+# =============================================================================
+# ─── Ranking: All combinations scored ────────────────────────────────────────
+# =============================================================================
+
+# Profile type finish scores (same logic as frontend calcCombinationScore)
+_PROFILE_TYPE_FINISH = {
+    "detail": 95,
+    "safe": 75,
+    "standard": 65,
+    "strong": 60,
+    "fast": 30,
+}
+
+
+def _calc_score(proc_dict, fil_dict, layer_height, mvs):
+    """Calculate speed, finish, confidence and overall scores for a combination."""
+    max_speed_from_mvs = mvs / (layer_height * DEFAULT_LINE_WIDTH)
+
+    # Speed score: average effective speed / 350 (reference high speed on K2)
+    effective_speeds = []
+    capped_count = 0
+    for field in EXTRUSION_SPEED_FIELDS:
+        raw = proc_dict.get(field)
+        if raw is not None:
+            raw_val = float(raw)
+            eff = min(raw_val, max_speed_from_mvs)
+            effective_speeds.append(eff)
+            if raw_val > max_speed_from_mvs:
+                capped_count += 1
+
+    if effective_speeds:
+        avg_effective = sum(effective_speeds) / len(effective_speeds)
+        speed_score = min(100, max(0, round((avg_effective / 350) * 100)))
+    else:
+        avg_effective = 0
+        speed_score = 0
+
+    # Finish score: profile type + wall_sequence bonus + layer height bonus
+    profile_type = proc_dict.get("profile_type", "standard")
+    type_score = _PROFILE_TYPE_FINISH.get(profile_type, 50)
+    wall_seq = proc_dict.get("wall_sequence") or ""
+    wall_seq_bonus = 10 if "outer" in wall_seq else 0
+    lh_bonus = round((0.20 - layer_height) * 100)
+    finish_score = min(100, max(0, type_score + wall_seq_bonus + lh_bonus))
+
+    # Confidence: from filament profile
+    confidence = int(fil_dict.get("confidence") or 50)
+
+    # Overall: weighted average
+    overall = round(speed_score * 0.35 + finish_score * 0.40 + confidence * 0.25)
+
+    return {
+        "speed": speed_score,
+        "finish": finish_score,
+        "confidence": confidence,
+        "overall": overall,
+        "avg_effective_speed": round(avg_effective, 1),
+        "capped_count": capped_count,
+        "total_speeds": len(effective_speeds),
+        "max_speed_from_mvs": round(max_speed_from_mvs, 1),
+    }
+
+
+def get_ranking():
+    """Cross all process × filament combinations (same material) and return scored ranking."""
+    conn = database.get_db_connection()
+
+    processes = conn.execute("""
+        SELECT pp.*, m.name as material_name
+        FROM process_profiles pp
+        JOIN materials m ON m.id = pp.material_id
+        WHERE pp.active = 1
+        ORDER BY pp.layer_height, pp.profile_type
+    """).fetchall()
+
+    filaments = conn.execute("""
+        SELECT fp.*, m.name as material_name, mf.name as manufacturer_name
+        FROM filament_profiles fp
+        JOIN materials m ON m.id = fp.material_id
+        JOIN manufacturers mf ON mf.id = fp.manufacturer_id
+        WHERE fp.active = 1
+        ORDER BY mf.name, fp.profile_name
+    """).fetchall()
+
+    conn.close()
+
+    # Build lookup: material_name -> list of filaments
+    fil_by_material = {}
+    for f in filaments:
+        fd = dict(f)
+        mat = fd["material_name"]
+        fil_by_material.setdefault(mat, []).append(fd)
+
+    results = []
+    for p in processes:
+        pd = dict(p)
+        mat = pd["material_name"]
+        layer_height = float(pd.get("layer_height") or 0.2)
+        profile_type = pd.get("profile_type", "standard")
+
+        # Cross with all filaments of the same material
+        for fd in fil_by_material.get(mat, []):
+            mvs = float(fd.get("max_volumetric_speed") or 14)
+            scores = _calc_score(pd, fd, layer_height, mvs)
+
+            results.append({
+                "process_id": pd["id"],
+                "filament_id": fd["id"],
+                "layer_height": layer_height,
+                "profile_type": profile_type,
+                "material": mat,
+                "process_name": pd["profile_name"],
+                "filament_name": fd.get("commercial_name") or fd["profile_name"],
+                "manufacturer": fd["manufacturer_name"],
+                "mvs": mvs,
+                "scores": scores,
+            })
+
+    # Sort by overall descending
+    results.sort(key=lambda r: r["scores"]["overall"], reverse=True)
+
+    return results

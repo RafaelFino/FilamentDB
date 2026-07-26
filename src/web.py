@@ -137,6 +137,11 @@ def register_routes(app):
         """Lista opções disponíveis para a simulação (processos e filamentos)."""
         return jsonify(services.get_simulation_options())
 
+    @app.get("/api/ranking")
+    def ranking_api():
+        """Retorna ranking de todas as combinações processo × filamento com scores."""
+        return jsonify(services.get_ranking())
+
     # ─── Orca Slicer Downloads ───────────────────────────────────────────────
 
     @app.get("/download/orca/filament")

@@ -511,6 +511,7 @@
             <button type="button" class="nav-btn active" data-view="filaments">🧵 Filamentos</button>
             <button type="button" class="nav-btn" data-view="process">⚙️ Processos</button>
             <button type="button" class="nav-btn" data-view="simulation">🔬 Simulação</button>
+            <button type="button" class="nav-btn" data-view="ranking">🏆 Ranking</button>
         </div>
 
         <div class="nav-section" id="filament-nav">
@@ -670,11 +671,60 @@
             <div id="sim-result" style="margin-top:8px;"></div>
         </div>
 
+        <!-- Ranking View -->
+        <div id="ranking-view" class="view-content">
+            <div class="page-header">
+                <h1>Ranking de Combinações</h1>
+                <span class="badge">Todas as combinações processo × filamento</span>
+            </div>
+
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <label style="font-size:.78rem; color:var(--muted);">Ordenar por:</label>
+                    <select id="ranking-sort" class="sim-select" style="min-width:140px;">
+                        <option value="overall">Score geral</option>
+                        <option value="speed">Velocidade</option>
+                        <option value="finish">Acabamento</option>
+                        <option value="confidence">Confiabilidade</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <label style="font-size:.78rem; color:var(--muted);">Material:</label>
+                    <select id="ranking-material" class="sim-select" style="min-width:120px;">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <label style="font-size:.78rem; color:var(--muted);">Profile type:</label>
+                    <select id="ranking-profile-type" class="sim-select" style="min-width:120px;">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <label style="font-size:.78rem; color:var(--muted);">Layer height:</label>
+                    <select id="ranking-layer" class="sim-select" style="min-width:100px;">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <label style="font-size:.78rem; color:var(--muted);">Fabricante:</label>
+                    <select id="ranking-manufacturer" class="sim-select" style="min-width:120px;">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <span id="ranking-count" style="font-size:.78rem; color:var(--muted); margin-left:auto;"></span>
+            </div>
+
+            <div id="ranking-table-wrap" class="table-wrap">
+                <div class="empty">Carregando ranking...</div>
+            </div>
+        </div>
+
     </main>
 </div>
 
 <script>window.treeData = {{ tree | tojson }};</script>
 <script>window.processTreeData = {{ process_tree | tojson }};</script>
-<script src="{{ url_for('static', filename='main.js') }}?v=15"></script>
+<script src="{{ url_for('static', filename='main.js') }}?v=16"></script>
 </body>
 </html>

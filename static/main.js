@@ -1489,3 +1489,162 @@ async function initSimulation() {
     }
 }
 initSimulation();
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── Ranking view ────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let rankingData = [];
+let rankingLoaded = false;
+
+const rankingSortSel = document.getElementById('ranking-sort');
+const rankingMaterialSel = document.getElementById('ranking-material');
+const rankingProfileTypeSel = document.getElementById('ranking-profile-type');
+const rankingLayerSel = document.getElementById('ranking-layer');
+const rankingManufacturerSel = document.getElementById('ranking-manufacturer');
+const rankingTableWrap = document.getElementById('ranking-table-wrap');
+const rankingCount = document.getElementById('ranking-count');
+
+async function loadRanking() {
+    if (rankingLoaded) return;
+    try {
+        rankingTableWrap.innerHTML = '<div class="empty">Carregando ranking...</div>';
+        const r = await fetch('/api/ranking');
+        rankingData = await r.json();
+        rankingLoaded = true;
+        populateRankingFilters();
+        renderRanking();
+    } catch (e) {
+        rankingTableWrap.innerHTML = '<div class="empty">Erro ao carregar ranking.</div>';
+        console.error('Failed to load ranking', e);
+    }
+}
+
+function populateRankingFilters() {
+    const materials = [...new Set(rankingData.map(r => r.material))].sort();
+    const profileTypes = [...new Set(rankingData.map(r => r.profile_type))].sort((a, b) => {
+        const order = ['fast', 'standard', 'strong', 'detail', 'safe'];
+        return order.indexOf(a) - order.indexOf(b);
+    });
+    const layers = [...new Set(rankingData.map(r => r.layer_height))].sort((a, b) => a - b);
+    const manufacturers = [...new Set(rankingData.map(r => r.manufacturer))].sort();
+
+    rankingMaterialSel.innerHTML = '<option value="">Todos</option>' +
+        materials.map(m => `<option value="${m}">${m}</option>`).join('');
+    rankingProfileTypeSel.innerHTML = '<option value="">Todos</option>' +
+        profileTypes.map(t => `<option value="${t}">${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('');
+    rankingLayerSel.innerHTML = '<option value="">Todos</option>' +
+        layers.map(l => `<option value="${l}">${Number(l).toFixed(2)}mm</option>`).join('');
+    rankingManufacturerSel.innerHTML = '<option value="">Todos</option>' +
+        manufacturers.map(m => `<option value="${m}">${m}</option>`).join('');
+}
+
+function getFilteredRanking() {
+    const sortBy = rankingSortSel.value;
+    const matFilter = rankingMaterialSel.value;
+    const ptFilter = rankingProfileTypeSel.value;
+    const lhFilter = rankingLayerSel.value;
+    const mfrFilter = rankingManufacturerSel.value;
+
+    let filtered = rankingData;
+
+    if (matFilter) filtered = filtered.filter(r => r.material === matFilter);
+    if (ptFilter) filtered = filtered.filter(r => r.profile_type === ptFilter);
+    if (lhFilter) filtered = filtered.filter(r => r.layer_height === parseFloat(lhFilter));
+    if (mfrFilter) filtered = filtered.filter(r => r.manufacturer === mfrFilter);
+
+    // Sort
+    filtered = [...filtered].sort((a, b) => b.scores[sortBy] - a.scores[sortBy]);
+
+    return filtered;
+}
+
+function rankingScoreBar(val, max = 100) {
+    const pct = Math.round((val / max) * 100);
+    const color = val >= 80 ? 'var(--green)' : val >= 60 ? '#ffd84d' : val >= 40 ? 'var(--orange)' : '#ff7b72';
+    return `<div style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size:.82rem; font-weight:600; color:${color}; min-width:28px;">${val}</span>
+        <div style="flex:1; height:6px; border-radius:3px; background:var(--border); min-width:50px;">
+            <div style="width:${pct}%; height:100%; border-radius:3px; background:${color};"></div>
+        </div>
+    </div>`;
+}
+
+function rankingCapIndicator(capped, total) {
+    if (total === 0) return '—';
+    const color = capped > 0 ? 'var(--orange)' : 'var(--green)';
+    const segments = Array.from({length: total}, (_, i) => {
+        const bg = i < capped ? 'var(--orange)' : 'var(--green)';
+        return `<div style="flex:1; height:6px; background:${bg}; border-radius:1px;"></div>`;
+    }).join('');
+    return `<div style="display:flex; align-items:center; gap:4px;">
+        <span style="font-size:.78rem; color:${color}; min-width:32px;">${capped}/${total}</span>
+        <div style="display:flex; gap:1px; flex:1; min-width:40px;">${segments}</div>
+    </div>`;
+}
+
+function renderRanking() {
+    const filtered = getFilteredRanking();
+    rankingCount.textContent = `${filtered.length} combinações`;
+
+    if (!filtered.length) {
+        rankingTableWrap.innerHTML = '<div class="empty">Nenhuma combinação encontrada para os filtros selecionados.</div>';
+        return;
+    }
+
+    // Limit to top 200 for performance
+    const shown = filtered.slice(0, 200);
+
+    const rows = shown.map((r, i) => {
+        const pos = i + 1;
+        const medal = pos <= 3 ? ['🥇','🥈','🥉'][pos-1] : `<span style="color:var(--muted)">${pos}</span>`;
+        const typeLabel = r.profile_type.charAt(0).toUpperCase() + r.profile_type.slice(1);
+        return `
+        <tr>
+            <td style="text-align:center; width:40px;">${medal}</td>
+            <td><strong>${r.filament_name}</strong><br><span style="font-size:.72rem; color:var(--muted)">${r.manufacturer}</span></td>
+            <td><span class="chip chip-${r.material}">${r.material}</span></td>
+            <td>${Number(r.layer_height).toFixed(2)}mm</td>
+            <td>${typeLabel}</td>
+            <td style="min-width:100px;">${rankingScoreBar(r.scores.overall)}</td>
+            <td style="min-width:90px;">${rankingScoreBar(r.scores.speed)}</td>
+            <td style="min-width:90px;">${rankingScoreBar(r.scores.finish)}</td>
+            <td style="min-width:90px;">${rankingScoreBar(r.scores.confidence)}</td>
+            <td style="min-width:90px;">${rankingCapIndicator(r.scores.capped_count, r.scores.total_speeds)}</td>
+            <td style="font-size:.78rem; color:var(--muted)">${r.scores.avg_effective_speed} mm/s</td>
+            <td style="font-size:.78rem; color:var(--muted)">${r.mvs} mm³/s</td>
+        </tr>`;
+    }).join('');
+
+    rankingTableWrap.innerHTML = `
+    <table>
+        <thead><tr>
+            <th style="width:40px;">#</th>
+            <th>Filamento</th>
+            <th>Material</th>
+            <th>Layer</th>
+            <th>Perfil</th>
+            <th>Score</th>
+            <th>Velocidade</th>
+            <th>Acabamento</th>
+            <th>Confiança</th>
+            <th>Limitações</th>
+            <th>Vel. média</th>
+            <th>MVS</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+    </table>
+    ${filtered.length > 200 ? `<div style="text-align:center; padding:12px; font-size:.78rem; color:var(--muted);">Mostrando top 200 de ${filtered.length} combinações. Use os filtros para refinar.</div>` : ''}`;
+}
+
+// Event listeners for ranking filters
+[rankingSortSel, rankingMaterialSel, rankingProfileTypeSel, rankingLayerSel, rankingManufacturerSel].forEach(sel => {
+    if (sel) sel.addEventListener('change', renderRanking);
+});
+
+// Lazy-load ranking when view is activated
+document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (btn.dataset.view === 'ranking') loadRanking();
+    });
+});
