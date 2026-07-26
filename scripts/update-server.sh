@@ -5,11 +5,16 @@
 # Faz git pull, rebuild do banco e reinicia o serviço.
 # Pensado para rodar via cron diariamente.
 #
-# Uso:
-#   /srv/FilamentDB/scripts/update-server.sh
+# IMPORTANTE: Este script precisa rodar como root (ou com sudo) porque:
+#   - systemctl restart requer privilégio de root
+#   - o serviço filamentdb.service é gerenciado pelo systemd
 #
-# Cron (como root):
+# Instalação no cron (como root):
+#   sudo crontab -e
 #   0 4 * * * /srv/FilamentDB/scripts/update-server.sh >> /var/log/filamentdb-update.log 2>&1
+#
+# Execução manual:
+#   sudo /srv/FilamentDB/scripts/update-server.sh
 #
 
 set -euo pipefail
@@ -20,6 +25,12 @@ LOG_PREFIX="[$(date '+%Y-%m-%d %H:%M:%S')]"
 
 log()  { echo "$LOG_PREFIX $*"; }
 err()  { echo "$LOG_PREFIX ERROR: $*" >&2; }
+
+# Verificar privilégio de root
+if [ "$(id -u)" -ne 0 ]; then
+    err "Este script precisa rodar como root. Use: sudo $0"
+    exit 1
+fi
 
 cd "$REPO_DIR"
 
