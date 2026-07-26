@@ -1358,13 +1358,26 @@ async function initSimulation() {
         setupSimColumn('a');
         setupSimColumn('b');
 
-        // Pre-select 0.20mm for column A
-        const layerA = document.getElementById('sim-a-layer');
-        if (layerA) {
-            const opt020 = [...layerA.options].find(o => parseFloat(o.value) === 0.2);
+        // Pre-select 0.20mm + Standard for both columns
+        for (const prefix of ['a', 'b']) {
+            const layerSel = document.getElementById(`sim-${prefix}-layer`);
+            if (!layerSel) continue;
+
+            // Select 0.20mm
+            const opt020 = [...layerSel.options].find(o => parseFloat(o.value) === 0.2);
             if (opt020) {
-                layerA.value = opt020.value;
-                layerA.dispatchEvent(new Event('change'));
+                layerSel.value = opt020.value;
+                layerSel.dispatchEvent(new Event('change'));
+            }
+
+            // Select Standard profile type
+            const profileSel = document.getElementById(`sim-${prefix}-profile`);
+            if (profileSel) {
+                const optStd = [...profileSel.options].find(o => o.value === 'standard');
+                if (optStd) {
+                    profileSel.value = optStd.value;
+                    profileSel.dispatchEvent(new Event('change'));
+                }
             }
         }
     } catch (e) {
