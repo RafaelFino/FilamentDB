@@ -549,6 +549,7 @@ def build_tree():
             "updated_at":               row["updated_at"],
             "variants":                 variants_by_profile.get(profile_id, []),
             "download_url":             f"/download/creality-print/{manufacturer}/{material}",
+            "orca_download_url":        f"/download/orca/filament/{manufacturer}/{material}",
         })
 
     return tree
@@ -710,6 +711,7 @@ def build_process_tree():
             "notes":                        row["notes"],
             "active":                       bool(row["active"]),
             "download_url":                 f"/download/process/{material}",
+            "orca_download_url":            f"/download/orca/process/{material}",
         })
 
     mat_order = ['PLA', 'PLA Matte', 'PLA Silk', 'PETG', 'PETG CF', 'ABS', 'ASA', 'TPU']

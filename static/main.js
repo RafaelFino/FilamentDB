@@ -266,7 +266,7 @@ function renderTable(manufacturer) {
             <td>${confBar(row.confidence)}</td>
             <td class="muted-txt">${row.drying_temperature ? row.drying_temperature+'°C / '+row.drying_time+'h' : '—'}</td>
             <td><span class="muted-txt" style="font-size:.78rem">${varCount > 0 ? varCount+' cores' : '—'}</span></td>
-            <td><a class="dl-link" href="${row.download_url}" onclick="event.stopPropagation()">↓ ZIP</a></td>
+            <td><a class="dl-link" href="${row.download_url}" onclick="event.stopPropagation()">↓ CP</a> · <a class="dl-link" href="${row.orca_download_url}" onclick="event.stopPropagation()">↓ Orca</a></td>
         </tr>
         <tr class="detail-row" id="det-${row.profile_id}" style="display:none">
             <td colspan="12"></td>
@@ -379,7 +379,7 @@ const CMP_ROWS = [
 
     { sec:'Perfil CP',    lbl:'Herda de',          fn: p => `<span class="mono" style="font-size:.72rem">${v(p.inherits)}</span>` },
     { sec:'Perfil CP',    lbl:'Base ID',           fn: p => v(p.base_id) },
-    { sec:'Perfil CP',    lbl:'Download',          fn: p => `<a class="dl-link" href="${p.download_url}">↓ ZIP</a>` },
+    { sec:'Perfil CP',    lbl:'Download',          fn: p => `<a class="dl-link" href="${p.download_url}">↓ Creality Print</a> · <a class="dl-link" href="${p.orca_download_url}">↓ Orca Slicer</a>` },
 ];
 
 // ─── Render comparison table ──────────────────────────────────────────────────
@@ -487,7 +487,7 @@ function renderMaterialCard(material) {
         <div class="mfr-stats">
             <div class="mfr-stat"><strong>${profiles.length}</strong>perfis de processo</div>
             <div class="mfr-stat"><strong>${[...new Set(profiles.map(p => p.profile_type))].join(' · ') || '—'}</strong>tipos</div>
-            <div class="mfr-stat"><a class="dl-link" href="/download/process/${encodeURIComponent(material)}">↓ Baixar ZIP</a></div>
+            <div class="mfr-stat"><a class="dl-link" href="/download/process/${encodeURIComponent(material)}">↓ Creality Print</a> · <a class="dl-link" href="/download/orca/process/${encodeURIComponent(material)}">↓ Orca Slicer</a></div>
         </div>
     `;
 }
@@ -640,7 +640,7 @@ const PROCESS_CMP_ROWS = [
     { sec:'Suporte',      lbl:'Ativo',                 fn: p => boolIcon(p.enable_support) },
     { sec:'Suporte',      lbl:'Tipo',                  fn: p => v(p.support_type) },
     { sec:'Perfil CP',    lbl:'Herda de',              fn: p => `<span class="mono" style="font-size:.72rem">${v(p.inherits)}</span>` },
-    { sec:'Perfil CP',    lbl:'Download',              fn: p => `<a class="dl-link" href="${p.download_url}">↓ ZIP</a>` },
+    { sec:'Perfil CP',    lbl:'Download',              fn: p => `<a class="dl-link" href="${p.download_url}">↓ Creality Print</a> · <a class="dl-link" href="${p.orca_download_url}">↓ Orca Slicer</a>` },
 ];
 
 function renderProcessCompare() {
@@ -728,7 +728,7 @@ function renderProcessTable(material) {
             <td class="mono">${v(row.inner_wall_speed,' mm/s')}</td>
             <td class="mono">${v(row.sparse_infill_density)}</td>
             <td class="mono">${v(row.wall_loops)}</td>
-            <td><a class="dl-link" href="${row.download_url}" onclick="event.stopPropagation()">↓ ZIP</a></td>
+            <td><a class="dl-link" href="${row.download_url}" onclick="event.stopPropagation()">↓ CP</a> · <a class="dl-link" href="${row.orca_download_url}" onclick="event.stopPropagation()">↓ Orca</a></td>
         </tr>
         <tr class="detail-row" id="proc-det-${row.profile_id}" style="display:none">
             <td colspan="8"></td>

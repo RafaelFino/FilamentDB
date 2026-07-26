@@ -112,6 +112,46 @@ def register_routes(app):
         conn.close()
         return jsonify([dict(row) for row in rows])
 
+    # ─── Orca Slicer Downloads ───────────────────────────────────────────────
+
+    @app.get("/download/orca/filament")
+    def download_orca_filament_zip():
+        manufacturer = request.args.get("manufacturer", "").strip()
+        material = request.args.get("material", "").strip()
+        if not manufacturer or not material:
+            return jsonify({"error": "manufacturer and material query parameters are required"}), 400
+
+        data, filename = services.build_orca_filament_zip(manufacturer, material)
+        if data is None:
+            return jsonify({"error": "no profiles found"}), 404
+        return send_file(data, mimetype="application/zip", as_attachment=True, download_name=filename)
+
+    @app.get("/download/orca/filament/<path:manufacturer>/<path:material>")
+    def download_orca_filament_zip_path(manufacturer, material):
+        data, filename = services.build_orca_filament_zip(manufacturer, material)
+        if data is None:
+            return jsonify({"error": "no profiles found"}), 404
+        return send_file(data, mimetype="application/zip", as_attachment=True, download_name=filename)
+
+    @app.get("/download/orca/process/<path:material>")
+    def download_orca_process_zip_path(material):
+        data, filename = services.build_orca_process_zip(material)
+        if data is None:
+            return jsonify({"error": "no process profiles found"}), 404
+        return send_file(data, mimetype="application/zip", as_attachment=True, download_name=filename)
+
+    @app.get("/download/orca/process")
+    def download_orca_process_zip():
+        material = request.args.get("material", "").strip()
+        if not material:
+            return jsonify({"error": "material query parameter is required"}), 400
+        data, filename = services.build_orca_process_zip(material)
+        if data is None:
+            return jsonify({"error": "no process profiles found"}), 404
+        return send_file(data, mimetype="application/zip", as_attachment=True, download_name=filename)
+
+    # ─── Tree and pages ──────────────────────────────────────────────────────
+
     @app.get("/api/tree")
     def tree_api():
         return jsonify(database.build_tree())
