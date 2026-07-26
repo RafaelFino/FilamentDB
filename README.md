@@ -46,7 +46,7 @@ flowchart TD
     subgraph Publicação
         CP_OUT --> PUB[publish.sh]
         ORCA_OUT --> PUB
-        PUB --> FDB_CP[~/filament-db/filament/\n~/filament-db/process/]
+        PUB --> FDB_CP[~/filament-db/creality-print/filament/\n~/filament-db/creality-print/process/]
         PUB --> FDB_ORCA[~/filament-db/orca/filament/\n~/filament-db/orca/process/]
     end
 
