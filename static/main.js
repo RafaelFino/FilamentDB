@@ -187,14 +187,11 @@ function renderDetailPanel(profile, material) {
         </div>
 
         <div class="info-block">
-            <div class="info-block-header">⚙️ Perfil Creality Print</div>
+            <div class="info-block-header">⚙️ Perfil Slicer</div>
             <div class="info-grid">
-                <div class="info-cell wide"><span class="lbl">Herda de</span><span class="v mono">${v(profile.inherits)}</span></div>
                 <div class="info-cell"><span class="lbl">Nome do perfil</span><span class="v mono" style="font-size:.75rem">${v(profile.profile_name)}</span></div>
                 <div class="info-cell"><span class="lbl">Impressora</span><span class="v">${v(profile.printer_model)}</span></div>
                 <div class="info-cell"><span class="lbl">Bico</span><span class="v">${v(profile.nozzle_size,'mm')}</span></div>
-                <div class="info-cell"><span class="lbl">Base ID</span><span class="v mono">${v(profile.base_id)}</span></div>
-                <div class="info-cell"><span class="lbl">Versão CP</span><span class="v">${v(profile.creality_print_version)}</span></div>
                 <div class="info-cell"><span class="lbl">Versão do perfil</span><span class="v">${v(profile.profile_version)}</span></div>
                 <div class="info-cell"><span class="lbl">Status</span><span class="v">${profile.active ? '<span class="bool-yes">Ativo</span>' : '<span style="color:#ff7b72">Inativo</span>'}</span></div>
             </div>
@@ -390,8 +387,6 @@ const CMP_ROWS = [
         ).join(' ');
     }},
 
-    { sec:'Perfil CP',    lbl:'Herda de',          fn: p => `<span class="mono" style="font-size:.72rem">${v(p.inherits)}</span>` },
-    { sec:'Perfil CP',    lbl:'Base ID',           fn: p => v(p.base_id) },
     { sec:'Perfil CP',    lbl:'Download',          fn: p => `<a class="dl-link" href="${p.download_url}">↓ Creality Print</a> · <a class="dl-link" href="${p.orca_download_url}">↓ Orca Slicer</a>` },
 ];
 
@@ -600,12 +595,10 @@ function renderProcessDetailPanel(profile, material) {
         </div>
 
         <div class="info-block">
-            <div class="info-block-header">🖨️ Creality Print</div>
+            <div class="info-block-header">🖨️ Perfil Slicer</div>
             <div class="info-grid">
-                <div class="info-cell wide"><span class="lbl">Herda de</span><span class="v mono">${v(profile.inherits)}</span></div>
                 <div class="info-cell"><span class="lbl">Impressora</span><span class="v">${v(profile.printer_model)}</span></div>
                 <div class="info-cell"><span class="lbl">Bico</span><span class="v">${v(profile.nozzle_size,'mm')}</span></div>
-                <div class="info-cell"><span class="lbl">Base ID</span><span class="v mono">${v(profile.base_id)}</span></div>
                 <div class="info-cell"><span class="lbl">Versão</span><span class="v">${v(profile.version)}</span></div>
                 <div class="info-cell"><span class="lbl">Status</span><span class="v">${profile.active ? '<span class="bool-yes">Ativo</span>' : '<span style="color:#ff7b72">Inativo</span>'}</span></div>
             </div>
@@ -652,7 +645,6 @@ const PROCESS_CMP_ROWS = [
     { sec:'Acelerações',  lbl:'Parede externa',        fn: p => v(p.outer_wall_acceleration,' mm/s²') },
     { sec:'Suporte',      lbl:'Ativo',                 fn: p => boolIcon(p.enable_support) },
     { sec:'Suporte',      lbl:'Tipo',                  fn: p => v(p.support_type) },
-    { sec:'Perfil CP',    lbl:'Herda de',              fn: p => `<span class="mono" style="font-size:.72rem">${v(p.inherits)}</span>` },
     { sec:'Perfil CP',    lbl:'Download',              fn: p => `<a class="dl-link" href="${p.download_url}">↓ Creality Print</a> · <a class="dl-link" href="${p.orca_download_url}">↓ Orca Slicer</a>` },
 ];
 
