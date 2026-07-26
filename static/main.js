@@ -241,7 +241,7 @@ function renderTable(manufacturer) {
     const rows = [];
     matNames.forEach(mat => {
         (mfData.materials[mat].profiles || []).forEach(p => {
-            rows.push({ ...p, _mat: mat });
+            rows.push({ ...p, _mat: mat, _mfr: manufacturer });
         });
     });
 
@@ -359,6 +359,7 @@ function syncHighlights() {
 
 // ─── Comparison column definition ────────────────────────────────────────────
 const CMP_ROWS = [
+    { sec:'Produto',      lbl:'Fabricante',        fn: p => v(p._mfr) },
     { sec:'Produto',      lbl:'Material',         fn: p => `<span class="chip chip-${p._mat}">${p._mat}</span>` },
     { sec:'Produto',      lbl:'Nome comercial',    fn: p => v(p.commercial_name) },
     { sec:'Produto',      lbl:'Linha',             fn: p => v(p.line) },
@@ -408,7 +409,7 @@ function renderCompare() {
         <th>
             <div class="col-hdr">
                 <span class="col-hdr-name">${p.commercial_name}</span>
-                <span class="col-hdr-sub">${p._mat} · ${currentManufacturer||p.manufacturer_name||''}</span>
+                <span class="col-hdr-sub">${p._mat} · ${p._mfr||p.manufacturer_name||''}</span>
                 <button class="remove-col" data-pid="${p.profile_id}" title="Remover coluna">✕</button>
             </div>
         </th>`).join('');
@@ -466,7 +467,7 @@ selectAllBtn?.addEventListener('click', () => {
     const mfData = treeData[currentManufacturer] || {};
     Object.entries(mfData.materials || {}).forEach(([mat, matData]) => {
         (matData.profiles || []).forEach(p => {
-            comparedProfiles.set(p.profile_id, { ...p, _mat: mat });
+            comparedProfiles.set(p.profile_id, { ...p, _mat: mat, _mfr: currentManufacturer });
         });
     });
     syncHighlights();
