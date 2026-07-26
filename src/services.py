@@ -442,3 +442,155 @@ def build_orca_process_zip(material):
     in_memory.seek(0)
     filename = f"orca-process-{safe_filename(material)}.zip"
     return in_memory, filename
+
+
+# =============================================================================
+# SIMULATION — Combina processo + filamento e calcula velocidades efetivas
+# =============================================================================
+
+# Line width padrão para 0.4mm nozzle
+DEFAULT_LINE_WIDTH = 0.45
+
+# Campos de velocidade que sofrem cap volumétrico (extrudam material)
+EXTRUSION_SPEED_FIELDS = [
+    "inner_wall_speed", "outer_wall_speed", "sparse_infill_speed",
+    "internal_solid_infill_speed", "top_surface_speed", "initial_layer_speed",
+    "support_speed", "gap_infill_speed",
+]
+
+
+def simulate_combination(process_id, filament_id):
+    """Calcula as velocidades efetivas de um processo + filamento.
+
+    Aplica o cap volumétrico do filamento sobre as velocidades do processo,
+    simulando o que o slicer faria em runtime.
+    """
+    conn = database.get_db_connection()
+
+    # Buscar processo
+    proc = conn.execute(
+        "SELECT * FROM process_profiles WHERE id = ? AND active = 1", (process_id,)
+    ).fetchone()
+    if not proc:
+        conn.close()
+        return None
+
+    # Buscar filamento
+    fil = conn.execute(
+        "SELECT * FROM filament_profiles WHERE id = ? AND active = 1", (filament_id,)
+    ).fetchone()
+    if not fil:
+        conn.close()
+        return None
+
+    # Buscar nomes
+    material = conn.execute(
+        "SELECT name FROM materials WHERE id = ?", (proc["material_id"],)
+    ).fetchone()
+    manufacturer = conn.execute(
+        "SELECT name FROM manufacturers WHERE id = ?", (fil["manufacturer_id"],)
+    ).fetchone()
+    fil_material = conn.execute(
+        "SELECT name FROM materials WHERE id = ?", (fil["material_id"],)
+    ).fetchone()
+    conn.close()
+
+    proc_dict = dict(proc)
+    fil_dict = dict(fil)
+
+    # Calcular cap volumétrico
+    mvs = float(fil_dict.get("max_volumetric_speed") or 14)
+    layer_height = float(proc_dict.get("layer_height") or 0.2)
+    max_speed_from_mvs = mvs / (layer_height * DEFAULT_LINE_WIDTH)
+
+    # Gerar resultado com velocidades efetivas
+    effective_speeds = {}
+    for field in EXTRUSION_SPEED_FIELDS:
+        raw = proc_dict.get(field)
+        if raw is not None:
+            raw_val = float(raw)
+            capped_val = min(raw_val, max_speed_from_mvs)
+            is_capped = raw_val > max_speed_from_mvs
+            effective_speeds[field] = {
+                "target": round(raw_val, 1),
+                "effective": round(capped_val, 1),
+                "capped": is_capped,
+            }
+
+    # Travel não é capped pelo MVS
+    travel = proc_dict.get("travel_speed")
+    if travel:
+        effective_speeds["travel_speed"] = {
+            "target": round(float(travel), 1),
+            "effective": round(float(travel), 1),
+            "capped": False,
+        }
+
+    return {
+        "process": {
+            "id": proc_dict["id"],
+            "name": proc_dict["profile_name"],
+            "profile_type": proc_dict["profile_type"],
+            "layer_height": layer_height,
+            "material": material["name"] if material else "?",
+            "wall_loops": proc_dict.get("wall_loops"),
+            "sparse_infill_density": proc_dict.get("sparse_infill_density"),
+            "sparse_infill_pattern": proc_dict.get("sparse_infill_pattern"),
+            "top_shell_layers": proc_dict.get("top_shell_layers"),
+            "bottom_shell_layers": proc_dict.get("bottom_shell_layers"),
+            "wall_sequence": proc_dict.get("wall_sequence"),
+            "seam_position": proc_dict.get("seam_position"),
+            "default_acceleration": proc_dict.get("default_acceleration"),
+            "inner_wall_acceleration": proc_dict.get("inner_wall_acceleration"),
+            "outer_wall_acceleration": proc_dict.get("outer_wall_acceleration"),
+            "top_surface_acceleration": proc_dict.get("top_surface_acceleration"),
+        },
+        "filament": {
+            "id": fil_dict["id"],
+            "name": fil_dict["profile_name"],
+            "commercial_name": fil_dict.get("commercial_name"),
+            "manufacturer": manufacturer["name"] if manufacturer else "?",
+            "material": fil_material["name"] if fil_material else "?",
+            "mvs": mvs,
+            "nozzle_temp": fil_dict.get("nozzle_temp_initial"),
+            "bed_temp": fil_dict.get("bed_temp"),
+            "flow_ratio": fil_dict.get("flow_ratio"),
+        },
+        "simulation": {
+            "max_speed_from_mvs": round(max_speed_from_mvs, 1),
+            "layer_height": layer_height,
+            "line_width": DEFAULT_LINE_WIDTH,
+            "mvs": mvs,
+            "speeds": effective_speeds,
+        },
+    }
+
+
+def get_simulation_options():
+    """Retorna processos e filamentos disponíveis para simulação."""
+    conn = database.get_db_connection()
+
+    processes = conn.execute("""
+        SELECT pp.id, pp.profile_name, pp.profile_type, pp.layer_height, m.name as material
+        FROM process_profiles pp
+        JOIN materials m ON m.id = pp.material_id
+        WHERE pp.active = 1
+        ORDER BY m.name, pp.profile_type, pp.layer_height
+    """).fetchall()
+
+    filaments = conn.execute("""
+        SELECT fp.id, fp.profile_name, fp.commercial_name, fp.max_volumetric_speed,
+               mf.name as manufacturer, m.name as material
+        FROM filament_profiles fp
+        JOIN manufacturers mf ON mf.id = fp.manufacturer_id
+        JOIN materials m ON m.id = fp.material_id
+        WHERE fp.active = 1
+        ORDER BY m.name, mf.name, fp.profile_name
+    """).fetchall()
+
+    conn.close()
+
+    return {
+        "processes": [dict(r) for r in processes],
+        "filaments": [dict(r) for r in filaments],
+    }

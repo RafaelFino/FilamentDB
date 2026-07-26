@@ -75,7 +75,7 @@ function typeChip(type) {
 }
 
 function typeRank(t) {
-    const order = ['draft', 'fast', 'standard', 'balanced', 'strong', 'quality'];
+    const order = ['fast', 'standard', 'strong', 'detail', 'safe'];
     const i = order.indexOf(t);
     return i < 0 ? 99 : i;
 }
@@ -307,14 +307,27 @@ function renderTable(manufacturer) {
         const pid = Number(tr.dataset.pid);
         const mat = tr.dataset.mat;
 
-        tr.addEventListener('click', e => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'A') return;
-            // Toggle compare selection
+        const toggleCompare = () => {
             const profile = rows.find(r => r.profile_id === pid);
             if (comparedProfiles.has(pid)) comparedProfiles.delete(pid);
             else if (profile) comparedProfiles.set(pid, profile);
             syncHighlights();
             renderCompare();
+        };
+
+        // Checkbox click adds/removes from comparison
+        const cb = tr.querySelector('.row-check');
+        if (cb) {
+            cb.addEventListener('change', e => {
+                e.stopPropagation();
+                toggleCompare();
+            });
+        }
+
+        tr.addEventListener('click', e => {
+            if (e.target.tagName === 'A') return;
+            if (e.target.tagName === 'INPUT') return; // handled by checkbox listener
+            toggleCompare();
 
             // Toggle detail panel
             const detRow = document.getElementById(`det-${pid}`);
@@ -764,13 +777,28 @@ function renderProcessTable(material) {
 
     processTableContainer.querySelectorAll('.row-item').forEach(tr => {
         const pid = Number(tr.dataset.pid);
-        tr.addEventListener('click', e => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'A') return;
+
+        const toggleCompare = () => {
             const profile = rows.find(r => r.profile_id === pid);
             if (comparedProcessProfiles.has(pid)) comparedProcessProfiles.delete(pid);
             else if (profile) comparedProcessProfiles.set(pid, profile);
             syncProcessHighlights();
             renderProcessCompare();
+        };
+
+        // Checkbox click adds/removes from comparison
+        const cb = tr.querySelector('.row-check');
+        if (cb) {
+            cb.addEventListener('change', e => {
+                e.stopPropagation();
+                toggleCompare();
+            });
+        }
+
+        tr.addEventListener('click', e => {
+            if (e.target.tagName === 'A') return;
+            if (e.target.tagName === 'INPUT') return; // handled by checkbox listener
+            toggleCompare();
 
             const detRow = document.getElementById(`proc-det-${pid}`);
             if (detRow) {
@@ -834,3 +862,430 @@ if (firstMaterialBtn) {
     renderProcessTable(firstMaterialBtn.dataset.material);
 }
 renderProcessCompare();
+
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── Simulation view — Cascading selectors ───────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let simData = { processes: [], filaments: [] };
+const simResult = document.getElementById('sim-result');
+
+// Material characteristics and comparison insights
+const MATERIAL_INFO = {
+    PLA: {
+        name: 'PLA',
+        strengths: 'Fácil de imprimir, boa resolução, baixo warping',
+        weaknesses: 'Baixa resistência térmica (~55°C), frágil sob impacto',
+        best_for: 'Protótipos, modelos visuais, peças decorativas',
+        temp_resistance: 'Baixa (deforma acima de 55°C)',
+        mechanical: 'Rígido mas quebradiço',
+    },
+    PETG: {
+        name: 'PETG',
+        strengths: 'Boa resistência mecânica e química, flexível, durável',
+        weaknesses: 'Stringing, requer mais cooling, acabamento menos preciso que PLA',
+        best_for: 'Peças funcionais, mecânicas, uso externo coberto',
+        temp_resistance: 'Moderada (~75°C)',
+        mechanical: 'Flexível e resistente a impacto',
+    },
+    ABS: {
+        name: 'ABS',
+        strengths: 'Alta resistência térmica, boa resistência a impacto, pós-processável com acetona',
+        weaknesses: 'Warping severo, requer câmara fechada, emite odor',
+        best_for: 'Peças automotivas, carcaças, peças que aquecem',
+        temp_resistance: 'Alta (~100°C)',
+        mechanical: 'Resistente a impacto e flexão',
+    },
+    ASA: {
+        name: 'ASA',
+        strengths: 'Resistente a UV e intempéries, similar ao ABS sem amarelamento',
+        weaknesses: 'Mesmo warping do ABS, requer câmara fechada',
+        best_for: 'Peças externas expostas ao sol',
+        temp_resistance: 'Alta (~100°C)',
+        mechanical: 'Similar ao ABS com UV resistance',
+    },
+    TPU: {
+        name: 'TPU',
+        strengths: 'Flexível, absorve impacto, resistente a abrasão',
+        weaknesses: 'Muito lento, difícil de imprimir, stringing extremo',
+        best_for: 'Capas de celular, amortecedores, juntas, vedações',
+        temp_resistance: 'Moderada (~60°C)',
+        mechanical: 'Elástico (95A Shore)',
+    },
+    'PLA-CF': {
+        name: 'PLA com Fibra de Carbono',
+        strengths: 'Alta rigidez, baixo peso, aspecto profissional matte',
+        weaknesses: 'Abrasivo (desgasta nozzle de latão), frágil, requer nozzle endurecido',
+        best_for: 'Peças estruturais leves, drones, chassis',
+        temp_resistance: 'Baixa (~55°C, igual PLA)',
+        mechanical: 'Muito rígido mas não flexível',
+    },
+    'PETG-CF': {
+        name: 'PETG com Fibra de Carbono',
+        strengths: 'Rigidez + resistência térmica do PETG, lightweight',
+        weaknesses: 'Abrasivo, caro, difícil de imprimir bem',
+        best_for: 'Peças estruturais com resistência térmica',
+        temp_resistance: 'Moderada (~75°C)',
+        mechanical: 'Rígido com boa resistência térmica',
+    },
+};
+
+function getMaterialInsights(matA, matB) {
+    if (!matA || !matB || matA === matB) return '';
+    const infoA = MATERIAL_INFO[matA] || { name: matA };
+    const infoB = MATERIAL_INFO[matB] || { name: matB };
+
+    return `
+    <div class="info-block" style="margin-bottom:16px;">
+        <div class="info-block-header">Diferença de materiais: ${infoA.name} vs ${infoB.name}</div>
+        <div style="padding:12px; display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:.82rem;">
+            <div>
+                <strong style="color:var(--blue)">${infoA.name}</strong>
+                <div style="color:var(--muted); margin-top:4px;">
+                    <div><strong>Pontos fortes:</strong> ${infoA.strengths || '—'}</div>
+                    <div><strong>Limitações:</strong> ${infoA.weaknesses || '—'}</div>
+                    <div><strong>Melhor para:</strong> ${infoA.best_for || '—'}</div>
+                    <div><strong>Térmica:</strong> ${infoA.temp_resistance || '—'}</div>
+                    <div><strong>Mecânica:</strong> ${infoA.mechanical || '—'}</div>
+                </div>
+            </div>
+            <div>
+                <strong style="color:var(--blue)">${infoB.name}</strong>
+                <div style="color:var(--muted); margin-top:4px;">
+                    <div><strong>Pontos fortes:</strong> ${infoB.strengths || '—'}</div>
+                    <div><strong>Limitações:</strong> ${infoB.weaknesses || '—'}</div>
+                    <div><strong>Melhor para:</strong> ${infoB.best_for || '—'}</div>
+                    <div><strong>Térmica:</strong> ${infoB.temp_resistance || '—'}</div>
+                    <div><strong>Mecânica:</strong> ${infoB.mechanical || '—'}</div>
+                </div>
+            </div>
+        </div>
+        <div style="padding:0 12px 12px; font-size:.78rem; color:var(--orange);">
+            ⚠️ Materiais diferentes têm propriedades físicas distintas — a comparação de velocidades não reflete resistência, flexibilidade ou resistência térmica da peça final.
+        </div>
+    </div>`;
+}
+
+// Speed parameter explanations
+const SPEED_EXPLAIN = {
+    inner_wall_speed: { name: 'Parede interna', faster: 'Impressão mais rápida, pode vibrar mais', slower: 'Mais lento mas paredes mais precisas' },
+    outer_wall_speed: { name: 'Parede externa', faster: 'Menos tempo, acabamento pode piorar', slower: 'Melhor acabamento superficial' },
+    sparse_infill_speed: { name: 'Preenchimento', faster: 'Infill mais rápido (não visível)', slower: 'Infill mais lento (melhor adesão)' },
+    internal_solid_infill_speed: { name: 'Infill sólido', faster: 'Camadas sólidas internas mais rápidas', slower: 'Melhor adesão entre camadas' },
+    top_surface_speed: { name: 'Superfície topo', faster: 'Topo mais rápido, pode ter gaps', slower: 'Superfície superior mais lisa' },
+    initial_layer_speed: { name: '1ª camada', faster: 'Primeira camada mais rápida, risco de descolamento', slower: 'Melhor adesão à mesa' },
+    travel_speed: { name: 'Deslocamento', faster: 'Menos tempo morto entre movimentos', slower: 'Menos vibrações em movimentos longos' },
+    support_speed: { name: 'Suporte', faster: 'Suporte impresso mais rápido', slower: 'Suporte mais preciso (remoção mais fácil)' },
+    gap_infill_speed: { name: 'Gap infill', faster: 'Gaps estreitos preenchidos mais rápido', slower: 'Preenchimento mais consistente' },
+};
+
+// ─── Cascading logic for one column ──────────────────────────────────────────
+function setupSimColumn(prefix) {
+    const layerSel = document.getElementById(`sim-${prefix}-layer`);
+    const profileSel = document.getElementById(`sim-${prefix}-profile`);
+    const processInfo = document.getElementById(`sim-${prefix}-process-info`);
+    const materialSel = document.getElementById(`sim-${prefix}-material`);
+    const mfrSel = document.getElementById(`sim-${prefix}-manufacturer`);
+    const filamentSel = document.getElementById(`sim-${prefix}-filament`);
+    const filamentInfo = document.getElementById(`sim-${prefix}-filament-info`);
+
+    if (!layerSel) return;
+
+    // Populate layer heights
+    const layers = [...new Set(simData.processes.map(p => p.layer_height))].sort((a,b) => a-b);
+    layerSel.innerHTML = '<option value="">Selecione...</option>' +
+        layers.map(l => `<option value="${l}">${l}mm</option>`).join('');
+
+    // Populate materials
+    const materials = [...new Set(simData.filaments.map(f => f.material))].sort();
+    materialSel.innerHTML = '<option value="">Selecione...</option>' +
+        materials.map(m => `<option value="${m}">${m}</option>`).join('');
+
+    // Layer → Profile cascade
+    layerSel.addEventListener('change', () => {
+        const lh = parseFloat(layerSel.value);
+        profileSel.disabled = !lh;
+        processInfo.style.display = 'none';
+        if (!lh) { profileSel.innerHTML = '<option value="">Selecione a altura primeiro</option>'; trySimulate(); return; }
+
+        const matching = simData.processes.filter(p => parseFloat(p.layer_height) === lh);
+        const types = [...new Set(matching.map(p => p.profile_type))].sort((a,b) => {
+            const order = ['fast','standard','strong','detail','safe'];
+            return order.indexOf(a) - order.indexOf(b);
+        });
+        profileSel.innerHTML = '<option value="">Selecione o perfil...</option>' +
+            types.map(t => `<option value="${t}">${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('');
+        profileSel.disabled = false;
+        trySimulate();
+    });
+
+    // Profile selected → show match info
+    profileSel.addEventListener('change', () => {
+        const lh = parseFloat(layerSel.value);
+        const type = profileSel.value;
+        if (!lh || !type) { processInfo.style.display = 'none'; trySimulate(); return; }
+
+        const matching = simData.processes.filter(p =>
+            parseFloat(p.layer_height) === lh && p.profile_type === type
+        );
+        if (matching.length > 0) {
+            processInfo.style.display = 'block';
+            processInfo.innerHTML = `
+                <div class="match-name">${matching[0].profile_name}</div>
+                <div class="match-detail">${matching.length} perfis encontrados (${matching.map(p=>p.material).join(', ')})</div>
+            `;
+        }
+        trySimulate();
+    });
+
+    // Material → Manufacturer cascade
+    materialSel.addEventListener('change', () => {
+        const mat = materialSel.value;
+        mfrSel.disabled = !mat;
+        filamentSel.disabled = true;
+        filamentSel.innerHTML = '<option value="">Selecione o fabricante primeiro</option>';
+        filamentInfo.style.display = 'none';
+        if (!mat) { mfrSel.innerHTML = '<option value="">Selecione o material primeiro</option>'; trySimulate(); return; }
+
+        const matching = simData.filaments.filter(f => f.material === mat);
+        const mfrs = [...new Set(matching.map(f => f.manufacturer))].sort();
+        mfrSel.innerHTML = '<option value="">Selecione...</option>' +
+            mfrs.map(m => `<option value="${m}">${m}</option>`).join('');
+        mfrSel.disabled = false;
+        trySimulate();
+    });
+
+    // Manufacturer → Filament cascade
+    mfrSel.addEventListener('change', () => {
+        const mat = materialSel.value;
+        const mfr = mfrSel.value;
+        filamentSel.disabled = !mfr;
+        filamentInfo.style.display = 'none';
+        if (!mfr) { filamentSel.innerHTML = '<option value="">Selecione o fabricante primeiro</option>'; trySimulate(); return; }
+
+        const matching = simData.filaments.filter(f => f.material === mat && f.manufacturer === mfr);
+        filamentSel.innerHTML = '<option value="">Selecione...</option>' +
+            matching.map(f => `<option value="${f.id}">${f.commercial_name} (MVS ${f.max_volumetric_speed})</option>`).join('');
+        filamentSel.disabled = false;
+        trySimulate();
+    });
+
+    // Filament selected → show info
+    filamentSel.addEventListener('change', () => {
+        const fid = parseInt(filamentSel.value);
+        if (!fid) { filamentInfo.style.display = 'none'; trySimulate(); return; }
+
+        const fil = simData.filaments.find(f => f.id === fid);
+        if (fil) {
+            filamentInfo.style.display = 'block';
+            filamentInfo.innerHTML = `
+                <div class="match-name">${fil.manufacturer} — ${fil.commercial_name}</div>
+                <div class="match-detail">MVS: ${fil.max_volumetric_speed} mm³/s · Material: ${fil.material}</div>
+            `;
+        }
+        trySimulate();
+    });
+}
+
+// ─── Get selected IDs from a column ─────────────────────────────────────────
+function getSimSelection(prefix) {
+    const layerSel = document.getElementById(`sim-${prefix}-layer`);
+    const profileSel = document.getElementById(`sim-${prefix}-profile`);
+    const materialSel = document.getElementById(`sim-${prefix}-material`);
+    const filamentSel = document.getElementById(`sim-${prefix}-filament`);
+
+    if (!layerSel) return null;
+
+    const lh = parseFloat(layerSel.value);
+    const type = profileSel.value;
+    const mat = materialSel.value;
+    const fid = parseInt(filamentSel.value);
+
+    if (!lh || !type || !fid) return null;
+
+    // Find the process that matches layer_height + profile_type + material (from filament)
+    const filament = simData.filaments.find(f => f.id === fid);
+    if (!filament) return null;
+
+    // Match process by layer_height + profile_type + filament's material
+    let process = simData.processes.find(p =>
+        parseFloat(p.layer_height) === lh && p.profile_type === type && p.material === filament.material
+    );
+    // Fallback: match without material constraint (use first matching)
+    if (!process) {
+        process = simData.processes.find(p =>
+            parseFloat(p.layer_height) === lh && p.profile_type === type
+        );
+    }
+    if (!process) return null;
+
+    return { processId: process.id, filamentId: fid };
+}
+
+// ─── Auto-simulate when both sides are ready ────────────────────────────────
+async function trySimulate() {
+    const selA = getSimSelection('a');
+    if (!selA) { simResult.innerHTML = '<div class="empty">Selecione altura, perfil e filamento na Combinação A para simular.</div>'; return; }
+
+    const rA = await fetch(`/api/simulate?process_id=${selA.processId}&filament_id=${selA.filamentId}`);
+    if (!rA.ok) { simResult.innerHTML = '<div class="empty">Erro ao simular.</div>'; return; }
+    const dataA = await rA.json();
+
+    let dataB = null;
+    const selB = getSimSelection('b');
+    if (selB) {
+        const rB = await fetch(`/api/simulate?process_id=${selB.processId}&filament_id=${selB.filamentId}`);
+        if (rB.ok) dataB = await rB.json();
+    }
+
+    renderSimResult(dataA, dataB);
+}
+
+// ─── Render simulation result ────────────────────────────────────────────────
+function formatSpeed(val, capped) {
+    if (val === undefined || val === null) return '—';
+    const cls = capped ? 'val-capped' : 'val-normal';
+    const suffix = capped ? ' ⚡' : '';
+    return `<span class="${cls}">${Math.round(val)} mm/s${suffix}</span>`;
+}
+
+function diffCell(valA, valB, field) {
+    if (valA === undefined || valB === undefined) return '<td class="diff-same">—</td>';
+    const diff = valB - valA;
+    const pct = valA > 0 ? Math.round((diff / valA) * 100) : 0;
+    const info = SPEED_EXPLAIN[field] || {};
+
+    if (Math.abs(pct) < 2) return `<td><span class="diff-same">≈ igual</span></td>`;
+
+    const cls = diff > 0 ? 'diff-better' : 'diff-worse';
+    const arrow = diff > 0 ? '▲' : '▼';
+    const explain = diff > 0 ? (info.faster || '') : (info.slower || '');
+    return `<td><span class="${cls}">${arrow} ${Math.abs(pct)}%</span>${explain ? `<br><span class="diff-explain">${explain}</span>` : ''}</td>`;
+}
+
+function renderSimResult(a, b) {
+    const speedFields = Object.keys(SPEED_EXPLAIN);
+    const hasB = !!b;
+
+    const colBHeader = hasB
+        ? `<th>${b.process.name}<br><span style="font-weight:400;font-size:.72rem;color:var(--muted)">${b.filament.manufacturer} ${b.filament.commercial_name} (MVS ${b.filament.mvs})</span></th><th>Diferença</th>`
+        : '';
+
+    const speedRows = speedFields.map(field => {
+        const sA = a.simulation.speeds[field];
+        const sB = hasB ? (b.simulation.speeds[field] || {}) : null;
+        if (!sA) return '';
+        const info = SPEED_EXPLAIN[field];
+        const colA = `<td>${formatSpeed(sA.effective, sA.capped)}${sA.capped ? `<br><span class="diff-explain">alvo: ${sA.target} → cap MVS</span>` : ''}</td>`;
+        const colB = hasB && sB.effective !== undefined
+            ? `<td>${formatSpeed(sB.effective, sB.capped)}${sB.capped ? `<br><span class="diff-explain">alvo: ${sB.target} → cap MVS</span>` : ''}</td>`
+            : (hasB ? '<td>—</td>' : '');
+        const colDiff = hasB ? diffCell(sA.effective, sB?.effective, field) : '';
+        return `<tr><td class="param-name">${info.name}</td>${colA}${colB}${colDiff}</tr>`;
+    }).join('');
+
+    const structFields = [
+        { key: 'wall_loops', name: 'Paredes', unit: '' },
+        { key: 'sparse_infill_density', name: 'Infill', unit: '' },
+        { key: 'sparse_infill_pattern', name: 'Padrão infill', unit: '' },
+        { key: 'top_shell_layers', name: 'Camadas topo', unit: '' },
+        { key: 'bottom_shell_layers', name: 'Camadas base', unit: '' },
+        { key: 'wall_sequence', name: 'Sequência paredes', unit: '' },
+        { key: 'seam_position', name: 'Costura', unit: '' },
+        { key: 'default_acceleration', name: 'Aceleração padrão', unit: ' mm/s²' },
+        { key: 'inner_wall_acceleration', name: 'Aceleração paredes int.', unit: ' mm/s²' },
+        { key: 'outer_wall_acceleration', name: 'Aceleração paredes ext.', unit: ' mm/s²' },
+    ];
+
+    const structRows = structFields.map(({ key, name, unit }) => {
+        const vA = a.process[key];
+        const vB = hasB ? b.process[key] : null;
+        const colA = `<td>${vA != null ? vA + unit : '—'}</td>`;
+        const colB = hasB ? `<td>${vB != null ? vB + unit : '—'}</td>` : '';
+        const colDiff = hasB
+            ? (String(vA) === String(vB) ? '<td><span class="diff-same">≈ igual</span></td>' : '<td><span class="diff-worse">≠ diferente</span></td>')
+            : '';
+        return `<tr><td class="param-name">${name}</td>${colA}${colB}${colDiff}</tr>`;
+    }).join('');
+
+    const filFields = [
+        { key: 'mvs', name: 'MVS', unit: ' mm³/s' },
+        { key: 'nozzle_temp', name: 'Nozzle', unit: '°C' },
+        { key: 'bed_temp', name: 'Mesa', unit: '°C' },
+        { key: 'flow_ratio', name: 'Flow ratio', unit: '' },
+    ];
+
+    const filRows = filFields.map(({ key, name, unit }) => {
+        const vA = a.filament[key];
+        const vB = hasB ? b.filament[key] : null;
+        const colA = `<td>${vA != null ? vA + unit : '—'}</td>`;
+        const colB = hasB ? `<td>${vB != null ? vB + unit : '—'}</td>` : '';
+        const colDiff = hasB
+            ? (String(vA) === String(vB) ? '<td><span class="diff-same">≈ igual</span></td>' : '<td><span class="diff-worse">≠ diferente</span></td>')
+            : '';
+        return `<tr><td class="param-name">${name}</td>${colA}${colB}${colDiff}</tr>`;
+    }).join('');
+
+    const capCountA = Object.values(a.simulation.speeds).filter(s => s.capped).length;
+    const capCountB = hasB ? Object.values(b.simulation.speeds).filter(s => s.capped).length : 0;
+
+    const summary = `
+        <div style="display:grid; grid-template-columns:${hasB ? '1fr 1fr' : '1fr'}; gap:12px; margin-bottom:16px;">
+            <div class="info-block">
+                <div class="info-block-header">A — ${a.process.profile_type} + ${a.filament.commercial_name}</div>
+                <div style="padding:10px 12px; font-size:.82rem; color:var(--muted);">
+                    Cap volumétrico: <strong style="color:var(--text)">${Math.round(a.simulation.max_speed_from_mvs)} mm/s</strong> (MVS ${a.filament.mvs} @ ${a.process.layer_height}mm)<br>
+                    Velocidades limitadas: <strong style="color:${capCountA > 0 ? 'var(--orange)' : 'var(--green)'}">${capCountA} de ${Object.keys(a.simulation.speeds).length}</strong>
+                </div>
+            </div>
+            ${hasB ? `
+            <div class="info-block">
+                <div class="info-block-header">B — ${b.process.profile_type} + ${b.filament.commercial_name}</div>
+                <div style="padding:10px 12px; font-size:.82rem; color:var(--muted);">
+                    Cap volumétrico: <strong style="color:var(--text)">${Math.round(b.simulation.max_speed_from_mvs)} mm/s</strong> (MVS ${b.filament.mvs} @ ${b.process.layer_height}mm)<br>
+                    Velocidades limitadas: <strong style="color:${capCountB > 0 ? 'var(--orange)' : 'var(--green)'}">${capCountB} de ${Object.keys(b.simulation.speeds).length}</strong>
+                </div>
+            </div>` : ''}
+        </div>`;
+
+    const numCols = hasB ? 4 : 2;
+
+    // Material comparison insights (when materials differ)
+    const materialInsights = hasB ? getMaterialInsights(a.filament.material, b.filament.material) : '';
+
+    simResult.innerHTML = `
+        ${materialInsights}
+        ${summary}
+        <div class="table-wrap">
+        <table class="sim-table">
+            <thead><tr>
+                <th style="min-width:140px">Parâmetro</th>
+                <th>${a.process.name}<br><span style="font-weight:400;font-size:.72rem;color:var(--muted)">${a.filament.manufacturer} ${a.filament.commercial_name} (MVS ${a.filament.mvs})</span></th>
+                ${colBHeader}
+            </tr></thead>
+            <tbody>
+                <tr class="sim-section"><td colspan="${numCols}">Velocidades efetivas</td></tr>
+                ${speedRows}
+                <tr class="sim-section"><td colspan="${numCols}">Estrutura da peça</td></tr>
+                ${structRows}
+                <tr class="sim-section"><td colspan="${numCols}">Filamento</td></tr>
+                ${filRows}
+            </tbody>
+        </table>
+        </div>`;
+}
+
+// ─── Init simulation ─────────────────────────────────────────────────────────
+async function initSimulation() {
+    try {
+        const r = await fetch('/api/simulation-options');
+        simData = await r.json();
+        setupSimColumn('a');
+        setupSimColumn('b');
+    } catch (e) {
+        console.error('Failed to load simulation options', e);
+    }
+}
+initSimulation();

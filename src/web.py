@@ -112,6 +112,31 @@ def register_routes(app):
         conn.close()
         return jsonify([dict(row) for row in rows])
 
+    # ─── Simulation API ──────────────────────────────────────────────────────
+
+    @app.get("/api/simulate")
+    def simulate_combination():
+        """Calcula velocidades efetivas de uma combinação processo + filamento.
+
+        Query params:
+            process_id: ID do perfil de processo
+            filament_id: ID do perfil de filamento
+        """
+        process_id = request.args.get("process_id", type=int)
+        filament_id = request.args.get("filament_id", type=int)
+        if not process_id or not filament_id:
+            return jsonify({"error": "process_id and filament_id required"}), 400
+
+        result = services.simulate_combination(process_id, filament_id)
+        if result is None:
+            return jsonify({"error": "profile not found"}), 404
+        return jsonify(result)
+
+    @app.get("/api/simulation-options")
+    def simulation_options():
+        """Lista opções disponíveis para a simulação (processos e filamentos)."""
+        return jsonify(services.get_simulation_options())
+
     # ─── Orca Slicer Downloads ───────────────────────────────────────────────
 
     @app.get("/download/orca/filament")
