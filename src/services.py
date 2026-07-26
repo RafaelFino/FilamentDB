@@ -555,6 +555,7 @@ def simulate_combination(process_id, filament_id):
             "nozzle_temp": fil_dict.get("nozzle_temp_initial"),
             "bed_temp": fil_dict.get("bed_temp"),
             "flow_ratio": fil_dict.get("flow_ratio"),
+            "confidence": fil_dict.get("confidence", 50),
         },
         "simulation": {
             "max_speed_from_mvs": round(max_speed_from_mvs, 1),

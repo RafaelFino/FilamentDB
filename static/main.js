@@ -1203,6 +1203,97 @@ function diffCell(valA, valB, field) {
     return `<td><span class="${cls}">${arrow} ${Math.abs(pct)}%</span>${explain ? `<br><span class="diff-explain">${explain}</span>` : ''}</td>`;
 }
 
+// ─── Score calculation for simulation combinations ──────────────────────────
+function calcCombinationScore(data) {
+    // 1. Confiabilidade (0-100): direto do perfil do filamento
+    const confidence = data.filament.confidence || 50;
+
+    // 2. Acabamento (0-100): baseado no profile type, wall sequence, layer height
+    const profileTypeFinish = {
+        detail: 95, safe: 75, standard: 65, strong: 60, fast: 30,
+    };
+    const typeScore = profileTypeFinish[data.process.profile_type] || 50;
+
+    // Wall sequence: outer-first é melhor para acabamento
+    const wallSeqBonus = (data.process.wall_sequence || '').includes('outer') ? 10 : 0;
+
+    // Layer height: menor = melhor acabamento (0.08 → +20, 0.20 → 0, 0.28 → -10)
+    const lh = data.process.layer_height || 0.2;
+    const lhBonus = Math.round((0.20 - lh) * 100); // 0.08→+12, 0.12→+8, 0.16→+4, 0.20→0, 0.24→-4, 0.28→-8
+
+    const finish = Math.min(100, Math.max(0, typeScore + wallSeqBonus + lhBonus));
+
+    // 3. Velocidade (0-100): quanto do potencial da máquina é aproveitado
+    // Baseado na proporção de velocidades efetivas vs. máximo da K2 (500 mm/s para extrusão)
+    const speeds = data.simulation.speeds;
+    const extrusionFields = Object.keys(speeds).filter(k => k !== 'travel_speed');
+    if (extrusionFields.length === 0) return { confidence, finish, speed: 50, overall: Math.round((confidence + finish + 50) / 3) };
+
+    const avgEffective = extrusionFields.reduce((sum, k) => sum + (speeds[k].effective || 0), 0) / extrusionFields.length;
+    // Normalizar: 0 mm/s → 0, 350 mm/s → 100 (referência: velocidade média alta típica na K2)
+    const speed = Math.min(100, Math.max(0, Math.round((avgEffective / 350) * 100)));
+
+    // Overall: média ponderada (velocidade 35%, acabamento 40%, confiabilidade 25%)
+    const overall = Math.round(speed * 0.35 + finish * 0.40 + confidence * 0.25);
+
+    return { confidence, finish, speed, overall };
+}
+
+function renderScoreCard(score, label, capInfo) {
+    const colorFor = (val) => val >= 80 ? 'var(--green)' : val >= 60 ? '#ffd84d' : val >= 40 ? 'var(--orange)' : '#ff7b72';
+    const capColor = capInfo.count > 0 ? 'var(--orange)' : 'var(--green)';
+    const capPct = Math.round((capInfo.count / capInfo.total) * 100);
+
+    return `
+    <div class="info-block" style="flex:1;">
+        <div class="info-block-header">${label}</div>
+        <div style="padding:12px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:baseline; justify-content:center; gap:4px;">
+                <span style="font-size:2.2rem; font-weight:700; color:${colorFor(score.overall)}">${score.overall}</span>
+                <span style="font-size:.8rem; color:var(--muted)">/100</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
+                    <span style="font-size:.72rem; color:var(--muted)">Velocidade</span>
+                    <span style="font-size:.9rem; font-weight:600; color:${colorFor(score.speed)}">${score.speed}</span>
+                    <div style="width:100%; height:4px; border-radius:2px; background:var(--border);">
+                        <div style="width:${score.speed}%; height:100%; border-radius:2px; background:${colorFor(score.speed)};"></div>
+                    </div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
+                    <span style="font-size:.72rem; color:var(--muted)">Acabamento</span>
+                    <span style="font-size:.9rem; font-weight:600; color:${colorFor(score.finish)}">${score.finish}</span>
+                    <div style="width:100%; height:4px; border-radius:2px; background:var(--border);">
+                        <div style="width:${score.finish}%; height:100%; border-radius:2px; background:${colorFor(score.finish)};"></div>
+                    </div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
+                    <span style="font-size:.72rem; color:var(--muted)">Confiabilidade</span>
+                    <span style="font-size:.9rem; font-weight:600; color:${colorFor(score.confidence)}">${score.confidence}</span>
+                    <div style="width:100%; height:4px; border-radius:2px; background:var(--border);">
+                        <div style="width:${score.confidence}%; height:100%; border-radius:2px; background:${colorFor(score.confidence)};"></div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top:4px; padding-top:8px; border-top:1px solid var(--border); display:flex; align-items:center; gap:8px;">
+                <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                        <span style="font-size:.72rem; color:var(--muted)">Velocidades limitadas pelo MVS</span>
+                        <span style="font-size:.78rem; font-weight:600; color:${capColor}">${capInfo.count} de ${capInfo.total}</span>
+                    </div>
+                    <div style="width:100%; height:6px; border-radius:3px; background:var(--border); overflow:hidden; display:flex;">
+                        ${Array.from({length: capInfo.total}, (_, i) => {
+                            const isCapped = i < capInfo.count;
+                            const bg = isCapped ? 'var(--orange)' : 'var(--green)';
+                            return `<div style="flex:1; height:100%; background:${bg}; margin-right:${i < capInfo.total - 1 ? '1px' : '0'};"></div>`;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
 function renderSimResult(a, b) {
     const speedFields = Object.keys(SPEED_EXPLAIN);
     const hasB = !!b;
@@ -1328,7 +1419,19 @@ function renderSimResult(a, b) {
     // Material comparison insights (when materials differ)
     const materialInsights = hasB ? getMaterialInsights(a.filament.material, b.filament.material) : '';
 
+    // Score cards
+    const scoreA = calcCombinationScore(a);
+    const scoreB = hasB ? calcCombinationScore(b) : null;
+    const capInfoA = { count: capCountA, total: Object.keys(a.simulation.speeds).filter(k => k !== 'travel_speed').length };
+    const capInfoB = hasB ? { count: capCountB, total: Object.keys(b.simulation.speeds).filter(k => k !== 'travel_speed').length } : null;
+    const scoreSection = `
+        <div style="display:flex; gap:12px; margin-bottom:16px;">
+            ${renderScoreCard(scoreA, `Score A — ${a.process.profile_type} + ${a.filament.commercial_name}`, capInfoA)}
+            ${hasB ? renderScoreCard(scoreB, `Score B — ${b.process.profile_type} + ${b.filament.commercial_name}`, capInfoB) : ''}
+        </div>`;
+
     simResult.innerHTML = `
+        ${scoreSection}
         ${materialInsights}
         ${summary}
         <div class="table-wrap">
