@@ -136,6 +136,73 @@ graph LR
 
 *Cap = MVS / (0.20 × 0.45)*
 
+## Simulador de Combinações (Web Dashboard)
+
+O dashboard web inclui um simulador interativo que calcula as velocidades efetivas resultantes da combinação de um perfil de processo com um perfil de filamento — exatamente como o slicer faria em runtime.
+
+### Como funciona
+
+```mermaid
+flowchart LR
+    subgraph Seleção do Processo
+        LH[Altura de camada] --> PT[Profile Type]
+        PT --> MAT[Material]
+    end
+    subgraph Seleção do Filamento
+        MAT --> MFR[Fabricante]
+        MFR --> FIL[Filamento específico]
+    end
+    subgraph Resultado
+        MAT --> SIM[Simulação]
+        FIL --> SIM
+        SIM --> VEL[Velocidades efetivas<br/>com cap MVS aplicado]
+    end
+```
+
+### Fluxo de uso
+
+1. **Escolha o processo** em 3 passos:
+   - Altura de camada (0.08 a 0.28mm)
+   - Profile type (Fast, Standard, Strong, Detail, Safe)
+   - Material (PLA, PETG, ABS...) — determina qual perfil de processo é usado
+
+2. **Escolha o filamento** em 2 passos (filtrado pelo material selecionado):
+   - Fabricante (Voolt3D, Sunlu, Creality...)
+   - Filamento específico (mostra MVS de cada opção)
+
+3. **Resultado automático**: assim que ambos estão selecionados, a simulação exibe:
+   - Velocidades efetivas (com indicação visual quando o MVS limita: ⚡)
+   - Estrutura da peça (walls, infill, layers)
+   - Parâmetros térmicos do filamento
+
+### Comparação lado a lado
+
+A interface permite preencher uma **Combinação B** ao lado da A. Quando ambas estão completas, uma terceira coluna aparece mostrando:
+
+- **Diferença percentual** de cada velocidade (▲ mais rápido / ▼ mais lento)
+- **Explicação prática** do impacto (ex: "Melhor acabamento superficial" ou "Impressão mais rápida, pode vibrar mais")
+- **Comparação de materiais**: quando os materiais são diferentes, um painel extra detalha as propriedades físicas de cada um (resistência térmica, mecânica, uso recomendado)
+
+### Exemplo: comparar PLA Velvet Fast vs PETG HF Standard
+
+| O que a simulação mostra | Significado |
+|--------------------------|-------------|
+| Inner wall: 500 mm/s → **277 mm/s** ⚡ | Voolt Velvet (MVS 25) limita a velocidade alvo de 500 |
+| Inner wall B: 229 mm/s → **133 mm/s** ⚡ | Voolt PETG HF (MVS 12) limita muito mais |
+| Diferença: ▲ 108% | A combinação A imprime paredes 2x mais rápido |
+| Material: PLA vs PETG | PETG tem melhor resistência térmica e química |
+
+### Acesso
+
+```bash
+# Iniciar o servidor web
+.venv/bin/python3 -m src.app
+
+# Acessar no browser
+http://localhost:5000
+# Navegar para 🔬 Simulação na sidebar
+```
+
 ## Uso rápido
 
 ```bash

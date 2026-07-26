@@ -624,56 +624,44 @@
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:8px;">
-                <!-- Column A selectors -->
+                <!-- Column A -->
                 <div class="info-block">
                     <div class="info-block-header">Combinação A</div>
                     <div style="padding:12px; display:flex; flex-direction:column; gap:8px;">
-                        <label class="sim-label">Altura de camada</label>
-                        <select id="sim-a-layer" class="sim-select"><option value="">Selecione...</option></select>
-
-                        <label class="sim-label">Perfil de processo</label>
-                        <select id="sim-a-profile" class="sim-select" disabled><option value="">Selecione a altura primeiro</option></select>
-
+                        <label class="sim-label">Processo</label>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+                            <select id="sim-a-layer" class="sim-select"><option value="">Altura...</option></select>
+                            <select id="sim-a-profile" class="sim-select" disabled><option value="">Perfil...</option></select>
+                            <select id="sim-a-material" class="sim-select" disabled><option value="">Material...</option></select>
+                        </div>
                         <div id="sim-a-process-info" class="sim-match" style="display:none;"></div>
 
-                        <hr style="border:none; border-top:1px solid var(--border); margin:6px 0;">
-
-                        <label class="sim-label">Material</label>
-                        <select id="sim-a-material" class="sim-select"><option value="">Selecione...</option></select>
-
-                        <label class="sim-label">Fabricante</label>
-                        <select id="sim-a-manufacturer" class="sim-select" disabled><option value="">Selecione o material primeiro</option></select>
-
-                        <label class="sim-label">Filamento</label>
-                        <select id="sim-a-filament" class="sim-select" disabled><option value="">Selecione o fabricante primeiro</option></select>
-
+                        <label class="sim-label" style="margin-top:8px;">Filamento</label>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                            <select id="sim-a-manufacturer" class="sim-select" disabled><option value="">Fabricante...</option></select>
+                            <select id="sim-a-filament" class="sim-select" disabled><option value="">Filamento...</option></select>
+                        </div>
                         <div id="sim-a-filament-info" class="sim-match" style="display:none;"></div>
                     </div>
                 </div>
 
-                <!-- Column B selectors -->
+                <!-- Column B -->
                 <div class="info-block">
                     <div class="info-block-header">Combinação B</div>
                     <div style="padding:12px; display:flex; flex-direction:column; gap:8px;">
-                        <label class="sim-label">Altura de camada</label>
-                        <select id="sim-b-layer" class="sim-select"><option value="">Selecione...</option></select>
-
-                        <label class="sim-label">Perfil de processo</label>
-                        <select id="sim-b-profile" class="sim-select" disabled><option value="">Selecione a altura primeiro</option></select>
-
+                        <label class="sim-label">Processo</label>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+                            <select id="sim-b-layer" class="sim-select"><option value="">Altura...</option></select>
+                            <select id="sim-b-profile" class="sim-select" disabled><option value="">Perfil...</option></select>
+                            <select id="sim-b-material" class="sim-select" disabled><option value="">Material...</option></select>
+                        </div>
                         <div id="sim-b-process-info" class="sim-match" style="display:none;"></div>
 
-                        <hr style="border:none; border-top:1px solid var(--border); margin:6px 0;">
-
-                        <label class="sim-label">Material</label>
-                        <select id="sim-b-material" class="sim-select"><option value="">Selecione...</option></select>
-
-                        <label class="sim-label">Fabricante</label>
-                        <select id="sim-b-manufacturer" class="sim-select" disabled><option value="">Selecione o material primeiro</option></select>
-
-                        <label class="sim-label">Filamento</label>
-                        <select id="sim-b-filament" class="sim-select" disabled><option value="">Selecione o fabricante primeiro</option></select>
-
+                        <label class="sim-label" style="margin-top:8px;">Filamento</label>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                            <select id="sim-b-manufacturer" class="sim-select" disabled><option value="">Fabricante...</option></select>
+                            <select id="sim-b-filament" class="sim-select" disabled><option value="">Filamento...</option></select>
+                        </div>
                         <div id="sim-b-filament-info" class="sim-match" style="display:none;"></div>
                     </div>
                 </div>
@@ -687,6 +675,6 @@
 
 <script>window.treeData = {{ tree | tojson }};</script>
 <script>window.processTreeData = {{ process_tree | tojson }};</script>
-<script src="{{ url_for('static', filename='main.js') }}?v=6"></script>
+<script src="{{ url_for('static', filename='main.js') }}?v=10"></script>
 </body>
 </html>
