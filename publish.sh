@@ -28,8 +28,8 @@ SOURCE_ORCA_FILAMENTS="${SCRIPT_DIR}/OrcaSlicer/filament"
 SOURCE_ORCA_PROCESS="${SCRIPT_DIR}/OrcaSlicer/process"
 DB_PATH="${SCRIPT_DIR}/filament.db"
 
-FILAMENT_DEST="${FILAMENT_DEST:-${HOME}/filament-db/filament}"
-PROCESS_DEST="${PROCESS_DEST:-${HOME}/filament-db/process}"
+FILAMENT_DEST="${FILAMENT_DEST:-${HOME}/filament-db/creality-print/filament}"
+PROCESS_DEST="${PROCESS_DEST:-${HOME}/filament-db/creality-print/process}"
 ORCA_FILAMENT_DEST="${ORCA_FILAMENT_DEST:-${HOME}/filament-db/orca/filament}"
 ORCA_PROCESS_DEST="${ORCA_PROCESS_DEST:-${HOME}/filament-db/orca/process}"
 

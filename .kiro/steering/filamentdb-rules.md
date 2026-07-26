@@ -83,27 +83,39 @@ Os demais fabricantes ficam no banco (filament-data/) para referência mas não 
 
 ## Publicação Local
 
-Destino: `~/filament-db/`
-- `~/filament-db/filament/` — perfis de filamento (.json + .info)
-- `~/filament-db/process/` — perfis de processo (apenas .json, **sem .info**)
+Destino: `~/filament-db/` com subpastas por slicer:
+
+```
+~/filament-db/
+├── creality-print/
+│   ├── filament/   ← .json + .info
+│   └── process/    ← apenas .json
+├── orca/
+│   ├── filament/   ← .json
+│   └── process/    ← .json
+└── diff/           ← perfis órfãos arquivados pelos scripts de inicialização
+```
 
 Ao publicar para a pasta local, copiar apenas os perfis filtrados (fabricantes habilitados, combinações válidas).
 
-## Creality Print — Inicialização
+## Inicialização dos Slicers
 
-O Creality Print é iniciado via script `run-creality-print.sh` que copia os perfis publicados para o diretório do usuário do slicer antes de abrir:
+Cada slicer tem um script em `~/run-<slicer>.sh` que sincroniza perfis de `~/filament-db/<slicer>/` para o diretório do usuário do slicer, arquiva perfis órfãos em `~/filament-db/diff/` e abre o aplicativo.
 
-```bash
-#!/bin/zsh
-cp ~/filament-db/filament/* ~/.config/Creality/Creality\ Print/7.0/user/8401264742/filament/
-cp ~/filament-db/process/*.json ~/.config/Creality/Creality\ Print/7.0/user/8401264742/process/
+### Creality Print
 
-creality-print
-```
+- Script: `~/run-creality-print.sh`
+- Origem: `~/filament-db/creality-print/{filament,process}`
+- Destino: `~/.config/Creality/Creality Print/7.0/user/8401264742/{filament,process}`
+- `filament/` — recebe .json + .info
+- `process/` — recebe apenas .json
 
-Diretório do Creality Print: `~/.config/Creality/Creality Print/7.0/user/8401264742/`
-- `filament/` — recebe .json + .info dos filamentos
-- `process/` — recebe apenas .json dos processos
+### Orca Slicer
+
+- Script: `~/run-orca-slicer.sh`
+- Origem: `~/filament-db/orca/{filament,process}`
+- Destino: `~/.config/OrcaSlicer/user/default/{filament,process}`
+- Ambos recebem apenas .json
 
 ## Estrutura de Dados
 
