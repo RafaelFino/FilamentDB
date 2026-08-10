@@ -491,7 +491,10 @@ def simulate_combination(process_id, filament_id):
         "SELECT name FROM manufacturers WHERE id = ?", (fil["manufacturer_id"],)
     ).fetchone()
     fil_material = conn.execute(
-        "SELECT name FROM materials WHERE id = ?", (fil["material_id"],)
+        "SELECT name, strength FROM materials WHERE id = ?", (fil["material_id"],)
+    ).fetchone()
+    proc_material = conn.execute(
+        "SELECT name, strength FROM materials WHERE id = ?", (proc["material_id"],)
     ).fetchone()
     conn.close()
 
@@ -533,6 +536,7 @@ def simulate_combination(process_id, filament_id):
             "profile_type": proc_dict["profile_type"],
             "layer_height": layer_height,
             "material": material["name"] if material else "?",
+            "material_strength": proc_material["strength"] if proc_material else 50,
             "wall_loops": proc_dict.get("wall_loops"),
             "sparse_infill_density": proc_dict.get("sparse_infill_density"),
             "sparse_infill_pattern": proc_dict.get("sparse_infill_pattern"),

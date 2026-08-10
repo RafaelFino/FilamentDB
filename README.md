@@ -61,7 +61,7 @@ Se o processo pede 600mm/s mas o filamento aguenta 277mm/s, o slicer reduz autom
 
 ```mermaid
 graph LR
-    F[Fast<br/>1.50x] --> E[Economy<br/>1.35x]
+    F[Fast<br/>1.50x] --> E[Economy<br/>1.00x]
     E --> S[Standard<br/>1.00x]
     S --> ST[Strong<br/>0.70x]
     S --> D[Detail<br/>0.55x]
@@ -78,7 +78,7 @@ graph LR
 | Profile Type | Foco | Walls | Infill | Seam | Speed × | Accel × | Quality × |
 |--------------|------|-------|--------|------|---------|---------|-----------|
 | **Fast** | Velocidade máxima | 3 | 12% grid | nearest | 1.50 | 1.50 | — |
-| **Economy** | Economia de filamento | 2 | 8% grid | nearest | 1.35 | 1.40 | — |
+| **Economy** | Economia de filamento | 2 | 8% grid | nearest | 1.00 | 1.00 | — |
 | **Standard** | Equilíbrio geral | 4 | 15% gyroid | aligned | 1.00 | 1.00 | — |
 | **Strong** | Resistência mecânica | 6 | 50% gyroid | aligned | 0.85 | 0.80 | — |
 | **Detail** | Qualidade visual (0.08-0.16mm) | 5 | 20% gyroid | back | 0.80 | 0.75 | 0.45 |
@@ -88,25 +88,25 @@ graph LR
 
 ### Velocidades Resultantes — PLA (inner_wall / outer_wall / infill mm/s)
 
-| Profile Type | Inner Wall | Outer Wall | Infill | Top Surface | Travel | Aceleração |
-|--------------|-----------|-----------|--------|-------------|--------|-----------|
-| **Fast** | 600 | 525 | 600 | 450 | 800 | 20000 |
-| **Economy** | 600 | 472 | 600 | 405 | 800 | 20000 |
-| **Standard** | 450 | 350 | 500 | 300 | 700 | 18000 |
-| **Strong** | 382 | 297 | 425 | 255 | 595 | 14400 |
-| **Detail** | 360 | 157 | 400 | 135 | 560 | 13500 |
-| **Safe** | 315 | 175 | 350 | 150 | 490 | 10800 |
+| Profile Type | Layer Height | Inner Wall | Outer Wall | Infill | Top Surface | Travel | Aceleração |
+|--------------|-------------|-----------|-----------|--------|-------------|--------|-----------|
+| **Fast** | 0.20 / 0.28 | 600 | 525 | 600 | 450 | 800 | 20000 |
+| **Economy** | 0.20 | 450 | 350 | 500 | 300 | 700 | 18000 |
+| **Standard** | 0.20 / 0.28 | 450 | 350 | 500 | 300 | 700 | 18000 |
+| **Strong** | 0.20 | 382 | 297 | 425 | 255 | 595 | 14400 |
+| **Detail** | 0.08-0.16 | 360 | 157 | 400 | 135 | 560 | 13500 |
+| **Safe** | 0.20 | 315 | 175 | 350 | 150 | 490 | 10800 |
 
 ### Velocidades Resultantes — PETG (inner_wall / outer_wall / infill mm/s)
 
-| Profile Type | Inner Wall | Outer Wall | Infill | Top Surface | Travel | Aceleração |
-|--------------|-----------|-----------|--------|-------------|--------|-----------|
-| **Fast** | 570 | 450 | 600 | 375 | 800 | 20000 |
-| **Economy** | 513 | 405 | 580 | 337 | 800 | 20000 |
-| **Standard** | 380 | 300 | 430 | 250 | 650 | 15000 |
-| **Strong** | 323 | 255 | 365 | 212 | 552 | 12000 |
-| **Detail** | 304 | 135 | 344 | 112 | 520 | 11250 |
-| **Safe** | 266 | 150 | 301 | 125 | 455 | 9000 |
+| Profile Type | Layer Height | Inner Wall | Outer Wall | Infill | Top Surface | Travel | Aceleração |
+|--------------|-------------|-----------|-----------|--------|-------------|--------|-----------|
+| **Fast** | 0.20 / 0.28 | 570 | 450 | 600 | 375 | 800 | 20000 |
+| **Economy** | 0.20 | 380 | 300 | 430 | 250 | 650 | 15000 |
+| **Standard** | 0.20 / 0.28 | 380 | 300 | 430 | 250 | 650 | 15000 |
+| **Strong** | 0.20 | 323 | 255 | 365 | 212 | 552 | 12000 |
+| **Detail** | 0.08-0.16 | 304 | 135 | 344 | 112 | 520 | 11250 |
+| **Safe** | 0.20 | 266 | 150 | 301 | 125 | 455 | 9000 |
 
 Os perfis Detail e Safe são **assimétricos**: inner wall e infill rodam na velocidade alta (0.80x e 0.70x), enquanto outer wall e top surface usam o quality_speed muito mais baixo (0.45x e 0.50x). Isso garante qualidade visual máxima sem desperdiçar tempo em movimentos que não afetam o resultado.
 
@@ -168,16 +168,24 @@ Todos os perfis incluem por padrão:
 ```json
 {
     "detail":    ["0.08", "0.12", "0.16"] × [PLA, PETG],
-    "standard":  ["0.16", "0.20", "0.24", "0.28"] × [PLA, PETG],
+    "standard":  ["0.20", "0.28"] × [PLA, PETG],
     "standard":  ["0.20"] × [TPU, ABS, PLA-CF, PETG-CF],
-    "economy":   ["0.20", "0.24", "0.28"] × [PLA, PETG],
-    "fast":      ["0.20", "0.24", "0.28"] × [PLA, PETG],
-    "strong":    ["0.20", "0.24", "0.28"] × [PLA, PETG],
+    "economy":   ["0.20"] × [PLA, PETG],
+    "fast":      ["0.20", "0.28"] × [PLA, PETG],
+    "strong":    ["0.20"] × [PLA, PETG],
     "safe":      ["0.20"] × [PLA, PETG]
 }
 ```
 
-**Total: 38 perfis de processo**
+**Total: 24 perfis de processo**
+
+Racional:
+- **Detail** usa layer heights exclusivos (0.08-0.16) — território de qualidade visual
+- **Standard 0.20** é o padrão de uso diário; **0.28** é draft rápido com qualidade aceitável
+- **Economy** só em 0.20 — se quer rápido E barato, use Fast 0.28
+- **Fast 0.20** = velocidade com qualidade; **Fast 0.28** = o mais rápido possível
+- **Strong** só em 0.20 — resistência precisa de boa adesão entre layers
+- **Safe** só em 0.20 — perfil de teste, sem variações
 
 ## MVS dos Filamentos Principais
 
@@ -246,7 +254,7 @@ flowchart TD
     LH[layer_heights/*.json<br/>shell thickness, support distances] --> MERGE
     PT[profile_types/*.json<br/>walls, infill, seam] --> MERGE
     MAT[materials/*.json<br/>velocidades base, acelerações] --> MERGE[Merge por herança]
-    MULT[PROFILE_MULTIPLIERS<br/>Fast=1.50x, Economy=1.35x...] --> CALC[Aplica multiplicadores]
+    MULT[PROFILE_MULTIPLIERS<br/>Fast=1.50x, Economy=1.00x...] --> CALC[Aplica multiplicadores]
     MERGE --> CALC
     CALC --> CAP[Cap: 600mm/s extrusão, 800mm/s travel, 20000mm/s² accel]
     CAP --> PROFILE[Perfil Final JSON]

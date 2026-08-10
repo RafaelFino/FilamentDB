@@ -7,7 +7,7 @@
         },
         {
             "profile_type": "standard",
-            "layer_heights": ["0.16", "0.20", "0.24", "0.28"],
+            "layer_heights": ["0.20", "0.28"],
             "materials": ["PLA", "PETG"]
         },
         {
@@ -17,17 +17,17 @@
         },
         {
             "profile_type": "economy",
-            "layer_heights": ["0.20", "0.24", "0.28"],
+            "layer_heights": ["0.20"],
             "materials": ["PLA", "PETG"]
         },
         {
             "profile_type": "fast",
-            "layer_heights": ["0.20", "0.24", "0.28"],
+            "layer_heights": ["0.20", "0.28"],
             "materials": ["PLA", "PETG"]
         },
         {
             "profile_type": "strong",
-            "layer_heights": ["0.20", "0.24", "0.28"],
+            "layer_heights": ["0.20"],
             "materials": ["PLA", "PETG"]
         },
         {

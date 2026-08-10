@@ -629,9 +629,106 @@ function syncProcessHighlights() {
     });
 }
 
+// Speed score for process comparison (no filament cap — shows raw machine potential)
+function calcProcessSpeedScore(profile) {
+    const speedFields = [
+        'inner_wall_speed', 'outer_wall_speed', 'sparse_infill_speed',
+        'internal_solid_infill_speed', 'top_surface_speed', 'initial_layer_speed',
+        'support_speed', 'gap_infill_speed'
+    ];
+    const speeds = speedFields.map(f => parseFloat(profile[f]) || 0).filter(s => s > 0);
+    if (!speeds.length) return 0;
+    const avg = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+    // Normalize: 0→0, 450→100 (K2 reference avg for max potential)
+    return Math.min(100, Math.max(0, Math.round((avg / 450) * 100)));
+}
+
+function renderSpeedScore(profile) {
+    const score = calcProcessSpeedScore(profile);
+    const color = score >= 80 ? 'var(--green)' : score >= 60 ? '#ffd84d' : score >= 40 ? 'var(--orange)' : '#ff7b72';
+    return `<div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-weight:700;color:${color};font-size:.95rem;">${score}</span>
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);min-width:40px;">
+            <div style="width:${score}%;height:100%;border-radius:2px;background:${color};"></div>
+        </div>
+        <span style="font-size:.7rem;color:var(--muted);">/100</span>
+    </div>`;
+}
+
+// Material usage score — relative indicator of how much filament a profile uses
+// Based on walls, infill density, and top/bottom layers
+function calcMaterialUsageScore(profile) {
+    const walls = parseInt(profile.wall_loops) || 4;
+    const infillStr = (profile.sparse_infill_density || '15%').replace('%', '');
+    const infill = parseFloat(infillStr) || 15;
+    const topLayers = parseInt(profile.top_shell_layers) || 5;
+    const bottomLayers = parseInt(profile.bottom_shell_layers) || 4;
+
+    // Weighted formula: walls contribute most, then infill, then shells
+    // Normalize each component to 0-100 range based on our profile extremes:
+    //   walls: 2 (economy) to 6 (strong) → normalize over 1-8 range
+    //   infill: 8% (economy) to 50% (strong) → normalize over 0-60 range
+    //   shells: 3+3=6 (economy/fast) to 7+6=13 (detail) → normalize over 4-16 range
+    const wallScore = Math.min(100, Math.max(0, ((walls - 1) / 7) * 100));
+    const infillScore = Math.min(100, Math.max(0, (infill / 60) * 100));
+    const shellScore = Math.min(100, Math.max(0, (((topLayers + bottomLayers) - 4) / 12) * 100));
+
+    // Weighted: infill has biggest volume impact, then walls, then shells
+    return Math.round(infillScore * 0.50 + wallScore * 0.35 + shellScore * 0.15);
+}
+
+function renderMaterialUsageScore(profile) {
+    const score = calcMaterialUsageScore(profile);
+    // Invert color: LOW usage = green (good for economy), HIGH usage = orange/red
+    const color = score <= 25 ? 'var(--green)' : score <= 45 ? '#ffd84d' : score <= 65 ? 'var(--orange)' : '#ff7b72';
+    const label = score <= 20 ? 'Mínimo' : score <= 35 ? 'Baixo' : score <= 55 ? 'Moderado' : score <= 75 ? 'Alto' : 'Muito alto';
+    return `<div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-weight:700;color:${color};font-size:.95rem;">${score}</span>
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);min-width:40px;">
+            <div style="width:${score}%;height:100%;border-radius:2px;background:${color};"></div>
+        </div>
+        <span style="font-size:.7rem;color:var(--muted);">${label}</span>
+    </div>`;
+}
+
+// Strength score for process comparison (structural resistance without material data)
+function calcProcessStrengthScore(profile) {
+    const walls = parseInt(profile.wall_loops) || 4;
+    const infillStr = (profile.sparse_infill_density || '15%').toString().replace('%', '');
+    const infill = parseFloat(infillStr) || 15;
+    const pattern = profile.sparse_infill_pattern || 'grid';
+    const lh = parseFloat(profile.layer_height) || 0.2;
+
+    const strengthWalls = Math.min(100, Math.max(0, ((walls - 1) / 6) * 100));
+    const strengthInfill = Math.min(100, Math.max(0, (infill / 60) * 100));
+    const patternBonus = pattern.includes('gyroid') ? 10 : 0;
+    const lhBonus = Math.round((0.20 - lh) * 75);
+
+    // Without material data, use 50 as neutral base
+    return Math.min(100, Math.max(0, Math.round(
+        strengthWalls * 0.40 + strengthInfill * 0.35 + (50 + lhBonus + patternBonus) * 0.25
+    )));
+}
+
+function renderStrengthScore(profile) {
+    const score = calcProcessStrengthScore(profile);
+    const color = score >= 70 ? 'var(--green)' : score >= 50 ? '#ffd84d' : score >= 30 ? 'var(--orange)' : '#ff7b72';
+    const label = score >= 75 ? 'Alta' : score >= 55 ? 'Boa' : score >= 35 ? 'Moderada' : 'Baixa';
+    return `<div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-weight:700;color:${color};font-size:.95rem;">${score}</span>
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);min-width:40px;">
+            <div style="width:${score}%;height:100%;border-radius:2px;background:${color};"></div>
+        </div>
+        <span style="font-size:.7rem;color:var(--muted);">${label}</span>
+    </div>`;
+}
+
 const PROCESS_CMP_ROWS = [
     { sec:'Perfil',       lbl:'Tipo',                  fn: p => typeChip(p.profile_type) },
     { sec:'Perfil',       lbl:'Descrição',             fn: p => v(p.description) },
+    { sec:'Score',        lbl:'Velocidade',            fn: p => renderSpeedScore(p) },
+    { sec:'Score',        lbl:'Uso de material',       fn: p => renderMaterialUsageScore(p) },
+    { sec:'Score',        lbl:'Resistência',           fn: p => renderStrengthScore(p) },
     { sec:'Camadas',      lbl:'Altura camada',         fn: p => v(p.layer_height,'mm') },
     { sec:'Camadas',      lbl:'Altura 1ª camada',      fn: p => v(p.initial_layer_height,'mm') },
     { sec:'Camadas',      lbl:'Paredes',               fn: p => v(p.wall_loops) },
@@ -640,6 +737,7 @@ const PROCESS_CMP_ROWS = [
     { sec:'Velocidades',  lbl:'Parede interna',        fn: p => v(p.inner_wall_speed,' mm/s') },
     { sec:'Velocidades',  lbl:'Parede externa',        fn: p => v(p.outer_wall_speed,' mm/s') },
     { sec:'Velocidades',  lbl:'Preenchimento',         fn: p => v(p.sparse_infill_speed,' mm/s') },
+    { sec:'Velocidades',  lbl:'Superfície topo',       fn: p => v(p.top_surface_speed,' mm/s') },
     { sec:'Velocidades',  lbl:'Deslocamento',          fn: p => v(p.travel_speed,' mm/s') },
     { sec:'Acelerações',  lbl:'Padrão',                fn: p => v(p.default_acceleration,' mm/s²') },
     { sec:'Acelerações',  lbl:'Parede interna',        fn: p => v(p.inner_wall_acceleration,' mm/s²') },
@@ -1227,7 +1325,7 @@ function calcCombinationScore(data) {
     // Baseado na proporção de velocidades efetivas vs. máximo da K2 (500 mm/s para extrusão)
     const speeds = data.simulation.speeds;
     const extrusionFields = Object.keys(speeds).filter(k => k !== 'travel_speed');
-    if (extrusionFields.length === 0) return { confidence, finish, speed: 50, overall: Math.round((confidence + finish + 50) / 3) };
+    if (extrusionFields.length === 0) return { confidence, finish, speed: 50, overall: Math.round((confidence + finish + 50) / 3), material_usage: 40, strength: 50 };
 
     const avgEffective = extrusionFields.reduce((sum, k) => sum + (speeds[k].effective || 0), 0) / extrusionFields.length;
     // Normalizar: 0 mm/s → 0, 350 mm/s → 100 (referência: velocidade média alta típica na K2)
@@ -1236,13 +1334,44 @@ function calcCombinationScore(data) {
     // Overall: média ponderada (velocidade 35%, acabamento 40%, confiabilidade 25%)
     const overall = Math.round(speed * 0.35 + finish * 0.40 + confidence * 0.25);
 
-    return { confidence, finish, speed, overall };
+    // 4. Uso de material relativo (0-100, onde menor = mais econômico)
+    const walls = parseInt(data.process.wall_loops) || 4;
+    const infillStr = (data.process.sparse_infill_density || '15%').toString().replace('%', '');
+    const infill = parseFloat(infillStr) || 15;
+    const topLayers = parseInt(data.process.top_shell_layers) || 5;
+    const bottomLayers = parseInt(data.process.bottom_shell_layers) || 4;
+    const wallScore_m = Math.min(100, Math.max(0, ((walls - 1) / 7) * 100));
+    const infillScore_m = Math.min(100, Math.max(0, (infill / 60) * 100));
+    const shellScore_m = Math.min(100, Math.max(0, (((topLayers + bottomLayers) - 4) / 12) * 100));
+    const material_usage = Math.round(infillScore_m * 0.50 + wallScore_m * 0.35 + shellScore_m * 0.15);
+
+    // 5. Resistência mecânica (0-100) — baseado em estrutura + material
+    const matStrength = parseInt(data.process.material_strength) || 50;
+    // Walls: 2→20, 4→50, 6→85 (normalized over 1-7 range, weighted)
+    const strengthWalls = Math.min(100, Math.max(0, ((walls - 1) / 6) * 100));
+    // Infill: 8%→13, 15%→25, 50%→83 (normalized over 0-60)
+    const strengthInfill = Math.min(100, Math.max(0, (infill / 60) * 100));
+    // Infill pattern: gyroid = +10 bonus (isotrópico), grid = 0
+    const patternBonus = (data.process.sparse_infill_pattern || '').includes('gyroid') ? 10 : 0;
+    // Layer height: menor = melhor adesão Z. 0.08→+15, 0.20→0, 0.28→-8
+    const lhStrengthBonus = Math.round((0.20 - lh) * 75);
+    // Combine: walls 35%, infill 30%, material 25%, layer height + pattern 10%
+    const strength = Math.min(100, Math.max(0, Math.round(
+        strengthWalls * 0.35 + strengthInfill * 0.30 + matStrength * 0.25 +
+        (50 + lhStrengthBonus + patternBonus) * 0.10
+    )));
+
+    return { confidence, finish, speed, overall, material_usage, strength };
 }
 
 function renderScoreCard(score, label, capInfo) {
     const colorFor = (val) => val >= 80 ? 'var(--green)' : val >= 60 ? '#ffd84d' : val >= 40 ? 'var(--orange)' : '#ff7b72';
+    // Material usage: invert color (low = green = good)
+    const matColorFor = (val) => val <= 25 ? 'var(--green)' : val <= 45 ? '#ffd84d' : val <= 65 ? 'var(--orange)' : '#ff7b72';
     const capColor = capInfo.count > 0 ? 'var(--orange)' : 'var(--green)';
     const capPct = Math.round((capInfo.count / capInfo.total) * 100);
+    const matScore = score.material_usage || 0;
+    const strScore = score.strength || 0;
 
     return `
     <div class="info-block" style="flex:1;">
@@ -1252,24 +1381,38 @@ function renderScoreCard(score, label, capInfo) {
                 <span style="font-size:2.2rem; font-weight:700; color:${colorFor(score.overall)}">${score.overall}</span>
                 <span style="font-size:.8rem; color:var(--muted)">/100</span>
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:8px;">
                 <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
-                    <span style="font-size:.72rem; color:var(--muted)">Velocidade</span>
-                    <span style="font-size:.9rem; font-weight:600; color:${colorFor(score.speed)}">${score.speed}</span>
+                    <span style="font-size:.68rem; color:var(--muted)">Velocidade</span>
+                    <span style="font-size:.85rem; font-weight:600; color:${colorFor(score.speed)}">${score.speed}</span>
                     <div style="width:100%; height:4px; border-radius:2px; background:var(--border);">
                         <div style="width:${score.speed}%; height:100%; border-radius:2px; background:${colorFor(score.speed)};"></div>
                     </div>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
-                    <span style="font-size:.72rem; color:var(--muted)">Acabamento</span>
-                    <span style="font-size:.9rem; font-weight:600; color:${colorFor(score.finish)}">${score.finish}</span>
+                    <span style="font-size:.68rem; color:var(--muted)">Acabamento</span>
+                    <span style="font-size:.85rem; font-weight:600; color:${colorFor(score.finish)}">${score.finish}</span>
                     <div style="width:100%; height:4px; border-radius:2px; background:var(--border);">
                         <div style="width:${score.finish}%; height:100%; border-radius:2px; background:${colorFor(score.finish)};"></div>
                     </div>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
-                    <span style="font-size:.72rem; color:var(--muted)">Confiabilidade</span>
-                    <span style="font-size:.9rem; font-weight:600; color:${colorFor(score.confidence)}">${score.confidence}</span>
+                    <span style="font-size:.68rem; color:var(--muted)">Resistência</span>
+                    <span style="font-size:.85rem; font-weight:600; color:${colorFor(strScore)}">${strScore}</span>
+                    <div style="width:100%; height:4px; border-radius:2px; background:var(--border);">
+                        <div style="width:${strScore}%; height:100%; border-radius:2px; background:${colorFor(strScore)};"></div>
+                    </div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
+                    <span style="font-size:.68rem; color:var(--muted)">Material</span>
+                    <span style="font-size:.85rem; font-weight:600; color:${matColorFor(matScore)}">${matScore}</span>
+                    <div style="width:100%; height:4px; border-radius:2px; background:var(--border);">
+                        <div style="width:${matScore}%; height:100%; border-radius:2px; background:${matColorFor(matScore)};"></div>
+                    </div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
+                    <span style="font-size:.68rem; color:var(--muted)">Confiança</span>
+                    <span style="font-size:.85rem; font-weight:600; color:${colorFor(score.confidence)}">${score.confidence}</span>
                     <div style="width:100%; height:4px; border-radius:2px; background:var(--border);">
                         <div style="width:${score.confidence}%; height:100%; border-radius:2px; background:${colorFor(score.confidence)};"></div>
                     </div>
