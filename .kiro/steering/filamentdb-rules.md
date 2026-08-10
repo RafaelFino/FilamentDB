@@ -28,7 +28,7 @@ Fast → Economy → Standard → Strong → Detail → Safe
 ```
 
 - **Fast**: Velocidade máxima. O mais rápido possível — aceita redução de qualidade em troca de tempo. 3 walls, 12% infill grid, inner-first.
-- **Economy**: Economia de filamento. Estrutura mínima viável — 2 walls, 8% grid, inner-first. Prioriza menor uso de material sobre resistência. Ideal para protótipos descartáveis e peças não-estruturais.
+- **Economy**: Economia de filamento. Estrutura mínima viável — 2 walls, 8% grid, inner-first. Velocidade igual Standard — a economia vem da estrutura reduzida, não da velocidade. Ideal para protótipos descartáveis e peças não-estruturais.
 - **Standard**: Equilíbrio geral, padrão de uso diário. 4 walls, 15% gyroid, outer-first, bom acabamento. Nome obrigatório — Creality Print requer um perfil "Standard" para iniciar.
 - **Strong**: Resistência mecânica (6 walls, 50% infill gyroid). Mais lento, peças funcionais.
 - **Detail**: Qualidade visual máxima. Layer heights baixos (0.08-0.16mm), 5 walls, 20% infill.
@@ -38,7 +38,7 @@ Fast → Economy → Standard → Strong → Detail → Safe
 
 ```
 Fast:     speed=1.50x  accel=1.50x
-Economy:  speed=1.35x  accel=1.40x
+Economy:  speed=1.00x  accel=1.00x  (economia via estrutura, não velocidade)
 Standard: speed=1.00x  accel=1.00x
 Strong:   speed=0.85x  accel=0.80x
 Detail:   speed=0.80x  accel=0.75x  quality_speed=0.45x (outer/top/1st layer)
