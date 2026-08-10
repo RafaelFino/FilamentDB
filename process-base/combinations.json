@@ -7,8 +7,18 @@
         },
         {
             "profile_type": "standard",
+            "layer_heights": ["0.16", "0.20", "0.24", "0.28"],
+            "materials": ["PLA", "PETG"]
+        },
+        {
+            "profile_type": "standard",
             "layer_heights": ["0.20"],
-            "materials": ["PLA", "PETG", "TPU", "ABS", "PLA-CF", "PETG-CF"]
+            "materials": ["TPU", "ABS", "PLA-CF", "PETG-CF"]
+        },
+        {
+            "profile_type": "economy",
+            "layer_heights": ["0.20", "0.24", "0.28"],
+            "materials": ["PLA", "PETG"]
         },
         {
             "profile_type": "fast",
@@ -17,7 +27,7 @@
         },
         {
             "profile_type": "strong",
-            "layer_heights": ["0.20", "0.24"],
+            "layer_heights": ["0.20", "0.24", "0.28"],
             "materials": ["PLA", "PETG"]
         },
         {

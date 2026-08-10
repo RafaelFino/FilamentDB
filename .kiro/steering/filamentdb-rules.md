@@ -24,45 +24,57 @@ Isso garante que filamentos premium (Voolt3D Velvet MVS=25, Sunlu HS MVS=22) apr
 Do mais rápido ao mais caprichado:
 
 ```
-Fast → Standard → Strong → Detail → Safe
+Fast → Economy → Standard → Strong → Detail → Safe
 ```
 
 - **Fast**: Velocidade máxima. O mais rápido possível — aceita redução de qualidade em troca de tempo. 3 walls, 12% infill grid, inner-first.
+- **Economy**: Economia de filamento. Estrutura mínima viável — 2 walls, 8% grid, inner-first. Prioriza menor uso de material sobre resistência. Ideal para protótipos descartáveis e peças não-estruturais.
 - **Standard**: Equilíbrio geral, padrão de uso diário. 4 walls, 15% gyroid, outer-first, bom acabamento. Nome obrigatório — Creality Print requer um perfil "Standard" para iniciar.
-- **Strong**: Resistência mecânica (6 walls, 55% infill). Mais lento, peças funcionais.
+- **Strong**: Resistência mecânica (6 walls, 50% infill gyroid). Mais lento, peças funcionais.
 - **Detail**: Qualidade visual máxima. Layer heights baixos (0.08-0.16mm), 5 walls, 20% infill.
 - **Safe**: Ultra-conservador para primeira impressão ou materiais desconhecidos. Lento mas confiável.
 
 ### Multiplicadores por Profile Type
 
 ```
-Fast:     speed=1.70x  accel=2.00x
+Fast:     speed=1.50x  accel=1.50x
+Economy:  speed=1.35x  accel=1.40x
 Standard: speed=1.00x  accel=1.00x
-Strong:   speed=0.70x  accel=0.60x
-Detail:   speed=0.55x  accel=0.45x
-Safe:     speed=0.40x  accel=0.30x
+Strong:   speed=0.85x  accel=0.80x
+Detail:   speed=0.80x  accel=0.75x  quality_speed=0.45x (outer/top/1st layer)
+Safe:     speed=0.70x  accel=0.60x  quality_speed=0.50x (outer/top/1st layer)
 ```
+
+Os perfis Detail e Safe usam multiplicadores **assimétricos**: campos que afetam qualidade visual (outer wall, top surface, primeira camada) recebem o `quality_speed` mais baixo, enquanto campos internos (inner wall, infill, travel, support) usam o `speed` regular mais alto. Isso permite imprimir rápido onde não importa e lento apenas onde melhora a qualidade ou confiabilidade.
 
 ### Limites Físicos da Máquina (caps no build.py)
 
-- Velocidade de extrusão: 500 mm/s
+- Velocidade de extrusão: 600 mm/s (spec K2)
 - Travel: 800 mm/s
 - Aceleração: 20000 mm/s²
+
+## Defaults de Suporte e Multifilamento
+
+Todos os perfis de processo incluem por padrão:
+
+- **Suportes**: Habilitados com `support_critical_regions_only = 1` (apenas regiões críticas), tree(auto), apenas na build plate.
+- **Prime Tower (multifilamento)**: Habilitada com largura mínima de 35mm para reduzir desperdício.
+- **Flush/Purga**: `flush_multiplier = 0.8` (reduzido do padrão 1.3), `flush_into_infill = 1`, `flush_into_support = 1` — minimiza desperdício de material em trocas de cor aproveitando infill e suporte como área de purga.
 
 ## Materiais — Velocidades Base (process-base/materials/)
 
 Os arquivos de material definem velocidades base que representam o alvo **Standard** para aquele tipo de material na K2. Referência: perfis do Orca Slicer para K2 0.4mm.
 
-O `speed_multiplier` ajusta proporcionalmente as velocidades vs. PLA (referência 1.0):
+O `speed_multiplier` no material é 1.0 por padrão — a diferença entre materiais já está encodada nas velocidades base. Isso evita dupla penalização.
 
-| Material | speed_mult | accel_mult | default_accel | Racional |
-|----------|-----------|-----------|---------------|----------|
-| PLA      | 1.00      | 1.00      | 12000         | Referência Orca — velocidades alvo da K2 |
-| PETG     | 0.85      | 0.85      | 10000         | Levemente menor por stringing/cooling |
-| ABS      | 0.75      | 0.75      | 8000          | Menor por warping/enclosure |
-| PLA-CF   | 0.70      | 0.75      | 8000          | Menor por abrasividade/rigidez |
-| PETG-CF  | 0.60      | 0.70      | 7000          | Mais conservador — fibra + PETG |
-| TPU      | 0.20      | 0.25      | 2500          | Flexível, velocidade muito baixa |
+| Material | speed_mult | accel_mult | default_accel | inner_wall base | Racional |
+|----------|-----------|-----------|---------------|-----------------|----------|
+| PLA      | 1.00      | 1.00      | 18000         | 450             | K2 max — filamento limita via MVS |
+| PETG     | 1.00      | 1.00      | 15000         | 380             | Levemente conservador por cooling/stringing |
+| ABS      | 1.00      | 1.00      | 12000         | 300             | Menor por warping — sem dupla penalização |
+| PLA-CF   | 1.00      | 1.00      | 10000         | 280             | Rigidez da fibra + desgaste do nozzle |
+| PETG-CF  | 1.00      | 1.00      | 9000          | 240             | Fibra + PETG — material mais difícil |
+| TPU      | 1.00      | 1.00      | 4000          | 120             | Flexível — Direct Drive ajuda, mas tem limites |
 
 ## Restrições de Materiais Especiais
 
@@ -74,10 +86,8 @@ O `speed_multiplier` ajusta proporcionalmente as velocidades vs. PLA (referênci
 Apenas exportar perfis de filamento dos seguintes fabricantes:
 
 - Voolt3D
-- Creality
 - Sunlu
-- F3D
-- Elegoo
+- Creality
 
 Os demais fabricantes ficam no banco (filament-data/) para referência mas não são exportados para Creality-Print/.
 
@@ -93,10 +103,26 @@ Destino: `~/filament-db/` com subpastas por slicer:
 ├── orca/
 │   ├── filament/   ← .json
 │   └── process/    ← .json
+├── backups/        ← zips com timestamp (últimos 10)
 └── diff/           ← perfis órfãos arquivados pelos scripts de inicialização
 ```
 
+O `publish.sh` faz backup automático antes de sobrescrever: gera um zip com todos os perfis atuais (ambos slicers, filamentos + processos) em `~/filament-db/backups/profiles_YYYYMMDD_HHMMSS.zip`, mantendo os últimos 10 backups.
+
+O `publish.sh` executa o pipeline completo: build → publish local → sync impressora.
+Use `--no-sync` se a impressora estiver offline ou imprimindo.
+
 Ao publicar para a pasta local, copiar apenas os perfis filtrados (fabricantes habilitados, combinações válidas).
+
+## Sincronização com Impressora K2
+
+O `sync-printer.sh` (chamado automaticamente pelo `publish.sh`) envia os perfis de filamento para a K2 via SSH usando o [go-filament-sync](https://github.com/zaggash/go-filament-sync).
+
+- Auto-descobre a impressora na rede via mDNS (hostname: `K2-88EA.local`)
+- Binário baixado automaticamente na primeira execução (`.tools/filament-sync-tool`)
+- Os perfis incluem campo `filament_notes` com metadata JSON para o sync
+- Após sync, filamentos aparecem na tela da impressora/CFS organizados por marca
+- **Não rodar durante impressão** — pode requerer reboot da impressora
 
 ## Inicialização dos Slicers
 
@@ -127,4 +153,5 @@ Cada slicer tem um script em `~/run-<slicer>.sh` que sincroniza perfis de `~/fil
 - `process-base/combinations.json` — define quais combinações são geradas
 - `build.py` — pipeline que gera banco SQLite + exporta para Creality-Print/
 - `Creality-Print/` — output final para importar no slicer
-- `publish.sh` — copia perfis para ~/filament-db/ (publicação local)
+- `publish.sh` — build + copia para ~/filament-db/ + sync impressora
+- `sync-printer.sh` — sincroniza filamentos com a K2 via SSH (go-filament-sync)

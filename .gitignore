@@ -35,3 +35,6 @@ tempCodeRunnerFile.py
 .ruff_cache/
 .mypy_cache/
 .pytest_cache/
+
+# External tools (downloaded by sync-printer.sh)
+.tools/

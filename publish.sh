@@ -55,11 +55,16 @@ RUN_BUILD=true
 EXPORT_ALL=false
 SHOW_LIST=false
 EXTRA_MANUFACTURERS=()
+SYNC_PRINTER=true
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --no-build)
             RUN_BUILD=false
+            shift
+            ;;
+        --no-sync)
+            SYNC_PRINTER=false
             shift
             ;;
         --all)
@@ -82,6 +87,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Opções:"
             echo "  --no-build          Pula o build.py, usa export existente"
+            echo "  --no-sync           Pula a sincronização com a impressora"
             echo "  --add <fabricante>   Inclui fabricante extra (pode repetir)"
             echo "  --all               Exporta TODOS os fabricantes do banco"
             echo "  --list              Lista fabricantes disponíveis e sai"
@@ -90,6 +96,8 @@ while [[ $# -gt 0 ]]; do
             echo "Fabricantes padrão: ${DEFAULT_MANUFACTURERS[*]}"
             echo ""
             echo "Exemplos:"
+            echo "  $0                              # build + publish + sync impressora"
+            echo "  $0 --no-sync                    # publish sem enviar para impressora"
             echo "  $0 --add \"Bambu Lab\" --add 3DLab"
             echo "  $0 --all --no-build"
             exit 0
@@ -167,6 +175,50 @@ fi
 
 mkdir -p "$FILAMENT_DEST" "$PROCESS_DEST" "$ORCA_FILAMENT_DEST" "$ORCA_PROCESS_DEST"
 
+# --- Backup antes de sobrescrever --------------------------------------------
+
+BACKUP_DIR="${HOME}/filament-db/backups"
+MAX_BACKUPS=10
+
+# Só faz backup se há arquivos existentes para proteger
+existing_files=$(find "$FILAMENT_DEST" "$PROCESS_DEST" "$ORCA_FILAMENT_DEST" "$ORCA_PROCESS_DEST" \
+    -maxdepth 1 -type f \( -name "*.json" -o -name "*.info" \) 2>/dev/null | wc -l)
+
+if [[ "$existing_files" -gt 0 ]]; then
+    mkdir -p "$BACKUP_DIR"
+    BACKUP_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    BACKUP_FILE="${BACKUP_DIR}/profiles_${BACKUP_TIMESTAMP}.zip"
+
+    info "Backup dos perfis atuais → ${BACKUP_FILE}"
+
+    # Cria zip preservando estrutura de diretórios relativa a ~/filament-db/
+    (cd "${HOME}/filament-db" && zip -qr "$BACKUP_FILE" \
+        creality-print/filament/ \
+        creality-print/process/ \
+        orca/filament/ \
+        orca/process/ \
+        2>/dev/null) || true
+
+    if [[ -f "$BACKUP_FILE" ]]; then
+        BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+        info "  Backup criado: ${BACKUP_SIZE} (${existing_files} arquivos)"
+    fi
+
+    # Rotação: mantém apenas os últimos MAX_BACKUPS
+    backup_count=$(find "$BACKUP_DIR" -maxdepth 1 -name "profiles_*.zip" -type f | wc -l)
+    if [[ "$backup_count" -gt "$MAX_BACKUPS" ]]; then
+        remove_count=$((backup_count - MAX_BACKUPS))
+        find "$BACKUP_DIR" -maxdepth 1 -name "profiles_*.zip" -type f -printf '%T+ %p\n' \
+            | sort | head -n "$remove_count" | cut -d' ' -f2- \
+            | while read -r old_backup; do
+                rm -f "$old_backup"
+            done
+        info "  Rotação: removidos ${remove_count} backup(s) antigo(s), mantendo últimos ${MAX_BACKUPS}"
+    fi
+else
+    info "Primeiro publish — sem backup necessário."
+fi
+
 # Limpa destino para garantir sync exato (remove antigos)
 warn "Sincronizando destino (removendo perfis antigos)..."
 find "$FILAMENT_DEST" -maxdepth 1 -type f \( -name "*.json" -o -name "*.info" \) -delete
@@ -229,3 +281,16 @@ else
     info "Fabricantes: ${DEFAULT_MANUFACTURERS[*]}"
 fi
 echo ""
+
+# --- Sync com impressora (opcional) ------------------------------------------
+
+if [[ "$SYNC_PRINTER" == true ]]; then
+    echo ""
+    info "Sincronizando filamentos com a impressora..."
+    if "${SCRIPT_DIR}/sync-printer.sh"; then
+        info "Impressora atualizada com sucesso!"
+    else
+        warn "Sync com impressora falhou (impressora offline ou imprimindo?)"
+        warn "Execute './sync-printer.sh' manualmente depois."
+    fi
+fi

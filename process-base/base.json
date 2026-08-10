@@ -7,9 +7,16 @@
     "enable_support": "1",
     "support_type": "tree(auto)",
     "support_on_build_plate_only": "1",
+    "support_critical_regions_only": "1",
     "support_xy_overrides_z": "z_overrides_xy",
     "infill_combination": "1",
     "ironing_type": "no ironing",
     "printer_model": "Creality K2",
-    "nozzle_size": "0.4"
+    "nozzle_size": "0.4",
+    "enable_prime_tower": "1",
+    "prime_tower_width": "35",
+    "prime_tower_brim_width": "3",
+    "flush_into_infill": "1",
+    "flush_into_support": "1",
+    "flush_multiplier": "0.8"
 }

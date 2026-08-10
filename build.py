@@ -213,10 +213,17 @@ def create_schema():
         support_interface_top_layers INTEGER,
         support_object_xy_distance REAL,
         support_xy_overrides_z TEXT,
+        support_critical_regions_only INTEGER DEFAULT 1,
         brim_width REAL,
         brim_object_gap REAL,
         ironing_type TEXT,
         seam_position TEXT,
+        enable_prime_tower INTEGER DEFAULT 1,
+        prime_tower_width INTEGER DEFAULT 35,
+        prime_tower_brim_width INTEGER DEFAULT 3,
+        flush_into_infill INTEGER DEFAULT 1,
+        flush_into_support INTEGER DEFAULT 1,
+        flush_multiplier REAL DEFAULT 0.8,
         printer_model TEXT DEFAULT 'Creality K2 Combo',
         nozzle_size REAL DEFAULT 0.4,
         base_id TEXT DEFAULT 'GP004',
@@ -395,11 +402,19 @@ def seed_filaments():
 # =============================================================================
 
 PROFILE_MULTIPLIERS = {
-    "fast": {"speed": 1.70, "accel": 2.00},
+    "fast": {"speed": 1.50, "accel": 1.50},
+    "economy": {"speed": 1.35, "accel": 1.40},
     "standard": {"speed": 1.0, "accel": 1.0},
-    "detail": {"speed": 0.55, "accel": 0.45},
-    "strong": {"speed": 0.70, "accel": 0.60},
-    "safe": {"speed": 0.40, "accel": 0.30},
+    "strong": {"speed": 0.85, "accel": 0.80},
+    "detail": {"speed": 0.80, "accel": 0.75, "quality_speed": 0.45},
+    "safe": {"speed": 0.70, "accel": 0.60, "quality_speed": 0.50},
+}
+
+# Fields where lower speed actually improves visible quality or print reliability.
+# These use 'quality_speed' multiplier when available (Detail/Safe).
+# All other speed fields use the regular 'speed' multiplier.
+QUALITY_SPEED_FIELDS = {
+    "outer_wall_speed", "top_surface_speed", "initial_layer_speed",
 }
 
 # Nozzle diameter and default line width (kept for reference)
@@ -420,11 +435,13 @@ ACCEL_FIELDS = [
     "outer_wall_acceleration", "top_surface_acceleration",
 ]
 
-BOOL_COLUMNS = {"enable_support", "support_on_build_plate_only"}
+BOOL_COLUMNS = {"enable_support", "support_on_build_plate_only", "support_critical_regions_only",
+                "enable_prime_tower", "flush_into_infill", "flush_into_support"}
 INT_COLUMNS = {
     "default_acceleration", "inner_wall_acceleration", "outer_wall_acceleration",
     "top_surface_acceleration", "wall_loops", "infill_combination",
     "top_shell_layers", "bottom_shell_layers", "support_interface_top_layers",
+    "prime_tower_width", "prime_tower_brim_width",
 }
 FLOAT_COLUMNS = {
     "inner_wall_speed", "outer_wall_speed", "sparse_infill_speed",
@@ -432,6 +449,7 @@ FLOAT_COLUMNS = {
     "travel_speed", "support_speed", "gap_infill_speed",
     "top_shell_thickness", "bottom_shell_thickness", "support_top_z_distance",
     "support_interface_spacing", "support_object_xy_distance", "brim_width", "brim_object_gap",
+    "flush_multiplier",
 }
 
 
@@ -457,12 +475,18 @@ def generate_process_profile(profile_type, layer_height, material_name):
 
     for field in SPEED_FIELDS:
         if field in material_data:
-            raw_speed = float(material_data[field]) * mult["speed"] * material_mult
-            # Cap at machine maximum (800 mm/s for travel, 500 mm/s for extrusion)
+            # Use quality_speed multiplier for fields that affect visible quality
+            if field in QUALITY_SPEED_FIELDS and "quality_speed" in mult:
+                speed_mult = mult["quality_speed"]
+            else:
+                speed_mult = mult["speed"]
+            raw_speed = float(material_data[field]) * speed_mult * material_mult
+            # Cap at machine maximum (800 mm/s for travel, 600 mm/s for extrusion)
+            # K2 spec: 600 mm/s max print speed, 800 mm/s travel
             if field == "travel_speed":
                 profile[field] = str(min(raw_speed, 800.0))
             else:
-                profile[field] = str(min(raw_speed, 500.0))
+                profile[field] = str(min(raw_speed, 600.0))
 
     for field in ACCEL_FIELDS:
         if field in material_data:
@@ -536,7 +560,10 @@ def seed_processes():
         "top_shell_layers", "bottom_shell_layers", "top_shell_thickness", "bottom_shell_thickness",
         "enable_support", "support_type", "support_on_build_plate_only", "support_top_z_distance",
         "support_interface_spacing", "support_interface_top_layers", "support_object_xy_distance",
-        "support_xy_overrides_z", "brim_width", "brim_object_gap", "ironing_type", "seam_position",
+        "support_xy_overrides_z", "support_critical_regions_only",
+        "brim_width", "brim_object_gap", "ironing_type", "seam_position",
+        "enable_prime_tower", "prime_tower_width", "prime_tower_brim_width",
+        "flush_into_infill", "flush_into_support", "flush_multiplier",
         "printer_model", "nozzle_size", "base_id", "inherits", "version",
         "description", "notes", "active",
     ]
@@ -609,7 +636,7 @@ if _mfr_override == "__ALL__":
 elif _mfr_override:
     EXPORT_MANUFACTURERS = set(m.strip() for m in _mfr_override.split(","))
 else:
-    EXPORT_MANUFACTURERS = {"Voolt3D", "Creality", "Sunlu", "F3D", "Elegoo"}
+    EXPORT_MANUFACTURERS = {"Voolt3D", "Creality", "Sunlu"}
 
 
 def export_filaments():
@@ -638,6 +665,7 @@ def export_filaments():
     conn.close()
 
     exported = 0
+    sync_id_counter = 10001  # IDs únicos para go-filament-sync (5 dígitos)
     for row in rows:
         brand, material, profile_name, n_init, n_min, n_max, bed, flow, mvs, inherits = row
 
@@ -645,17 +673,32 @@ def export_filaments():
         if EXPORT_MANUFACTURERS is not None and brand not in EXPORT_MANUFACTURERS:
             continue
 
+        # Metadata para go-filament-sync (sincronização com impressora)
+        # O campo filament_notes deve ser um JSON string com id/vendor/type/name
+        sync_metadata = {
+            "id": str(sync_id_counter),
+            "vendor": brand,
+            "type": material,
+            "name": profile_name,
+        }
+
         payload = {
             "base_id": "GFSA04",
             "filament_flow_ratio": [str(flow)],
             "filament_max_volumetric_speed": [str(mvs)],
             "filament_settings_id": [profile_name],
+            "filament_notes": [json.dumps(sync_metadata, ensure_ascii=False)],
+            "filament_vendor": [brand],
+            "filament_type": [material],
+            "filament_density": ["1.24"],
+            "filament_diameter": ["1.75"],
             "from": "User",
             "hot_plate_temp": [str(bed)],
             "hot_plate_temp_initial_layer": [str(int(bed) + 5)],
             "inherits": inherits or NOZZLE_BASE,
             "is_custom_defined": "0",
             "name": profile_name,
+            "nozzle_temperature": [str(n_init)],
             "nozzle_temperature_initial_layer": [str(n_init)],
             "nozzle_temperature_range_low": [str(n_min)],
             "nozzle_temperature_range_high": [str(n_max)],
@@ -663,6 +706,8 @@ def export_filaments():
             "textured_plate_temp_initial_layer": [str(int(bed) + 5)],
             "version": "26.4.28.18",
         }
+
+        sync_id_counter += 1
 
         file_base = profile_name
         json_path = EXPORT_FILAMENTS_DIR / f"{file_base}.json"
@@ -714,8 +759,11 @@ def export_processes():
             pp.enable_support, pp.support_type, pp.support_on_build_plate_only,
             pp.support_top_z_distance, pp.support_interface_spacing,
             pp.support_interface_top_layers, pp.support_object_xy_distance,
-            pp.support_xy_overrides_z, pp.brim_width, pp.brim_object_gap,
+            pp.support_xy_overrides_z, pp.support_critical_regions_only,
+            pp.brim_width, pp.brim_object_gap,
             pp.ironing_type, pp.seam_position,
+            pp.enable_prime_tower, pp.prime_tower_width, pp.prime_tower_brim_width,
+            pp.flush_into_infill, pp.flush_into_support, pp.flush_multiplier,
             pp.printer_model, pp.base_id, pp.inherits, pp.version,
             m.name AS material_name
         FROM process_profiles pp
@@ -729,13 +777,13 @@ def export_processes():
         profile_name = row[0]
 
         data = {
-            "base_id": row[43] if row[43] else "GP004",
+            "base_id": row[50] if row[50] else "GP004",
             "from": "User",
-            "inherits": row[44] if row[44] else "0.20mm Standard @Creality K2 0.4 nozzle",
+            "inherits": row[51] if row[51] else "0.20mm Standard @Creality K2 0.4 nozzle",
             "is_custom_defined": "0",
             "name": profile_name,
             "print_settings_id": profile_name,
-            "version": row[45] if row[45] else "26.4.28.18",
+            "version": row[52] if row[52] else "26.4.28.18",
         }
 
         # Map indexed fields
@@ -758,8 +806,13 @@ def export_processes():
             (32, "support_on_build_plate_only"), (33, "support_top_z_distance"),
             (34, "support_interface_spacing"), (35, "support_interface_top_layers"),
             (36, "support_object_xy_distance"), (37, "support_xy_overrides_z"),
-            (38, "brim_width"), (39, "brim_object_gap"),
-            (40, "ironing_type"), (41, "seam_position"),
+            (38, "support_critical_regions_only"),
+            (39, "brim_width"), (40, "brim_object_gap"),
+            (41, "ironing_type"), (42, "seam_position"),
+            (43, "enable_prime_tower"), (44, "prime_tower_width"),
+            (45, "prime_tower_brim_width"),
+            (46, "flush_into_infill"), (47, "flush_into_support"),
+            (48, "flush_multiplier"),
         ]
 
         for idx, key in field_map:
