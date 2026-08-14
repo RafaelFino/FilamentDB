@@ -217,6 +217,9 @@ def create_schema():
         brim_width REAL,
         brim_object_gap REAL,
         ironing_type TEXT,
+        ironing_speed REAL,
+        ironing_flow REAL,
+        ironing_spacing REAL,
         seam_position TEXT,
         enable_prime_tower INTEGER DEFAULT 1,
         prime_tower_width INTEGER DEFAULT 35,
@@ -449,7 +452,7 @@ FLOAT_COLUMNS = {
     "travel_speed", "support_speed", "gap_infill_speed",
     "top_shell_thickness", "bottom_shell_thickness", "support_top_z_distance",
     "support_interface_spacing", "support_object_xy_distance", "brim_width", "brim_object_gap",
-    "flush_multiplier",
+    "flush_multiplier", "ironing_speed", "ironing_flow", "ironing_spacing",
 }
 
 
@@ -468,6 +471,24 @@ def generate_process_profile(profile_type, layer_height, material_name):
     # Merge: base < layer_height < profile_type
     profile = {**base, **layer_data, **type_data}
 
+    # Layer height overrides for adhesion-critical fields (brim, initial_layer_print_height)
+    # take precedence over profile_type — thinner layers need more adhesion help regardless
+    # of profile_type settings.
+    ADHESION_OVERRIDE_FIELDS = {"brim_width", "brim_object_gap", "initial_layer_print_height"}
+    for field in ADHESION_OVERRIDE_FIELDS:
+        if field in layer_data:
+            # Only override if layer_height value provides better adhesion (wider brim, thicker first layer)
+            layer_val = float(layer_data[field])
+            profile_val = float(profile.get(field, 0))
+            if field == "brim_object_gap":
+                # Smaller gap = better adhesion, so layer overrides if smaller
+                if layer_val < profile_val:
+                    profile[field] = layer_data[field]
+            else:
+                # Larger value = better adhesion (wider brim, thicker first layer)
+                if layer_val > profile_val:
+                    profile[field] = layer_data[field]
+
     # Apply material speeds with profile_type multipliers
     mult = PROFILE_MULTIPLIERS.get(profile_type, {"speed": 1.0, "accel": 1.0})
     material_mult = material_data.get("speed_multiplier", 1.0)
@@ -484,9 +505,15 @@ def generate_process_profile(profile_type, layer_height, material_name):
             # Cap at machine maximum (800 mm/s for travel, 600 mm/s for extrusion)
             # K2 spec: 600 mm/s max print speed, 800 mm/s travel
             if field == "travel_speed":
-                profile[field] = str(min(raw_speed, 800.0))
+                raw_speed = min(raw_speed, 800.0)
             else:
-                profile[field] = str(min(raw_speed, 600.0))
+                raw_speed = min(raw_speed, 600.0)
+            # Layer height can define a speed cap (e.g. lower initial_layer_speed
+            # for thin layers to improve bed adhesion)
+            if field in layer_data:
+                layer_cap = float(layer_data[field])
+                raw_speed = min(raw_speed, layer_cap)
+            profile[field] = str(raw_speed)
 
     for field in ACCEL_FIELDS:
         if field in material_data:
@@ -561,7 +588,8 @@ def seed_processes():
         "enable_support", "support_type", "support_on_build_plate_only", "support_top_z_distance",
         "support_interface_spacing", "support_interface_top_layers", "support_object_xy_distance",
         "support_xy_overrides_z", "support_critical_regions_only",
-        "brim_width", "brim_object_gap", "ironing_type", "seam_position",
+        "brim_width", "brim_object_gap", "ironing_type", "ironing_speed",
+        "ironing_flow", "ironing_spacing", "seam_position",
         "enable_prime_tower", "prime_tower_width", "prime_tower_brim_width",
         "flush_into_infill", "flush_into_support", "flush_multiplier",
         "printer_model", "nozzle_size", "base_id", "inherits", "version",
@@ -761,7 +789,8 @@ def export_processes():
             pp.support_interface_top_layers, pp.support_object_xy_distance,
             pp.support_xy_overrides_z, pp.support_critical_regions_only,
             pp.brim_width, pp.brim_object_gap,
-            pp.ironing_type, pp.seam_position,
+            pp.ironing_type, pp.ironing_speed, pp.ironing_flow, pp.ironing_spacing,
+            pp.seam_position,
             pp.enable_prime_tower, pp.prime_tower_width, pp.prime_tower_brim_width,
             pp.flush_into_infill, pp.flush_into_support, pp.flush_multiplier,
             pp.printer_model, pp.base_id, pp.inherits, pp.version,
@@ -777,13 +806,13 @@ def export_processes():
         profile_name = row[0]
 
         data = {
-            "base_id": row[50] if row[50] else "GP004",
+            "base_id": row[53] if row[53] else "GP004",
             "from": "User",
-            "inherits": row[51] if row[51] else "0.20mm Standard @Creality K2 0.4 nozzle",
+            "inherits": row[54] if row[54] else "0.20mm Standard @Creality K2 0.4 nozzle",
             "is_custom_defined": "0",
             "name": profile_name,
             "print_settings_id": profile_name,
-            "version": row[52] if row[52] else "26.4.28.18",
+            "version": row[55] if row[55] else "26.4.28.18",
         }
 
         # Map indexed fields
@@ -808,11 +837,13 @@ def export_processes():
             (36, "support_object_xy_distance"), (37, "support_xy_overrides_z"),
             (38, "support_critical_regions_only"),
             (39, "brim_width"), (40, "brim_object_gap"),
-            (41, "ironing_type"), (42, "seam_position"),
-            (43, "enable_prime_tower"), (44, "prime_tower_width"),
-            (45, "prime_tower_brim_width"),
-            (46, "flush_into_infill"), (47, "flush_into_support"),
-            (48, "flush_multiplier"),
+            (41, "ironing_type"), (42, "ironing_speed"),
+            (43, "ironing_flow"), (44, "ironing_spacing"),
+            (45, "seam_position"),
+            (46, "enable_prime_tower"), (47, "prime_tower_width"),
+            (48, "prime_tower_brim_width"),
+            (49, "flush_into_infill"), (50, "flush_into_support"),
+            (51, "flush_multiplier"),
         ]
 
         for idx, key in field_map:
@@ -978,6 +1009,7 @@ def export_orca_processes():
             pp.sparse_infill_density, pp.sparse_infill_pattern,
             pp.top_shell_layers, pp.bottom_shell_layers,
             pp.seam_position,
+            pp.ironing_type, pp.ironing_speed, pp.ironing_flow, pp.ironing_spacing,
             m.name AS material_name
         FROM process_profiles pp
         JOIN materials m ON m.id = pp.material_id
@@ -992,7 +1024,9 @@ def export_orca_processes():
          initial_layer, travel, support, gap_infill,
          default_accel, inner_accel, outer_accel, top_accel,
          wall_loops, wall_sequence, infill_density, infill_pattern,
-         top_shell, bottom_shell, seam_position, material_name) = row
+         top_shell, bottom_shell, seam_position,
+         ironing_type, ironing_speed, ironing_flow, ironing_spacing,
+         material_name) = row
 
         # Orca profile name (same as Creality Print)
         orca_name = profile_name
@@ -1049,6 +1083,12 @@ def export_orca_processes():
         set_val("top_shell_layers", top_shell, as_int=True)
         set_val("bottom_shell_layers", bottom_shell, as_int=True)
         set_val("seam_position", seam_position)
+
+        if ironing_type and ironing_type != "no ironing":
+            data["ironing_type"] = str(ironing_type)
+            set_val("ironing_speed", ironing_speed)
+            set_val("ironing_flow", ironing_flow)
+            set_val("ironing_spacing", ironing_spacing)
 
         if infill_density:
             # Orca uses "15" not "15%"

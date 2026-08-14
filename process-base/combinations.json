@@ -2,7 +2,7 @@
     "combinations": [
         {
             "profile_type": "detail",
-            "layer_heights": ["0.08", "0.12", "0.16"],
+            "layer_heights": ["0.08", "0.12", "0.16", "0.20"],
             "materials": ["PLA", "PETG"]
         },
         {

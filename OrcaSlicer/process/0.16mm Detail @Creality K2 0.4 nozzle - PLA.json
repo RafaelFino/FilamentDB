@@ -25,6 +25,10 @@
     "top_shell_layers": "7",
     "bottom_shell_layers": "6",
     "seam_position": "back",
+    "ironing_type": "top",
+    "ironing_speed": "30",
+    "ironing_flow": "10",
+    "ironing_spacing": "0.1",
     "sparse_infill_density": "20",
     "sparse_infill_pattern": "gyroid"
 }

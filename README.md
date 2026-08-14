@@ -155,13 +155,27 @@ Todos os perfis incluem por padrão:
 | Configuração | Valor | Racional |
 |--------------|-------|----------|
 | `support_critical_regions_only` | 1 | Suporte apenas em regiões realmente necessárias |
-| `support_type` | tree(auto) | Suporte em árvore — menos material, fácil de remover |
+| `support_type` | tree(auto) | Suporte em árvore — menos material, menos pontos de contato, fácil de remover |
 | `support_on_build_plate_only` | 1 | Evita suporte sobre a peça |
+| `support_xy_overrides_z` | z_overrides_xy | Prioriza distância Z (gap vertical) sobre XY |
 | `enable_prime_tower` | 1 | Habilitada para multifilamento |
 | `prime_tower_width` | 35 mm | Mínima funcional (padrão é 40) |
 | `flush_multiplier` | 0.8 | Reduzido de 1.3 — sem problemas na prática |
 | `flush_into_infill` | 1 | Usa infill como área de purga |
 | `flush_into_support` | 1 | Usa suporte como área de purga |
+
+### Suportes otimizados para remoção (especialmente PETG)
+
+PETG tem alta adesão entre camadas — suportes com distâncias curtas fundem com a peça e são muito difíceis de remover. Os perfis usam valores otimizados para facilitar a remoção:
+
+| Parâmetro | 0.20mm | 0.28mm | Por que |
+|-----------|--------|--------|---------|
+| `support_top_z_distance` | 0.25mm | 0.30mm | Gap vertical entre suporte e peça — evita fusão |
+| `support_interface_spacing` | 0.8mm | 1.0mm | Espaçamento na interface — menos contato |
+| `support_interface_top_layers` | 2 | 2 | Menos camadas de interface — descola mais fácil |
+| `support_object_xy_distance` | 0.5mm | 0.55mm | Distância lateral — suporte não gruda nas paredes |
+
+Esses valores funcionam bem tanto para PLA quanto PETG. PLA não precisa de tanto gap mas não é prejudicado por tê-lo. PETG é o material que mais beneficia desses ajustes.
 
 ## Combinações Geradas
 
@@ -286,11 +300,11 @@ Após o sync, os filamentos aparecem na tela da impressora e no CFS. Se usar tag
 ## Uso Rápido
 
 ```bash
-# Pipeline completo: build + publish local + sync impressora
+# Pipeline padrão: build + publish local
 ./publish.sh
 
-# Sem sync com impressora (ex: impressora desligada ou imprimindo)
-./publish.sh --no-sync
+# Com sync para a impressora (apenas quando solicitado explicitamente)
+./publish.sh --sync
 
 # Apenas build (sem publish nem sync)
 python3 build.py
@@ -307,14 +321,16 @@ python3 build.py
 
 Antes de sobrescrever perfis, o `publish.sh` faz backup automático em `~/filament-db/backups/` (zip com timestamp, mantém os últimos 10).
 
+O sync com a impressora (`--sync` ou `./sync-printer.sh`) é **opt-in** — só roda quando pedido explicitamente. Isso evita interferir com a impressora durante impressões ou após updates de firmware.
+
 ## Comandos
 
 | Comando | O que faz |
 |---------|-----------|
-| `./publish.sh` | Build + publish local + sync impressora (pipeline completo) |
-| `./publish.sh --no-sync` | Build + publish sem enviar para impressora |
-| `./publish.sh --no-build` | Apenas copia (sem rebuild nem sync) |
-| `./publish.sh --no-build --no-sync` | Apenas copia para ~/filament-db/ |
+| `./publish.sh` | Build + publish local (sem sync impressora) |
+| `./publish.sh --sync` | Build + publish local + sync impressora via SSH |
+| `./publish.sh --no-build` | Apenas copia (sem rebuild) |
+| `./publish.sh --no-build --sync` | Copia + sync impressora |
 | `./publish.sh --list` | Lista fabricantes disponíveis |
 | `./publish.sh --add "Nome"` | Inclui fabricante extra |
 | `./publish.sh --all` | Exporta todos os fabricantes |

@@ -1,13 +1,13 @@
 {
     "type": "process",
-    "name": "0.08mm Detail @Creality K2 0.4 nozzle - PETG",
-    "inherits": "0.08mm SuperDetail @Creality K2 0.4 nozzle",
+    "name": "0.20mm Detail @Creality K2 0.4 nozzle - PETG",
+    "inherits": "0.20mm Standard @Creality K2 0.4 nozzle",
     "from": "User",
     "instantiation": "true",
     "compatible_printers": [
         "Creality K2 0.4 nozzle"
     ],
-    "layer_height": "0.1",
+    "layer_height": "0.2",
     "inner_wall_speed": "304",
     "outer_wall_speed": "135",
     "sparse_infill_speed": "344",

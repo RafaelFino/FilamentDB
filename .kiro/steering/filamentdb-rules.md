@@ -58,8 +58,15 @@ Os perfis Detail e Safe usam multiplicadores **assimétricos**: campos que afeta
 Todos os perfis de processo incluem por padrão:
 
 - **Suportes**: Habilitados com `support_critical_regions_only = 1` (apenas regiões críticas), tree(auto), apenas na build plate.
+- **Distâncias de suporte otimizadas para remoção fácil** (especialmente PETG):
+  - `support_top_z_distance`: 0.25mm (0.20mm layer) / 0.30mm (0.28mm layer) — gap vertical maior evita fusão com PETG
+  - `support_interface_spacing`: 0.8-1.0mm — interface espaçada para menos contato
+  - `support_interface_top_layers`: 2 — menos camadas de interface = descola mais fácil
+  - `support_object_xy_distance`: 0.5-0.55mm — distância lateral generosa
 - **Prime Tower (multifilamento)**: Habilitada com largura mínima de 35mm para reduzir desperdício.
-- **Flush/Purga**: `flush_multiplier = 0.8` (reduzido do padrão 1.3), `flush_into_infill = 1`, `flush_into_support = 1` — minimiza desperdício de material em trocas de cor aproveitando infill e suporte como área de purga.
+- **Flush/Purga**: `flush_multiplier = 0.8` (reduzido do padrão 1.3), `flush_into_infill = 1`, `flush_into_support = 1` — minimiza desperdício de material em trocas de cor.
+
+**Nota sobre PETG e suportes**: PETG tem alta adesão entre camadas — os valores de distância de suporte são calibrados para que o suporte não funda com a peça, priorizando remoção limpa sobre acabamento da superfície suportada.
 
 ## Materiais — Velocidades Base (process-base/materials/)
 
@@ -109,8 +116,8 @@ Destino: `~/filament-db/` com subpastas por slicer:
 
 O `publish.sh` faz backup automático antes de sobrescrever: gera um zip com todos os perfis atuais (ambos slicers, filamentos + processos) em `~/filament-db/backups/profiles_YYYYMMDD_HHMMSS.zip`, mantendo os últimos 10 backups.
 
-O `publish.sh` executa o pipeline completo: build → publish local → sync impressora.
-Use `--no-sync` se a impressora estiver offline ou imprimindo.
+O `publish.sh` executa o pipeline local: build → backup → publish para ~/filament-db/.
+O sync com a impressora é **opt-in** — use `./publish.sh --sync` ou `./sync-printer.sh` apenas quando quiser enviar para a K2.
 
 Ao publicar para a pasta local, copiar apenas os perfis filtrados (fabricantes habilitados, combinações válidas).
 

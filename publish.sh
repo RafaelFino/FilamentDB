@@ -55,7 +55,7 @@ RUN_BUILD=true
 EXPORT_ALL=false
 SHOW_LIST=false
 EXTRA_MANUFACTURERS=()
-SYNC_PRINTER=true
+SYNC_PRINTER=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -65,6 +65,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-sync)
             SYNC_PRINTER=false
+            shift
+            ;;
+        --sync)
+            SYNC_PRINTER=true
             shift
             ;;
         --all)
@@ -87,7 +91,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Opções:"
             echo "  --no-build          Pula o build.py, usa export existente"
-            echo "  --no-sync           Pula a sincronização com a impressora"
+            echo "  --sync              Sincroniza filamentos com a impressora via SSH"
             echo "  --add <fabricante>   Inclui fabricante extra (pode repetir)"
             echo "  --all               Exporta TODOS os fabricantes do banco"
             echo "  --list              Lista fabricantes disponíveis e sai"
@@ -96,8 +100,8 @@ while [[ $# -gt 0 ]]; do
             echo "Fabricantes padrão: ${DEFAULT_MANUFACTURERS[*]}"
             echo ""
             echo "Exemplos:"
-            echo "  $0                              # build + publish + sync impressora"
-            echo "  $0 --no-sync                    # publish sem enviar para impressora"
+            echo "  $0                              # build + publish local"
+            echo "  $0 --sync                       # build + publish + sync impressora"
             echo "  $0 --add \"Bambu Lab\" --add 3DLab"
             echo "  $0 --all --no-build"
             exit 0
