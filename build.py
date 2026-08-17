@@ -221,10 +221,23 @@ def create_schema():
         ironing_flow REAL,
         ironing_spacing REAL,
         seam_position TEXT,
+        seam_gap TEXT,
+        seam_slope_type TEXT,
+        seam_slope_conditional INTEGER DEFAULT 0,
+        seam_slope_entire_loop INTEGER DEFAULT 0,
+        seam_slope_inner_walls INTEGER DEFAULT 0,
+        seam_slope_min_length INTEGER DEFAULT 20,
+        seam_slope_start_height INTEGER DEFAULT 0,
+        seam_slope_steps INTEGER DEFAULT 10,
+        staggered_inner_seams INTEGER DEFAULT 0,
+        role_based_wipe_speed INTEGER DEFAULT 0,
+        wipe_on_loops INTEGER DEFAULT 0,
         enable_prime_tower INTEGER DEFAULT 1,
         prime_tower_width INTEGER DEFAULT 35,
         prime_tower_brim_width INTEGER DEFAULT 3,
+        prime_volume INTEGER DEFAULT 45,
         flush_into_infill INTEGER DEFAULT 1,
+        flush_into_objects INTEGER DEFAULT 0,
         flush_into_support INTEGER DEFAULT 1,
         flush_multiplier REAL DEFAULT 0.8,
         printer_model TEXT DEFAULT 'Creality K2 Combo',
@@ -439,12 +452,15 @@ ACCEL_FIELDS = [
 ]
 
 BOOL_COLUMNS = {"enable_support", "support_on_build_plate_only", "support_critical_regions_only",
-                "enable_prime_tower", "flush_into_infill", "flush_into_support"}
+                "enable_prime_tower", "flush_into_infill", "flush_into_objects", "flush_into_support",
+                "seam_slope_conditional", "seam_slope_entire_loop", "seam_slope_inner_walls",
+                "staggered_inner_seams", "role_based_wipe_speed", "wipe_on_loops"}
 INT_COLUMNS = {
     "default_acceleration", "inner_wall_acceleration", "outer_wall_acceleration",
     "top_surface_acceleration", "wall_loops", "infill_combination",
     "top_shell_layers", "bottom_shell_layers", "support_interface_top_layers",
-    "prime_tower_width", "prime_tower_brim_width",
+    "prime_tower_width", "prime_tower_brim_width", "prime_volume",
+    "seam_slope_min_length", "seam_slope_start_height", "seam_slope_steps",
 }
 FLOAT_COLUMNS = {
     "inner_wall_speed", "outer_wall_speed", "sparse_infill_speed",
@@ -590,8 +606,11 @@ def seed_processes():
         "support_xy_overrides_z", "support_critical_regions_only",
         "brim_width", "brim_object_gap", "ironing_type", "ironing_speed",
         "ironing_flow", "ironing_spacing", "seam_position",
-        "enable_prime_tower", "prime_tower_width", "prime_tower_brim_width",
-        "flush_into_infill", "flush_into_support", "flush_multiplier",
+        "seam_gap", "seam_slope_type", "seam_slope_conditional", "seam_slope_entire_loop",
+        "seam_slope_inner_walls", "seam_slope_min_length", "seam_slope_start_height", "seam_slope_steps",
+        "staggered_inner_seams", "role_based_wipe_speed", "wipe_on_loops",
+        "enable_prime_tower", "prime_tower_width", "prime_tower_brim_width", "prime_volume",
+        "flush_into_infill", "flush_into_objects", "flush_into_support", "flush_multiplier",
         "printer_model", "nozzle_size", "base_id", "inherits", "version",
         "description", "notes", "active",
     ]
@@ -790,9 +809,15 @@ def export_processes():
             pp.support_xy_overrides_z, pp.support_critical_regions_only,
             pp.brim_width, pp.brim_object_gap,
             pp.ironing_type, pp.ironing_speed, pp.ironing_flow, pp.ironing_spacing,
-            pp.seam_position,
+            pp.seam_position, pp.seam_gap, pp.seam_slope_type,
+            pp.seam_slope_conditional, pp.seam_slope_entire_loop,
+            pp.seam_slope_inner_walls, pp.seam_slope_min_length,
+            pp.seam_slope_start_height, pp.seam_slope_steps,
+            pp.staggered_inner_seams, pp.role_based_wipe_speed, pp.wipe_on_loops,
             pp.enable_prime_tower, pp.prime_tower_width, pp.prime_tower_brim_width,
-            pp.flush_into_infill, pp.flush_into_support, pp.flush_multiplier,
+            pp.prime_volume,
+            pp.flush_into_infill, pp.flush_into_objects, pp.flush_into_support,
+            pp.flush_multiplier,
             pp.printer_model, pp.base_id, pp.inherits, pp.version,
             m.name AS material_name
         FROM process_profiles pp
@@ -806,13 +831,13 @@ def export_processes():
         profile_name = row[0]
 
         data = {
-            "base_id": row[53] if row[53] else "GP004",
+            "base_id": row[66] if row[66] else "GP004",
             "from": "User",
-            "inherits": row[54] if row[54] else "0.20mm Standard @Creality K2 0.4 nozzle",
+            "inherits": row[67] if row[67] else "0.20mm Standard @Creality K2 0.4 nozzle",
             "is_custom_defined": "0",
             "name": profile_name,
             "print_settings_id": profile_name,
-            "version": row[55] if row[55] else "26.4.28.18",
+            "version": row[68] if row[68] else "26.4.28.18",
         }
 
         # Map indexed fields
@@ -839,11 +864,16 @@ def export_processes():
             (39, "brim_width"), (40, "brim_object_gap"),
             (41, "ironing_type"), (42, "ironing_speed"),
             (43, "ironing_flow"), (44, "ironing_spacing"),
-            (45, "seam_position"),
-            (46, "enable_prime_tower"), (47, "prime_tower_width"),
-            (48, "prime_tower_brim_width"),
-            (49, "flush_into_infill"), (50, "flush_into_support"),
-            (51, "flush_multiplier"),
+            (45, "seam_position"), (46, "seam_gap"), (47, "seam_slope_type"),
+            (48, "seam_slope_conditional"), (49, "seam_slope_entire_loop"),
+            (50, "seam_slope_inner_walls"), (51, "seam_slope_min_length"),
+            (52, "seam_slope_start_height"), (53, "seam_slope_steps"),
+            (54, "staggered_inner_seams"), (55, "role_based_wipe_speed"),
+            (56, "wipe_on_loops"),
+            (57, "enable_prime_tower"), (58, "prime_tower_width"),
+            (59, "prime_tower_brim_width"), (60, "prime_volume"),
+            (61, "flush_into_infill"), (62, "flush_into_objects"),
+            (63, "flush_into_support"), (64, "flush_multiplier"),
         ]
 
         for idx, key in field_map:
@@ -1008,7 +1038,11 @@ def export_orca_processes():
             pp.wall_loops, pp.wall_sequence,
             pp.sparse_infill_density, pp.sparse_infill_pattern,
             pp.top_shell_layers, pp.bottom_shell_layers,
-            pp.seam_position,
+            pp.seam_position, pp.seam_gap, pp.seam_slope_type,
+            pp.seam_slope_conditional, pp.seam_slope_entire_loop,
+            pp.seam_slope_inner_walls, pp.seam_slope_min_length,
+            pp.seam_slope_start_height, pp.seam_slope_steps,
+            pp.staggered_inner_seams,
             pp.ironing_type, pp.ironing_speed, pp.ironing_flow, pp.ironing_spacing,
             m.name AS material_name
         FROM process_profiles pp
@@ -1024,7 +1058,11 @@ def export_orca_processes():
          initial_layer, travel, support, gap_infill,
          default_accel, inner_accel, outer_accel, top_accel,
          wall_loops, wall_sequence, infill_density, infill_pattern,
-         top_shell, bottom_shell, seam_position,
+         top_shell, bottom_shell, seam_position, seam_gap, seam_slope_type,
+         seam_slope_conditional, seam_slope_entire_loop,
+         seam_slope_inner_walls, seam_slope_min_length,
+         seam_slope_start_height, seam_slope_steps,
+         staggered_inner_seams,
          ironing_type, ironing_speed, ironing_flow, ironing_spacing,
          material_name) = row
 
@@ -1083,6 +1121,15 @@ def export_orca_processes():
         set_val("top_shell_layers", top_shell, as_int=True)
         set_val("bottom_shell_layers", bottom_shell, as_int=True)
         set_val("seam_position", seam_position)
+        set_val("seam_gap", seam_gap)
+        set_val("seam_slope_type", seam_slope_type)
+        set_val("seam_slope_conditional", seam_slope_conditional, as_int=True)
+        set_val("seam_slope_entire_loop", seam_slope_entire_loop, as_int=True)
+        set_val("seam_slope_inner_walls", seam_slope_inner_walls, as_int=True)
+        set_val("seam_slope_min_length", seam_slope_min_length, as_int=True)
+        set_val("seam_slope_start_height", seam_slope_start_height, as_int=True)
+        set_val("seam_slope_steps", seam_slope_steps, as_int=True)
+        set_val("staggered_inner_seams", staggered_inner_seams, as_int=True)
 
         if ironing_type and ironing_type != "no ironing":
             data["ironing_type"] = str(ironing_type)
