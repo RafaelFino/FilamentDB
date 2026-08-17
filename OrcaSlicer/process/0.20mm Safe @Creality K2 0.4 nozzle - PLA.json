@@ -25,6 +25,15 @@
     "top_shell_layers": "6",
     "bottom_shell_layers": "5",
     "seam_position": "back",
+    "seam_gap": "15%",
+    "seam_slope_type": "external",
+    "seam_slope_conditional": "1",
+    "seam_slope_entire_loop": "0",
+    "seam_slope_inner_walls": "1",
+    "seam_slope_min_length": "20",
+    "seam_slope_start_height": "0",
+    "seam_slope_steps": "10",
+    "staggered_inner_seams": "1",
     "sparse_infill_density": "18",
     "sparse_infill_pattern": "gyroid"
 }

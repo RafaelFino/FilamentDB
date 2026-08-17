@@ -2,6 +2,7 @@
     "layer_height": "0.16",
     "initial_layer_print_height": "0.24",
     "initial_layer_speed": "60.0",
+    "outer_wall_speed": "220.0",
     "top_shell_thickness": "0.96",
     "bottom_shell_thickness": "0.96",
     "brim_width": 8.0,
