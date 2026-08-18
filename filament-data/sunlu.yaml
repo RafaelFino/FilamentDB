@@ -84,6 +84,34 @@ lines:
   color_options:
   - Natural
   - Black
+- name: PETG High Speed Matte Line
+  description: High-flow PETG optimized for high-speed printing with matte finish
+  positioning: performance
+  difficulty: 50
+  target_use: high_speed_functional
+  notes: >
+    Specs oficiais do datasheet: nozzle 240-270°C (escala por velocidade), bed 60-70°C,
+    density 1.26 g/cm³, HDT 70°C, melting point 128°C, MFR 4.4 g/10min,
+    tensile 48 MPa, flexural 78 MPa, flexural modulus 2700 MPa,
+    IZOD impact 4.1 kJ/m², elongation 33%. Suporta 50-600mm/s.
+    Sensível à umidade — stringing/oozing se não estiver bem seco.
+    Secar a 50°C, manter abaixo de 20% RH com dessecante.
+  color_options:
+  - Black
+  - White
+  - Grey
+  - Red
+  - Purple
+  - Blue
+  - Mocha Mousse
+  - Sky Blue
+  - Magenta
+  - Coral Pink
+  - Sunny Orange
+  - Yellow
+  - Olive Green
+  - Green
+  - Mint Green
 - name: ABS Line
   description: Engineering ABS for high strength parts
   positioning: engineering
@@ -315,6 +343,75 @@ materials:
       material_flexibility: 50
       material_temperature_resistance: 50
       material_uv_resistance: 30
+    - line: PETG High Speed Matte Line
+      commercial_name: PETG High Speed Matte
+      profile_name: Sunlu PETG HS
+      notes: >
+        PETG de alto fluxo com acabamento matte. MFR 4.4 g/10min — fluxo muito superior
+        ao PETG padrão. Sensível à umidade: secar a 50°C, manter <20% RH.
+        Nozzle escala por velocidade: 240-250°C @100-200mm/s, 260-270°C @300-600mm/s.
+      nozzle:
+        initial: 250
+        min: 240
+        max: 270
+      bed:
+        initial: 70
+        temp: 70
+      flow_ratio: 0.97
+      max_volumetric_speed: 18
+      density: 1.26
+      heat_deflection_temp: 70
+      melting_point: 128
+      mfi_g_10min: 4.4
+      tensile_strength_mpa: 48
+      flexural_strength_mpa: 78
+      flexural_modulus_mpa: 2700
+      impact_strength_kj_m2: 4.1
+      elongation_at_break_pct: 33
+      diameter_tolerance: "1.75±0.02mm"
+      drying_temperature: 50
+      drying_time: 6.0
+      confidence: 88
+      recommendation: >
+        PETG premium de alto fluxo para impressão rápida. Equivalente ao Voolt3D PETG HF.
+        Acabamento matte elegante. Exige controle de umidade rigoroso — stringing severo se úmido.
+      color: Black
+      surface_finish: Matte
+      material_strength: 70
+      material_flexibility: 55
+      material_temperature_resistance: 65
+      material_uv_resistance: 45
+      variants:
+      - color: Black
+        hex: "#000000"
+      - color: White
+        hex: "#FFFFFF"
+      - color: Grey
+        hex: "#75787B"
+      - color: Red
+        hex: "#BC2726"
+      - color: Purple
+        hex: "#685BC7"
+      - color: Blue
+        hex: "#1729AB"
+      - color: Mocha Mousse
+        hex: "#A47B67"
+      - color: Sky Blue
+        hex: "#4CCBFE"
+      - color: Magenta
+        hex: "#C52E79"
+      - color: Coral Pink
+        hex: "#FF8674"
+      - color: Sunny Orange
+        hex: "#ED7334"
+      - color: Yellow
+        hex: "#FFF13F"
+      - color: Olive Green
+        hex: "#5A6D3D"
+      - color: Green
+        hex: "#1DAA27"
+      - color: Mint Green
+        hex: "#4CA98F"
   ABS:
     profiles:
     - line: ABS Line
