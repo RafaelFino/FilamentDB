@@ -712,7 +712,6 @@ def export_filaments():
     conn.close()
 
     exported = 0
-    sync_id_counter = 10001  # IDs únicos para go-filament-sync (5 dígitos)
     for row in rows:
         brand, material, profile_name, n_init, n_min, n_max, bed, flow, mvs, inherits = row
 
@@ -720,21 +719,11 @@ def export_filaments():
         if EXPORT_MANUFACTURERS is not None and brand not in EXPORT_MANUFACTURERS:
             continue
 
-        # Metadata para go-filament-sync (sincronização com impressora)
-        # O campo filament_notes deve ser um JSON string com id/vendor/type/name
-        sync_metadata = {
-            "id": str(sync_id_counter),
-            "vendor": brand,
-            "type": material,
-            "name": profile_name,
-        }
-
         payload = {
             "base_id": "GFSA04",
             "filament_flow_ratio": [str(flow)],
             "filament_max_volumetric_speed": [str(mvs)],
             "filament_settings_id": [profile_name],
-            "filament_notes": [json.dumps(sync_metadata, ensure_ascii=False)],
             "filament_vendor": [brand],
             "filament_type": [material],
             "filament_density": ["1.24"],
@@ -753,8 +742,6 @@ def export_filaments():
             "textured_plate_temp_initial_layer": [str(int(bed) + 5)],
             "version": "26.4.28.18",
         }
-
-        sync_id_counter += 1
 
         file_base = profile_name
         json_path = EXPORT_FILAMENTS_DIR / f"{file_base}.json"

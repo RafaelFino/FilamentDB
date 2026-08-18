@@ -117,19 +117,8 @@ Destino: `~/filament-db/` com subpastas por slicer:
 O `publish.sh` faz backup automático antes de sobrescrever: gera um zip com todos os perfis atuais (ambos slicers, filamentos + processos) em `~/filament-db/backups/profiles_YYYYMMDD_HHMMSS.zip`, mantendo os últimos 10 backups.
 
 O `publish.sh` executa o pipeline local: build → backup → publish para ~/filament-db/.
-O sync com a impressora é **opt-in** — use `./publish.sh --sync` ou `./sync-printer.sh` apenas quando quiser enviar para a K2.
 
 Ao publicar para a pasta local, copiar apenas os perfis filtrados (fabricantes habilitados, combinações válidas).
-
-## Sincronização com Impressora K2
-
-O `sync-printer.sh` (chamado automaticamente pelo `publish.sh`) envia os perfis de filamento para a K2 via SSH usando o [go-filament-sync](https://github.com/zaggash/go-filament-sync).
-
-- Auto-descobre a impressora na rede via mDNS (hostname: `K2-88EA.local`)
-- Binário baixado automaticamente na primeira execução (`.tools/filament-sync-tool`)
-- Os perfis incluem campo `filament_notes` com metadata JSON para o sync
-- Após sync, filamentos aparecem na tela da impressora/CFS organizados por marca
-- **Não rodar durante impressão** — pode requerer reboot da impressora
 
 ## Inicialização dos Slicers
 
@@ -160,5 +149,4 @@ Cada slicer tem um script em `~/run-<slicer>.sh` que sincroniza perfis de `~/fil
 - `process-base/combinations.json` — define quais combinações são geradas
 - `build.py` — pipeline que gera banco SQLite + exporta para Creality-Print/
 - `Creality-Print/` — output final para importar no slicer
-- `publish.sh` — build + copia para ~/filament-db/ + sync impressora
-- `sync-printer.sh` — sincroniza filamentos com a K2 via SSH (go-filament-sync)
+- `publish.sh` — build + copia para ~/filament-db/

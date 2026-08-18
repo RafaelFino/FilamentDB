@@ -244,7 +244,6 @@ flowchart TD
         ORCA_OUT --> PUB
         PUB --> FDB_CP[~/filament-db/creality-print/]
         PUB --> FDB_ORCA[~/filament-db/orca/]
-        PUB --> SYNC[sync-printer.sh]
     end
 
     subgraph Slicers
@@ -252,11 +251,6 @@ flowchart TD
         FDB_ORCA --> RORCA[run-orca-slicer.sh]
         RCP --> CP[Creality Print 7.0]
         RORCA --> ORCA[Orca Slicer]
-    end
-
-    subgraph Impressora
-        SYNC --> K2[Creality K2 via SSH]
-        K2 --> CFS[CFS - Filamentos na tela]
     end
 ```
 
@@ -278,24 +272,7 @@ flowchart TD
 
 ## Sincronização com a Impressora (K2 / CFS)
 
-Os perfis de filamento podem ser enviados diretamente para a K2 via SSH, fazendo com que apareçam na tela da impressora organizados por marca e tipo — sem precisar da conta Creality Cloud.
-
-Usa o [go-filament-sync](https://github.com/zaggash/go-filament-sync) (binário Go, baixado automaticamente na primeira execução).
-
-```bash
-# Sincronizar com a impressora (IP obrigatório)
-./sync-printer.sh 192.168.1.50
-
-# Com senha customizada
-PRINTER_PASS=minha_senha ./sync-printer.sh 10.0.0.100
-```
-
-**Pré-requisitos:**
-- SSH habilitado na impressora (Settings > Root Access na tela)
-- Impressora na mesma rede local
-- Senha padrão: `creality_2024` (ou a que configurou)
-
-Após o sync, os filamentos aparecem na tela da impressora e no CFS. Se usar tags RFID customizadas (MIFARE Classic 1K), o `id` no campo `filament_notes` de cada perfil deve corresponder ao Material Code da tag.
+Os filamentos são sincronizados com a impressora K2 automaticamente pelo Creality Print ao enviar o G-code para impressão. O slicer carrega os perfis de filamento selecionados junto com o job.
 
 ## Uso Rápido
 
@@ -303,14 +280,8 @@ Após o sync, os filamentos aparecem na tela da impressora e no CFS. Se usar tag
 # Pipeline padrão: build + publish local
 ./publish.sh
 
-# Com sync para a impressora (apenas quando solicitado explicitamente)
-./publish.sh --sync
-
-# Apenas build (sem publish nem sync)
+# Apenas build (sem publish)
 python3 build.py
-
-# Sync manual com a impressora (auto-descobre via mDNS)
-./sync-printer.sh
 
 # Abrir Creality Print (sync local + launch)
 ~/run-creality-print.sh
@@ -321,24 +292,21 @@ python3 build.py
 
 Antes de sobrescrever perfis, o `publish.sh` faz backup automático em `~/filament-db/backups/` (zip com timestamp, mantém os últimos 10).
 
-O sync com a impressora (`--sync` ou `./sync-printer.sh`) é **opt-in** — só roda quando pedido explicitamente. Isso evita interferir com a impressora durante impressões ou após updates de firmware.
+Os filamentos são enviados para a impressora K2 automaticamente pelo Creality Print ao gerar o G-code — não há necessidade de sync manual via SSH.
 
 ## Comandos
 
 | Comando | O que faz |
 |---------|-----------|
-| `./publish.sh` | Build + publish local (sem sync impressora) |
-| `./publish.sh --sync` | Build + publish local + sync impressora via SSH |
+| `./publish.sh` | Build + publish local |
 | `./publish.sh --no-build` | Apenas copia (sem rebuild) |
 | `./publish.sh --no-build --sync` | Copia + sync impressora |
 | `./publish.sh --list` | Lista fabricantes disponíveis |
 | `./publish.sh --add "Nome"` | Inclui fabricante extra |
 | `./publish.sh --all` | Exporta todos os fabricantes |
-| `python3 build.py` | Recria banco + exporta perfis (sem publish/sync) |
+| `python3 build.py` | Recria banco + exporta perfis (sem publish) |
 | `python3 build.py --only-db` | Apenas recria o banco (sem export) |
 | `python3 build.py --only-export` | Apenas exporta (banco já existe) |
-| `./sync-printer.sh` | Sync filamentos com impressora (auto-descobre IP) |
-| `./sync-printer.sh <IP>` | Sync com IP específico |
 | `~/run-creality-print.sh` | Sync perfis locais + abre Creality Print |
 | `~/run-orca-slicer.sh` | Sync perfis locais + abre Orca Slicer |
 

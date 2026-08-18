@@ -13,9 +13,6 @@
 #   ./publish.sh --all                     # exporta TODOS os fabricantes
 #   ./publish.sh --list                    # lista fabricantes disponíveis
 #   ./publish.sh --no-build                # pula o build.py
-#
-# Os perfis de processo são sempre publicados (não dependem de fabricante).
-#
 
 set -euo pipefail
 
@@ -55,20 +52,10 @@ RUN_BUILD=true
 EXPORT_ALL=false
 SHOW_LIST=false
 EXTRA_MANUFACTURERS=()
-SYNC_PRINTER=false
-
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --no-build)
             RUN_BUILD=false
-            shift
-            ;;
-        --no-sync)
-            SYNC_PRINTER=false
-            shift
-            ;;
-        --sync)
-            SYNC_PRINTER=true
             shift
             ;;
         --all)
@@ -91,7 +78,6 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Opções:"
             echo "  --no-build          Pula o build.py, usa export existente"
-            echo "  --sync              Sincroniza filamentos com a impressora via SSH"
             echo "  --add <fabricante>   Inclui fabricante extra (pode repetir)"
             echo "  --all               Exporta TODOS os fabricantes do banco"
             echo "  --list              Lista fabricantes disponíveis e sai"
@@ -101,7 +87,6 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Exemplos:"
             echo "  $0                              # build + publish local"
-            echo "  $0 --sync                       # build + publish + sync impressora"
             echo "  $0 --add \"Bambu Lab\" --add 3DLab"
             echo "  $0 --all --no-build"
             exit 0
@@ -285,16 +270,3 @@ else
     info "Fabricantes: ${DEFAULT_MANUFACTURERS[*]}"
 fi
 echo ""
-
-# --- Sync com impressora (opcional) ------------------------------------------
-
-if [[ "$SYNC_PRINTER" == true ]]; then
-    echo ""
-    info "Sincronizando filamentos com a impressora..."
-    if "${SCRIPT_DIR}/sync-printer.sh"; then
-        info "Impressora atualizada com sucesso!"
-    else
-        warn "Sync com impressora falhou (impressora offline ou imprimindo?)"
-        warn "Execute './sync-printer.sh' manualmente depois."
-    fi
-fi
