@@ -88,7 +88,7 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.04
-      max_volumetric_speed: 25
+      max_volumetric_speed: 22
       density: 1.24
       glass_transition_temp: 55
       diameter_tolerance: 0.02
