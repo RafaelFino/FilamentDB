@@ -1,0 +1,216 @@
+manufacturer:
+  name: Multfila
+  country: Brazil
+  website: https://shop.multfila.com.br
+  notes: >
+    Fabricante brasileiro com boa tolerância dimensional (±0.02mm) e matéria-prima virgem.
+    Linha ampla incluindo PLA, PETG, ABS, TPU e especiais (Silk, Matte, Translúcido, Termo).
+    Não declara suporte a alta velocidade — posicionamento de qualidade intermediária.
+lines:
+- name: PLA Standard Line
+  description: General purpose PLA with good dimensional consistency
+  positioning: balanced
+  difficulty: 40
+  target_use: general_printing
+  notes: >
+    PLA com tolerância ±0.02mm, matéria-prima virgem. Extrusão uniforme,
+    boa aderência entre camadas. Foco em qualidade e consistência.
+  color_options:
+  - Black
+  - White
+  - Red
+  - Blue
+  - Green
+  - Yellow
+  - Grey
+  - Orange
+  - Pink
+  - Purple
+- name: PLA Silk Line
+  description: Metallic/silk finish PLA for aesthetic prints
+  positioning: aesthetic
+  difficulty: 45
+  target_use: visual_quality
+  notes: Acabamento sedoso/metálico. Tolerância ±0.02mm.
+  color_options:
+  - Gold
+  - Silver
+  - Copper
+  - Bronze
+  - Rainbow
+- name: PLA Matte Line
+  description: Matte finish PLA for elegant visual appearance
+  positioning: aesthetic
+  difficulty: 45
+  target_use: visual_quality
+  notes: Acabamento fosco que esconde linhas de camada. Tolerância ±0.02mm.
+  color_options:
+  - Black
+  - White
+  - Blue
+  - Green
+  - Grey
+- name: PETG Line
+  description: Standard PETG for functional and durable parts
+  positioning: functional
+  difficulty: 55
+  target_use: mechanical_parts
+  notes: PETG padrão com tolerância ±0.02mm. Boa adesão entre camadas.
+  color_options:
+  - Black
+  - White
+  - Blue
+  - Natural
+- name: ABS Line
+  description: Standard ABS for engineering applications
+  positioning: engineering
+  difficulty: 65
+  target_use: mechanical_heat_resistant
+  notes: ABS padrão. Tolerância ±0.02mm. Requer câmara fechada.
+  color_options:
+  - Black
+  - White
+- name: TPU Line
+  description: Flexible TPU for elastic parts
+  positioning: flexible
+  difficulty: 75
+  target_use: flexible_parts
+  notes: TPU flexível. Tolerância ±0.02mm. Velocidade baixa obrigatória.
+  color_options:
+  - Black
+  - White
+  - Yellow
+  - Blue
+materials:
+  PLA:
+    profiles:
+    - line: PLA Standard Line
+      commercial_name: PLA
+      profile_name: Multfila PLA
+      nozzle:
+        initial: 210
+        min: 190
+        max: 220
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 15
+      diameter_tolerance: "1.75±0.02mm"
+      confidence: 80
+      recommendation: >
+        PLA com boa tolerância. Não otimizado para alta velocidade mas consistente.
+        Velocidade efetiva ~165 mm/s na K2 (limitado pelo MVS).
+      color: Black
+      surface_finish: Standard
+      material_strength: 58
+      material_flexibility: 50
+      material_temperature_resistance: 48
+      material_uv_resistance: 30
+    - line: PLA Silk Line
+      commercial_name: PLA Silk
+      profile_name: Multfila PLA Silk
+      nozzle:
+        initial: 220
+        min: 210
+        max: 235
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.05
+      max_volumetric_speed: 12
+      confidence: 78
+      recommendation: Acabamento silk/metálico. Velocidade mais baixa por causa do aditivo.
+      color: Gold
+      surface_finish: Silky
+      material_strength: 55
+      material_flexibility: 48
+      material_temperature_resistance: 48
+      material_uv_resistance: 30
+    - line: PLA Matte Line
+      commercial_name: PLA Matte
+      profile_name: Multfila PLA Matte
+      nozzle:
+        initial: 215
+        min: 200
+        max: 225
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      confidence: 78
+      recommendation: Acabamento fosco que esconde camadas. Boa alternativa ao Voolt3D Velvet.
+      color: Black
+      surface_finish: Matte
+      material_strength: 56
+      material_flexibility: 50
+      material_temperature_resistance: 48
+      material_uv_resistance: 30
+  PETG:
+    profiles:
+    - line: PETG Line
+      commercial_name: PETG
+      profile_name: Multfila PETG
+      nozzle:
+        initial: 240
+        min: 230
+        max: 250
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      max_volumetric_speed: 12
+      diameter_tolerance: "1.75±0.02mm"
+      confidence: 78
+      recommendation: PETG padrão com boa tolerância. Conservador em velocidade.
+      color: Black
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 55
+      material_uv_resistance: 30
+  ABS:
+    profiles:
+    - line: ABS Line
+      commercial_name: ABS
+      profile_name: Multfila ABS
+      nozzle:
+        initial: 245
+        min: 235
+        max: 260
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 10
+      confidence: 75
+      recommendation: ABS padrão. Requer câmara fechada para evitar warping.
+      color: Black
+      surface_finish: Standard
+      material_strength: 62
+      material_flexibility: 50
+      material_temperature_resistance: 70
+      material_uv_resistance: 30
+  TPU:
+    profiles:
+    - line: TPU Line
+      commercial_name: TPU 95A
+      profile_name: Multfila TPU
+      nozzle:
+        initial: 225
+        min: 215
+        max: 235
+      bed:
+        initial: 50
+        temp: 50
+      flow_ratio: 1.05
+      max_volumetric_speed: 8
+      confidence: 72
+      recommendation: TPU flexível padrão. Velocidade baixa obrigatória.
+      color: Black
+      surface_finish: Flexible
+      material_strength: 55
+      material_flexibility: 85
+      material_temperature_resistance: 50
+      material_uv_resistance: 30

@@ -1,0 +1,194 @@
+manufacturer:
+  name: 3DFila
+  country: Brazil
+  website: https://3dfila.com.br
+  notes: >
+    Fabricante brasileiro com linha ampla incluindo PLA, PLA HT (alta temperatura),
+    PETG XT, ABS e Silk. Tolerância declarada ±0.05mm — a mais frouxa entre os
+    fabricantes avaliados. Preço baixo, adequado para uso casual e protótipos
+    descartáveis. Não recomendado para alta velocidade.
+lines:
+- name: PLA Standard Line
+  description: Basic PLA for general purpose printing
+  positioning: budget
+  difficulty: 40
+  target_use: general_printing
+  notes: >
+    PLA padrão da 3DFila. Tolerância ±0.05mm. Biodegradável, origem vegetal.
+    Facilidade de uso como principal atrativo. Preço competitivo.
+  color_options:
+  - Black
+  - White
+  - Red
+  - Blue
+  - Green
+  - Yellow
+  - Orange
+  - Pink
+  - Grey
+  - Brown
+- name: PLA HT Line
+  description: High temperature PLA for parts requiring heat resistance
+  positioning: engineering
+  difficulty: 55
+  target_use: heat_resistant_parts
+  notes: >
+    PLA de alta resistência térmica. Para peças que precisam suportar
+    temperaturas mais elevadas que o PLA comum. Pós-processamento térmico possível.
+  color_options:
+  - Natural
+  - Black
+- name: PLA Silk Line
+  description: Silk finish PLA for aesthetic decorative parts
+  positioning: aesthetic
+  difficulty: 45
+  target_use: visual_quality
+  notes: Acabamento sedoso/brilhante. Versões Duo (duas cores) disponíveis.
+  color_options:
+  - Gold
+  - Silver
+  - Copper
+  - Rainbow
+  - Duo Colors
+- name: PETG XT Line
+  description: Modified PETG with improved durability and flexibility
+  positioning: functional
+  difficulty: 55
+  target_use: mechanical_parts
+  notes: >
+    PETG com copolimerização de glicol modificado. Mais durável e versátil.
+    Resistência química, baixo warping, boa adesão entre camadas.
+  color_options:
+  - Black
+  - White
+  - Blue
+  - Natural
+  - Grey
+- name: ABS Line
+  description: Standard ABS for engineering applications
+  positioning: engineering
+  difficulty: 70
+  target_use: mechanical_heat_resistant
+  notes: ABS padrão. Requer câmara fechada.
+  color_options:
+  - Black
+  - White
+materials:
+  PLA:
+    profiles:
+    - line: PLA Standard Line
+      commercial_name: PLA
+      profile_name: 3DFila PLA
+      nozzle:
+        initial: 210
+        min: 190
+        max: 220
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 11
+      diameter_tolerance: "1.75±0.05mm"
+      confidence: 68
+      recommendation: >
+        PLA barato mas com tolerância frouxa (±0.05mm). Pode causar inconsistência
+        de fluxo em alta velocidade. Usar apenas em perfis Safe/Standard lentos.
+        Não recomendado para K2 em velocidade máxima.
+      color: Black
+      surface_finish: Standard
+      material_strength: 55
+      material_flexibility: 48
+      material_temperature_resistance: 45
+      material_uv_resistance: 28
+    - line: PLA HT Line
+      commercial_name: PLA HT
+      profile_name: 3DFila PLA HT
+      nozzle:
+        initial: 220
+        min: 210
+        max: 235
+      bed:
+        initial: 65
+        temp: 65
+      flow_ratio: 1.0
+      max_volumetric_speed: 12
+      diameter_tolerance: "1.75±0.05mm"
+      confidence: 65
+      recommendation: >
+        PLA de alta temperatura. Útil para peças que ficarão em ambientes quentes.
+        Pós-processamento térmico (annealing) melhora propriedades.
+      color: Natural
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 45
+      material_temperature_resistance: 65
+      material_uv_resistance: 30
+    - line: PLA Silk Line
+      commercial_name: PLA Silk
+      profile_name: 3DFila PLA Silk
+      nozzle:
+        initial: 220
+        min: 210
+        max: 235
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.05
+      max_volumetric_speed: 10
+      diameter_tolerance: "1.75±0.05mm"
+      confidence: 68
+      recommendation: Acabamento brilhante para peças decorativas. Velocidade baixa.
+      color: Gold
+      surface_finish: Silky
+      material_strength: 52
+      material_flexibility: 48
+      material_temperature_resistance: 45
+      material_uv_resistance: 28
+  PETG:
+    profiles:
+    - line: PETG XT Line
+      commercial_name: PETG XT
+      profile_name: 3DFila PETG XT
+      nozzle:
+        initial: 240
+        min: 230
+        max: 255
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      max_volumetric_speed: 11
+      diameter_tolerance: "1.75±0.05mm"
+      confidence: 68
+      recommendation: >
+        PETG funcional de baixo custo. Tolerância frouxa pode causar stringing
+        variável. Adequado para peças onde acabamento não é prioridade.
+      color: Black
+      surface_finish: Standard
+      material_strength: 58
+      material_flexibility: 50
+      material_temperature_resistance: 55
+      material_uv_resistance: 30
+  ABS:
+    profiles:
+    - line: ABS Line
+      commercial_name: ABS
+      profile_name: 3DFila ABS
+      nozzle:
+        initial: 245
+        min: 235
+        max: 260
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 10
+      diameter_tolerance: "1.75±0.05mm"
+      confidence: 65
+      recommendation: ABS básico. Requer câmara fechada. Tolerância frouxa.
+      color: Black
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 48
+      material_temperature_resistance: 68
+      material_uv_resistance: 30

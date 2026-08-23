@@ -1,0 +1,130 @@
+manufacturer:
+  name: Brasfila
+  country: Brazil
+  website: https://www.brasfila.com.br
+  notes: >
+    Fabricante brasileiro de Londrina/PR. Foco em preço acessível (~R$97/kg PLA Premium).
+    Tolerância ±0.05mm. Linhas: PLA Premium (sólido, silk, metalizado), PETG Premium.
+    Posicionamento entry-level — não otimizado para alta velocidade.
+    Nozzle recomendado 190-210°C, bed 0-60°C.
+lines:
+- name: PLA Premium Line
+  description: Standard PLA with good surface finish
+  positioning: budget
+  difficulty: 40
+  target_use: general_printing
+  notes: >
+    PLA Premium da Brasfila. Tolerância ±0.05mm. Nozzle 190-210°C.
+    Preço acessível (~R$97/kg). Boa variedade de cores sólidas.
+  color_options:
+  - Black
+  - White
+  - Red
+  - Blue
+  - Green
+  - Yellow
+  - Orange
+  - Pink
+  - Purple
+  - Grey
+  - Magenta
+  - Bronze
+- name: PLA Silk Line
+  description: Silk/metallic finish PLA for decorative parts
+  positioning: aesthetic
+  difficulty: 45
+  target_use: visual_quality
+  notes: >
+    PLA com acabamento sedoso/metálico. Tolerância ±0.05mm. Nozzle 190-210°C.
+    Preço similar ao PLA Premium (~R$116/kg).
+  color_options:
+  - Gold
+  - Silver
+  - Copper
+  - Bronze
+  - Aluminium
+  - Rose Gold
+- name: PETG Premium Line
+  description: Standard PETG for functional parts
+  positioning: functional
+  difficulty: 55
+  target_use: mechanical_parts
+  notes: PETG padrão. Tolerância ±0.05mm.
+  color_options:
+  - Black
+  - White
+  - Natural
+  - Blue
+materials:
+  PLA:
+    profiles:
+    - line: PLA Premium Line
+      commercial_name: PLA Premium
+      profile_name: Brasfila PLA
+      nozzle:
+        initial: 200
+        min: 190
+        max: 210
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 11
+      diameter_tolerance: "1.75±0.05mm"
+      confidence: 68
+      recommendation: >
+        PLA básico e barato. Tolerância frouxa (±0.05mm) não ideal para K2 em
+        alta velocidade. Funcional para impressões lentas e protótipos descartáveis.
+        Range de temperatura estreito (190-210°C).
+      color: Black
+      surface_finish: Standard
+      material_strength: 55
+      material_flexibility: 48
+      material_temperature_resistance: 45
+      material_uv_resistance: 28
+    - line: PLA Silk Line
+      commercial_name: PLA Silk
+      profile_name: Brasfila PLA Silk
+      nozzle:
+        initial: 205
+        min: 190
+        max: 215
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.05
+      max_volumetric_speed: 10
+      diameter_tolerance: "1.75±0.05mm"
+      confidence: 65
+      recommendation: Acabamento silk de baixo custo. Velocidade conservadora.
+      color: Gold
+      surface_finish: Silky
+      material_strength: 52
+      material_flexibility: 48
+      material_temperature_resistance: 45
+      material_uv_resistance: 28
+  PETG:
+    profiles:
+    - line: PETG Premium Line
+      commercial_name: PETG
+      profile_name: Brasfila PETG
+      nozzle:
+        initial: 240
+        min: 230
+        max: 250
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      max_volumetric_speed: 10
+      diameter_tolerance: "1.75±0.05mm"
+      confidence: 65
+      recommendation: >
+        PETG básico e barato. Tolerância frouxa pode causar stringing imprevisível.
+        Adequado para peças funcionais sem exigência de acabamento.
+      color: Black
+      surface_finish: Standard
+      material_strength: 58
+      material_flexibility: 50
+      material_temperature_resistance: 55
+      material_uv_resistance: 30

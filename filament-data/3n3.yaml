@@ -1,0 +1,101 @@
+manufacturer:
+  name: 3N3
+  country: Argentina
+  website: https://grilon3.com.ar
+  notes: >
+    Marca da NTH (Nicieza y Taverna Hnos), empresa argentina com mais de 70 anos em
+    plásticos de engenharia. Certificações CE, RoHS, REACH e ISO9001.
+    Exporta para mais de 80 países. Filamentos básicos de bom custo no Brasil.
+    Tolerância ±0.03mm. Foco em preço acessível, não em performance.
+lines:
+- name: PLA Standard Line
+  description: Basic PLA for everyday printing at low cost
+  positioning: budget
+  difficulty: 40
+  target_use: general_printing
+  notes: >
+    PLA padrão da 3N3. Tolerância ±0.03mm. Nozzle 190-230°C, bed 50°C.
+    Density 1.24 g/cm³, Tg 55°C, fusão 115°C. ~316m/kg (PLA) ou ~330m/kg.
+    Embalagem a vácuo com sílica.
+  color_options:
+  - Black
+  - White
+  - Red
+  - Blue
+  - Green
+  - Yellow
+  - Orange
+  - Pink
+  - Purple
+  - Grey
+  - Bronze
+  - Gold
+  - Brown
+- name: PETG Line
+  description: Standard PETG for functional parts
+  positioning: functional
+  difficulty: 55
+  target_use: mechanical_parts
+  notes: >
+    PETG 3N3 com glicol modificado. Combinação de resistência do ABS
+    com facilidade de impressão do PLA. Tolerância ±0.03mm.
+  color_options:
+  - Black
+  - White
+  - Natural
+  - Grey
+materials:
+  PLA:
+    profiles:
+    - line: PLA Standard Line
+      commercial_name: PLA
+      profile_name: 3N3 PLA
+      nozzle:
+        initial: 210
+        min: 190
+        max: 230
+      bed:
+        initial: 50
+        temp: 50
+      flow_ratio: 1.0
+      max_volumetric_speed: 12
+      density: 1.24
+      glass_transition_temp: 55
+      melting_point: 115
+      diameter_tolerance: "1.75±0.03mm"
+      confidence: 75
+      recommendation: >
+        PLA básico e barato. Funcional para velocidades baixas (~100 mm/s).
+        Na K2, o MVS baixo limita severamente a velocidade efetiva (~133 mm/s).
+        Bom para protótipos descartáveis onde tempo não importa.
+      color: Black
+      surface_finish: Standard
+      material_strength: 55
+      material_flexibility: 48
+      material_temperature_resistance: 45
+      material_uv_resistance: 28
+  PETG:
+    profiles:
+    - line: PETG Line
+      commercial_name: PETG
+      profile_name: 3N3 PETG
+      nozzle:
+        initial: 240
+        min: 230
+        max: 250
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      max_volumetric_speed: 11
+      diameter_tolerance: "1.75±0.03mm"
+      confidence: 72
+      recommendation: >
+        PETG básico. Funcional mas lento. MVS estimado conservador.
+        Adequado para peças funcionais sem pressa.
+      color: Black
+      surface_finish: Standard
+      material_strength: 58
+      material_flexibility: 50
+      material_temperature_resistance: 55
+      material_uv_resistance: 30

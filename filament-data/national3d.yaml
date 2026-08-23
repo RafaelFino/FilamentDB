@@ -1,0 +1,131 @@
+manufacturer:
+  name: National 3D
+  country: Brazil
+  website: https://www.lojanational3d.com.br
+  notes: >
+    Fabricante brasileiro com foco em custo-benefício. Destaque para o PLA Max High Speed
+    com MVS declarado de 29 mm³/s — potencialmente o melhor custo-benefício para impressoras
+    de alta velocidade no mercado nacional. Tolerância ±0.03mm com controle a laser.
+lines:
+- name: PLA Max High Speed Line
+  description: High-speed PLA optimized for fast printing up to 600mm/s
+  positioning: performance
+  difficulty: 40
+  target_use: high_speed_printing
+  notes: >
+    Specs oficiais: nozzle 185-210°C, bed 50-70°C, density 1.24 g/cm³,
+    MVS 29 mm³/s, tolerância ±0.03mm (controle a laser), ~370m/kg.
+    Carretel compatível com AMS. Embalagem a vácuo com sílica.
+  color_options:
+  - Black
+  - White
+  - Red
+  - Blue
+  - Green
+  - Yellow
+  - Grey
+  - Orange
+  - Pink
+  - Purple
+- name: PETG Line
+  description: Standard PETG for durable functional parts
+  positioning: functional
+  difficulty: 55
+  target_use: mechanical_parts
+  notes: >
+    Specs oficiais: nozzle 225-240°C, bed 60-70°C, density 1.27 g/cm³,
+    tolerância ±0.03mm, ~380m/kg. Sem MVS declarado.
+  color_options:
+  - Black
+  - White
+  - Natural
+- name: ABS MG-94 Premium Line
+  description: High-quality ABS with excellent flow for engineering parts
+  positioning: engineering
+  difficulty: 65
+  target_use: mechanical_heat_resistant
+  notes: >
+    ABS MG-94 puro. Nozzle 225-250°C, bed 60-70°C.
+    Tolerância ±0.03mm. Boa fluidez.
+  color_options:
+  - Black
+  - White
+  - Red
+  - Blue
+  - Pink
+materials:
+  PLA:
+    profiles:
+    - line: PLA Max High Speed Line
+      commercial_name: PLA Max High Speed
+      profile_name: National 3D PLA Max HS
+      notes: >
+        MVS declarado de 29 mm³/s pelo fabricante. Se confirmado em uso real,
+        é superior ao Voolt3D Velvet (25). Precisa de validação prática.
+      nozzle:
+        initial: 200
+        min: 185
+        max: 210
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 29
+      density: 1.24
+      diameter_tolerance: "1.75±0.03mm"
+      confidence: 70
+      recommendation: >
+        MVS muito alto declarado pelo fabricante. Se real, excelente custo-benefício
+        para K2. Requer validação prática — valor pode ser otimista.
+      color: Black
+      surface_finish: Standard
+      material_strength: 58
+      material_flexibility: 50
+      material_temperature_resistance: 48
+      material_uv_resistance: 30
+  PETG:
+    profiles:
+    - line: PETG Line
+      commercial_name: PETG
+      profile_name: National 3D PETG
+      nozzle:
+        initial: 235
+        min: 225
+        max: 240
+      bed:
+        initial: 70
+        temp: 70
+      flow_ratio: 0.98
+      max_volumetric_speed: 12
+      density: 1.27
+      diameter_tolerance: "1.75±0.03mm"
+      confidence: 75
+      recommendation: PETG padrão de custo acessível. Sem dados de MVS — estimado conservador.
+      color: Black
+      surface_finish: Standard
+      material_strength: 60
+      material_flexibility: 50
+      material_temperature_resistance: 55
+      material_uv_resistance: 30
+  ABS:
+    profiles:
+    - line: ABS MG-94 Premium Line
+      commercial_name: ABS MG-94
+      profile_name: National 3D ABS
+      nozzle:
+        initial: 240
+        min: 225
+        max: 250
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 12
+      confidence: 70
+      recommendation: ABS MG-94 com boa fluidez. Requer câmara fechada para melhores resultados.
+      color: Black
+      surface_finish: Standard
+      material_strength: 65
+      material_flexibility: 50
+      material_temperature_resistance: 70
+      material_uv_resistance: 30
