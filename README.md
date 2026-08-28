@@ -361,6 +361,56 @@ Apenas estes fabricantes são exportados para os slicers:
 
 Os demais ficam no banco (`filament-data/`) para referência. Para incluir fabricantes extras temporariamente: `./publish.sh --add "Elegoo"`
 
+## App Mobile (Android)
+
+Há um app Android (WebView) em desenvolvimento que dá acesso ao dashboard pelo
+celular — foco em controle de estoque e simulações. O scaffold está em
+`android/` e o roteiro completo (fases pendentes + decisões técnicas já tomadas)
+está em [`mobile-roadmap.md`](mobile-roadmap.md).
+
+Features pendentes do servidor (ex: autorização de escrita do estoque por
+usuário) estão em [`next-steps.md`](next-steps.md).
+
+## Health Checks
+
+O servidor expõe dois endpoints de saúde, seguindo a distinção liveness/readiness:
+
+| Endpoint | Tipo | O que checa | Status |
+|----------|------|-------------|--------|
+| `GET /health` | Liveness | Só se o processo Flask responde. Não toca em disco. | Sempre `200` enquanto o worker atende |
+| `GET /health/ready` | Readiness | Probe de leitura (`SELECT 1`) em cada banco: `filament.db` (catálogo) e `inventory.db` (estoque) | `200` se ambos ok, `503` se qualquer um falhar |
+
+O `/health/ready` retorna um detalhamento por dependência com latência:
+
+```json
+{
+  "status": "ok",
+  "checks": {
+    "filament_db":  {"status": "ok", "path": "...filament.db",  "latency_ms": 0.26},
+    "inventory_db": {"status": "ok", "path": "...inventory.db", "latency_ms": 0.12}
+  }
+}
+```
+
+Quando um banco está inacessível ou sem schema (ex: `filament.db` recém-recriado sem tabelas), o endpoint responde `503` e identifica a dependência com falha — abrir a conexão não basta, um `.db` vazio abre sem erro mas falha no primeiro `SELECT`.
+
+### Monitoramento externo (Pangolin)
+
+O [Pangolin](https://docs.pangolin.net/manage/resources/public/healthchecks-failover) faz polling HTTP periódico contra um target e o marca como *unhealthy* (removendo-o da rotação) com base no **status code**. Config recomendada no dashboard do Pangolin, por target:
+
+| Parâmetro | Valor |
+|-----------|-------|
+| scheme | `http` (TLS terminado no Traefik) |
+| path | `/health/ready` |
+| method | `GET` |
+| expected status | `200` |
+| timeout | `2s` |
+| healthy interval | `30s` |
+| unhealthy interval | `5s` |
+| healthy / unhealthy threshold | `2` / `3` (evita flapping) |
+
+Usar `/health/ready` (não `/health`) garante que o target sai de rotação se o banco cair — o serviço não é útil sem o catálogo. O `/health` puro só detecta processo morto.
+
 ## Requisitos
 
 - Python 3.9+

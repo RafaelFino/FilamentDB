@@ -2,15 +2,74 @@
 web.py — Rotas da API e páginas web.
 """
 
+import time
+
 from flask import jsonify, request, render_template, send_file
 
 from src import database, inventory, services
 
 
+def _probe(connect_fn, path, probe_sql):
+    """Executa um probe de leitura contra um banco e mede latência.
+
+    Retorna um dict no formato esperado pelos endpoints de health:
+      {"status": "ok"|"error", "path": <str>, "latency_ms": <float>[, "error": <str>]}
+
+    O probe roda `probe_sql` (um SELECT barato contra a tabela principal do
+    banco). Não basta abrir a conexão: um arquivo .db vazio ou defasado abre
+    sem erro mas falha no primeiro SELECT com "no such table". Esse é
+    justamente o cenário que o Pangolin precisa enxergar como unhealthy.
+    """
+    start = time.perf_counter()
+    conn = None
+    try:
+        conn = connect_fn()
+        conn.execute(probe_sql).fetchone()
+        latency_ms = round((time.perf_counter() - start) * 1000, 2)
+        return {"status": "ok", "path": path, "latency_ms": latency_ms}
+    except Exception as exc:  # sqlite3.Error, arquivo ausente/corrompido, etc.
+        latency_ms = round((time.perf_counter() - start) * 1000, 2)
+        return {"status": "error", "path": path, "latency_ms": latency_ms, "error": str(exc)}
+    finally:
+        if conn is not None:
+            conn.close()
+
+
 def register_routes(app):
     @app.get("/health")
     def health():
-        return jsonify({"status": "ok", "database": database.DB_PATH})
+        """Liveness: o processo Flask está de pé e respondendo.
+
+        Barato de propósito — não toca em disco nem em banco. Sempre 200
+        enquanto o worker consegue atender a requisição. Serve para o Pangolin
+        detectar processo travado/morto, não dependências quebradas.
+        """
+        return jsonify({"status": "ok"})
+
+    @app.get("/health/ready")
+    def health_ready():
+        """Readiness: o serviço consegue efetivamente atender requisições.
+
+        Faz um probe de leitura em cada banco (catálogo + estoque). Retorna
+        200 se ambos respondem, 503 se qualquer um falhar. O Pangolin avalia o
+        health check pelo STATUS CODE, então o 503 é o que remove o target da
+        rotação quando o banco está inacessível ou sem schema.
+        """
+        checks = {
+            "filament_db": _probe(
+                database.get_db_connection,
+                database.DB_PATH,
+                "SELECT 1 FROM filament_profiles LIMIT 1",
+            ),
+            "inventory_db": _probe(
+                inventory.get_connection,
+                inventory.INVENTORY_DB_PATH,
+                "SELECT 1 FROM inventory_items LIMIT 1",
+            ),
+        }
+        healthy = all(c["status"] == "ok" for c in checks.values())
+        body = {"status": "ok" if healthy else "error", "checks": checks}
+        return jsonify(body), (200 if healthy else 503)
 
     @app.get("/manufacturers")
     def list_manufacturers():
