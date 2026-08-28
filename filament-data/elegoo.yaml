@@ -8,6 +8,9 @@ lines:
   positioning: balanced
   difficulty: 40
   target_use: general_printing
+  tier: standard
+  category: general
+  finish: standard
   notes: Linha base PLA, fácil de imprimir e confiável
   color_options:
   - Black
@@ -32,6 +35,9 @@ lines:
   positioning: entry_level
   difficulty: 38
   target_use: general_printing
+  tier: budget
+  category: general
+  finish: standard
   notes: Linha econômica com ampla gama de cores
   color_options:
   - Black
@@ -57,6 +63,9 @@ lines:
   positioning: improved_quality
   difficulty: 45
   target_use: functional_pla
+  tier: premium
+  category: mechanical
+  finish: standard
   notes: PLA mais resistente, melhor impacto e estabilidade. Specs oficiais 190-230°C, bed 35-65°C, density 1.26 g/cm³, Vicat 63°C
   color_options:
   - Black
@@ -81,6 +90,9 @@ lines:
   positioning: professional
   difficulty: 48
   target_use: functional_pla
+  tier: professional
+  category: mechanical
+  finish: standard
   notes: PLA de alta performance para uso profissional
   color_options:
   - Black
@@ -98,6 +110,9 @@ lines:
   positioning: performance
   difficulty: 35
   target_use: high_speed_printing
+  tier: standard
+  category: high_speed
+  finish: standard
   notes: Otimizado para impressões rápidas até 600mm/s. Specs oficiais 190-230°C, bed 35-65°C
   color_options:
   - Black
@@ -116,6 +131,9 @@ lines:
   positioning: aesthetic
   difficulty: 40
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: matte
   notes: Acabamento fosco, foco em estética. Specs oficiais 190-220°C, bed 50-65°C, Vicat 64°C, spool 160g
   color_options:
   - Matte Black
@@ -135,6 +153,9 @@ lines:
   positioning: aesthetic
   difficulty: 45
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: silk
   notes: Acabamento sedoso, cores metálicas e bicolores
   color_options:
   - Silk Gold
@@ -162,6 +183,9 @@ lines:
   positioning: aesthetic
   difficulty: 42
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: special
   notes: Efeito galáxia com partículas brilhantes
   color_options:
   - Galaxy Black
@@ -172,6 +196,9 @@ lines:
   positioning: engineering
   difficulty: 55
   target_use: structural_parts
+  tier: professional
+  category: mechanical
+  finish: standard
   notes: Reforço em fibra de carbono, maior rigidez, requer bico endurecido
   color_options:
   - Black
@@ -180,6 +207,9 @@ lines:
   positioning: functional
   difficulty: 60
   target_use: mechanical_parts
+  tier: standard
+  category: mechanical
+  finish: standard
   notes: Maior resistência mecânica e térmica
   color_options:
   - Black
@@ -190,6 +220,9 @@ lines:
   positioning: flexible
   difficulty: 80
   target_use: flexible_parts
+  tier: standard
+  category: flexible
+  finish: standard
   notes: Baixa velocidade, alta elasticidade
   color_options:
   - Natural

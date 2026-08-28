@@ -13,6 +13,9 @@ lines:
   positioning: balanced
   difficulty: 45
   target_use: general_printing
+  tier: premium
+  category: general
+  finish: standard
   notes: Linha principal da 3DLab. Alta consistência de lote e dimensão.
   color_options:
   - Preto Eclipse
@@ -40,6 +43,9 @@ lines:
   positioning: aesthetic
   difficulty: 45
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: glossy
   notes: Cores altamente saturadas e vivas
   color_options:
   - Variado
@@ -48,6 +54,9 @@ lines:
   positioning: aesthetic
   difficulty: 45
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: satin
   notes: Acabamento entre matte e gloss, semibrilho suave
   color_options:
   - Variado
@@ -56,6 +65,9 @@ lines:
   positioning: performance
   difficulty: 48
   target_use: high_speed_printing
+  tier: standard
+  category: high_speed
+  finish: standard
   notes: Otimizado para velocidades elevadas (high speed)
   color_options:
   - Preto Carbono
@@ -70,6 +82,9 @@ lines:
   positioning: functional
   difficulty: 50
   target_use: mechanical_parts
+  tier: premium
+  category: mechanical
+  finish: standard
   notes: Maior tenacidade que o PLA convencional
   color_options:
   - Variado
@@ -78,6 +93,9 @@ lines:
   positioning: aesthetic
   difficulty: 45
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: silk
   notes: Reflexo suave e sedoso
   color_options:
   - Variado
@@ -86,6 +104,9 @@ lines:
   positioning: aesthetic
   difficulty: 45
   target_use: visual_quality
+  tier: premium
+  category: aesthetic
+  finish: silk
   notes: Versão premium do silk com acabamento mais intenso
   color_options:
   - Variado
@@ -94,6 +115,9 @@ lines:
   positioning: aesthetic
   difficulty: 47
   target_use: visual_quality
+  tier: premium
+  category: aesthetic
+  finish: silk
   notes: Combinação de duas cores com acabamento silk
   color_options:
   - Variado
@@ -102,6 +126,9 @@ lines:
   positioning: aesthetic
   difficulty: 45
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: special
   notes: Transições de cor automáticas durante a impressão
   color_options:
   - Rainbow
@@ -110,6 +137,9 @@ lines:
   positioning: aesthetic
   difficulty: 50
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: special
   notes: Efeitos visuais diferenciados
   color_options:
   - Neon
@@ -121,6 +151,9 @@ lines:
   positioning: functional
   difficulty: 65
   target_use: mechanical_parts
+  tier: premium
+  category: high_temp
+  finish: standard
   notes: ABS com boa resistência mecânica e térmica
   color_options:
   - Preto Eclipse
@@ -132,6 +165,9 @@ lines:
   positioning: functional
   difficulty: 55
   target_use: mechanical_parts
+  tier: premium
+  category: mechanical
+  finish: standard
   notes: Alta resistência mecânica, química e térmica. Certificação FoodSafe europeia.
   color_options:
   - Preto Eclipse
@@ -143,6 +179,9 @@ lines:
   positioning: flexible
   difficulty: 75
   target_use: flexible_parts
+  tier: standard
+  category: flexible
+  finish: standard
   notes: Alta elasticidade, dureza 98A Shore
   color_options:
   - Variado
@@ -151,6 +190,9 @@ lines:
   positioning: flexible
   difficulty: 60
   target_use: flexible_parts
+  tier: standard
+  category: flexible
+  finish: standard
   notes: Semi-rígido, dureza 65D Shore
   color_options:
   - Variado
@@ -159,6 +201,9 @@ lines:
   positioning: functional
   difficulty: 70
   target_use: mechanical_parts
+  tier: standard
+  category: mechanical
+  finish: standard
   notes: Material especial PCV
   color_options:
   - Variado
@@ -167,6 +212,9 @@ lines:
   positioning: budget
   difficulty: 40
   target_use: general_printing
+  tier: budget
+  category: general
+  finish: standard
   notes: Melhor custo-benefício
   color_options:
   - Variado

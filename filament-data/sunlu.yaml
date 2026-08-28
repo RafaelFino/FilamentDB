@@ -8,6 +8,9 @@ lines:
   positioning: balanced
   difficulty: 40
   target_use: general_printing
+  tier: standard
+  category: general
+  finish: standard
   notes: PLA base da Sunlu, confiável e fácil de imprimir
   color_options:
   - Natural
@@ -17,6 +20,9 @@ lines:
   positioning: improved_quality
   difficulty: 45
   target_use: functional_pla
+  tier: premium
+  category: mechanical
+  finish: standard
   notes: PLA reforçado, bom equilíbrio geral
   color_options:
   - Natural
@@ -26,6 +32,9 @@ lines:
   positioning: performance
   difficulty: 35
   target_use: high_speed_printing
+  tier: standard
+  category: high_speed
+  finish: standard
   notes: >
     Specs oficiais do datasheet: nozzle 210-230°C, bed 50-60°C, density 1.28 g/cm³,
     Vicat 54°C, HDT 57°C, tensile strength 39±5 MPa, flexural strength 70±5 MPa,
@@ -52,6 +61,9 @@ lines:
   positioning: performance_plus
   difficulty: 40
   target_use: advanced_pla
+  tier: premium
+  category: high_speed
+  finish: standard
   notes: Melhor fluidez e acabamento superficial, formulação avançada
   color_options:
   - Natural
@@ -67,6 +79,9 @@ lines:
   positioning: aesthetic
   difficulty: 45
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: silk
   notes: Acabamento brilhante, foco estético
   color_options:
   - White
@@ -80,6 +95,9 @@ lines:
   positioning: functional
   difficulty: 55
   target_use: mechanical_parts
+  tier: standard
+  category: mechanical
+  finish: standard
   notes: Boa resistência mecânica e química
   color_options:
   - Natural
@@ -89,6 +107,9 @@ lines:
   positioning: performance
   difficulty: 50
   target_use: high_speed_functional
+  tier: premium
+  category: high_speed
+  finish: matte
   notes: >
     Specs oficiais do datasheet: nozzle 240-270°C (escala por velocidade), bed 60-70°C,
     density 1.26 g/cm³, HDT 70°C, melting point 128°C, MFR 4.4 g/10min,
@@ -117,6 +138,9 @@ lines:
   positioning: engineering
   difficulty: 70
   target_use: mechanical_heat_resistant
+  tier: standard
+  category: high_temp
+  finish: standard
   notes: Requer ambiente fechado para melhor resultado
   color_options:
   - Natural
@@ -126,6 +150,9 @@ lines:
   positioning: flexible
   difficulty: 80
   target_use: flexible_parts
+  tier: standard
+  category: flexible
+  finish: standard
   notes: Baixa velocidade, alta elasticidade
   color_options:
   - Natural

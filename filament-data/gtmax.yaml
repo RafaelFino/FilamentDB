@@ -9,6 +9,9 @@ lines:
   positioning: balanced
   difficulty: 45
   target_use: general_printing
+  tier: standard
+  category: general
+  finish: standard
   notes: Linha base mais comum no mercado brasileiro
   color_options:
   - Natural
@@ -18,6 +21,9 @@ lines:
   positioning: budget
   difficulty: 55
   target_use: low_cost_printing
+  tier: budget
+  category: general
+  finish: standard
   notes: Mais variação entre lotes, exige ajuste fino de perfil
   color_options:
   - Natural
@@ -27,6 +33,9 @@ lines:
   positioning: improved_quality
   difficulty: 50
   target_use: better_stability
+  tier: standard
+  category: general
+  finish: standard
   notes: Versão mais estável da linha padrão
   color_options:
   - Natural
@@ -36,6 +45,9 @@ lines:
   positioning: functional
   difficulty: 65
   target_use: mechanical_parts
+  tier: premium
+  category: mechanical
+  finish: standard
   notes: Voltado para peças funcionais e uso técnico
   color_options:
   - Black
@@ -46,6 +58,9 @@ lines:
   positioning: flexible
   difficulty: 80
   target_use: flexible_parts
+  tier: standard
+  category: flexible
+  finish: standard
   notes: Requer baixa velocidade e controle de retração
   color_options:
   - Natural

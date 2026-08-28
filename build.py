@@ -135,6 +135,10 @@ def create_schema():
         line_description TEXT,
         line_positioning TEXT,
         line_target_use TEXT,
+        line_tier TEXT,
+        line_category TEXT,
+        line_finish TEXT,
+        line_skill_level TEXT,
         line_color_options TEXT,
         color TEXT,
         surface_finish TEXT,
@@ -298,6 +302,22 @@ def load_material_defs():
 CURRENT_USE_BRANDS = {"Voolt3D", "Sunlu", "Creality"}
 
 
+def skill_level_from_difficulty(difficulty):
+    """Deriva skill_level normalizado a partir do difficulty (0-100) da linha.
+
+    Faixas: beginner (0-40), intermediate (41-65), advanced (66-100).
+    Retorna None se difficulty ausente, mantendo o campo opcional.
+    """
+    if difficulty is None:
+        return None
+    d = int(difficulty)
+    if d <= 40:
+        return "beginner"
+    if d <= 65:
+        return "intermediate"
+    return "advanced"
+
+
 def derive_confidence(material_name, manufacturer_name, profile, material_defs):
     """Deriva o confidence (0-100) de fatores objetivos e rastreáveis.
 
@@ -404,10 +424,11 @@ def seed_filaments():
                 nozzle_temp_initial, nozzle_temp_min, nozzle_temp_max,
                 bed_temp_initial, bed_temp, flow_ratio, max_volumetric_speed,
                 profile_version, confidence, line, line_description, line_positioning,
-                line_target_use, line_color_options, color, surface_finish,
+                line_target_use, line_tier, line_category, line_finish, line_skill_level,
+                line_color_options, color, surface_finish,
                 recommendation, diameter, density, drying_temperature, drying_time,
                 notes, active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             manufacturer_id, material_id,
             profile["commercial_name"], profile["profile_name"],
@@ -422,6 +443,8 @@ def seed_filaments():
             profile.get("profile_version", 1), confidence,
             profile.get("line"), profile.get("line_description"),
             profile.get("line_positioning"), profile.get("line_target_use"),
+            profile.get("line_tier"), profile.get("line_category"),
+            profile.get("line_finish"), profile.get("line_skill_level"),
             json.dumps(profile.get("line_color_options", []), ensure_ascii=False)
                 if profile.get("line_color_options") is not None else None,
             profile.get("color"), profile.get("surface_finish"),
@@ -474,6 +497,12 @@ def seed_filaments():
                 profile["line_description"] = line_def.get("description")
                 profile["line_positioning"] = line_def.get("positioning")
                 profile["line_target_use"] = line_def.get("target_use")
+                profile["line_tier"] = line_def.get("tier")
+                profile["line_category"] = line_def.get("category")
+                profile["line_finish"] = line_def.get("finish")
+                profile["line_skill_level"] = skill_level_from_difficulty(
+                    line_def.get("difficulty")
+                )
                 profile["line_color_options"] = line_def.get("color_options")
                 if "color" not in profile:
                     profile["color"] = material_name

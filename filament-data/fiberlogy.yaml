@@ -8,6 +8,9 @@ lines:
   positioning: balanced
   difficulty: 40
   target_use: general_printing
+  tier: standard
+  category: general
+  finish: standard
   notes: Muito consistente para uso diário
   color_options:
   - Natural
@@ -17,6 +20,9 @@ lines:
   positioning: functional
   difficulty: 60
   target_use: mechanical_parts
+  tier: premium
+  category: mechanical
+  finish: standard
   notes: PETG e ASA de alta qualidade
   color_options:
   - Natural
@@ -26,6 +32,9 @@ lines:
   positioning: improved_quality
   difficulty: 35
   target_use: visual_quality
+  tier: standard
+  category: general
+  finish: standard
   notes: Muito fácil de imprimir
   color_options:
   - Natural
@@ -35,6 +44,9 @@ lines:
   positioning: flexible
   difficulty: 80
   target_use: flexible_parts
+  tier: standard
+  category: flexible
+  finish: standard
   notes: Alta qualidade em TPU
   color_options:
   - Natural

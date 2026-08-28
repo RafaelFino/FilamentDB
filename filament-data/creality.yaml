@@ -8,6 +8,9 @@ lines:
   positioning: performance
   difficulty: 25
   target_use: production_speed
+  tier: standard
+  category: high_speed
+  finish: standard
   notes: Linha principal moderna da Creality para alta velocidade
   color_options:
   - Natural
@@ -17,6 +20,9 @@ lines:
   positioning: balanced
   difficulty: 50
   target_use: general_printing
+  tier: standard
+  category: general
+  finish: standard
   notes: Linha tradicional com boa estabilidade e ampla compatibilidade
   color_options:
   - Natural
@@ -26,6 +32,9 @@ lines:
   positioning: beginner
   difficulty: 40
   target_use: beginner_low_cost
+  tier: budget
+  category: general
+  finish: standard
   notes: Mais tolerante, menor exigência de tuning
   color_options:
   - Natural
@@ -35,6 +44,9 @@ lines:
   positioning: performance_plus
   difficulty: 30
   target_use: functional_pla
+  tier: premium
+  category: high_speed
+  finish: standard
   notes: PLA reforçado otimizado para velocidade
   color_options:
   - Natural
@@ -44,6 +56,9 @@ lines:
   positioning: functional
   difficulty: 55
   target_use: mechanical_parts
+  tier: standard
+  category: mechanical
+  finish: standard
   notes: Boa resistência química e mecânica
   color_options:
   - Natural
@@ -53,6 +68,9 @@ lines:
   positioning: performance
   difficulty: 45
   target_use: high_speed_petg
+  tier: standard
+  category: high_speed
+  finish: standard
   notes: PETG otimizado para fluxo alto
   color_options:
   - Natural
@@ -62,6 +80,9 @@ lines:
   positioning: engineering
   difficulty: 70
   target_use: mechanical_heat_resistant
+  tier: professional
+  category: high_temp
+  finish: standard
   notes: Requer ambiente fechado
   color_options:
   - Black
@@ -72,6 +93,9 @@ lines:
   positioning: engineering_outdoor
   difficulty: 75
   target_use: outdoor_parts
+  tier: professional
+  category: high_temp
+  finish: standard
   notes: Substituto do ABS para uso externo
   color_options:
   - Black
@@ -82,6 +106,9 @@ lines:
   positioning: flexible
   difficulty: 80
   target_use: flexible_parts
+  tier: standard
+  category: flexible
+  finish: standard
   notes: Baixa velocidade, alta elasticidade
   color_options:
   - Natural

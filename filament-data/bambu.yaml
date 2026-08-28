@@ -8,6 +8,9 @@ lines:
   positioning: balanced
   difficulty: 35
   target_use: general_printing
+  tier: standard
+  category: general
+  finish: standard
   notes: Linha base com excelente consistência e controle de qualidade
   color_options:
   - Natural
@@ -17,6 +20,9 @@ lines:
   positioning: functional
   difficulty: 45
   target_use: functional_parts
+  tier: premium
+  category: mechanical
+  finish: standard
   notes: Maior resistência mecânica que materiais básicos
   color_options:
   - Natural
@@ -26,6 +32,9 @@ lines:
   positioning: aesthetic
   difficulty: 40
   target_use: visual_quality
+  tier: premium
+  category: aesthetic
+  finish: matte
   notes: Acabamento fosco premium
   color_options:
   - Black
@@ -36,6 +45,9 @@ lines:
   positioning: aesthetic
   difficulty: 45
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: silk
   notes: Alto brilho, foco estético
   color_options:
   - White
@@ -46,6 +58,9 @@ lines:
   positioning: engineering
   difficulty: 75
   target_use: mechanical_heat_resistant
+  tier: professional
+  category: high_temp
+  finish: standard
   notes: Materiais técnicos de alta exigência
   color_options:
   - Black
@@ -56,6 +71,9 @@ lines:
   positioning: support
   difficulty: 70
   target_use: support_material
+  tier: standard
+  category: support
+  finish: standard
   notes: Materiais auxiliares de suporte
   color_options:
   - Natural

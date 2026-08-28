@@ -9,6 +9,9 @@ lines:
   positioning: balanced
   difficulty: 40
   target_use: general_printing
+  tier: standard
+  category: general
+  finish: standard
   notes: Linha base da Voolt3D, boa estabilidade e custo equilibrado
   color_options:
   - Natural
@@ -19,6 +22,9 @@ lines:
   positioning: aesthetic
   difficulty: 35
   target_use: visual_quality
+  tier: premium
+  category: aesthetic
+  finish: velvet
   notes: Foco em acabamento visual e toque fosco. Reduz visibilidade de camadas, pode ser lixado. High Speed Premium.
   color_options:
   - Preto
@@ -40,6 +46,9 @@ lines:
   positioning: aesthetic
   difficulty: 38
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: silk
   notes: Acabamento silk com reflexo metálico
   color_options:
   - Dourado
@@ -49,6 +58,9 @@ lines:
   positioning: performance
   difficulty: 45
   target_use: high_speed_printing
+  tier: premium
+  category: high_speed
+  finish: standard
   notes: Otimizado para alta velocidade. Max volumetric speed até 25 mm³/s.
   color_options:
   - Natural
@@ -59,6 +71,9 @@ lines:
   positioning: functional
   difficulty: 60
   target_use: mechanical_parts
+  tier: premium
+  category: mechanical
+  finish: standard
   notes: Maior resistência mecânica e térmica
   color_options:
   - Black
@@ -69,6 +84,9 @@ lines:
   positioning: flexible
   difficulty: 80
   target_use: flexible_parts
+  tier: standard
+  category: flexible
+  finish: standard
   notes: Baixa velocidade e alta elasticidade
   color_options:
   - Natural

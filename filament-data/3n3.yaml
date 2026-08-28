@@ -13,6 +13,9 @@ lines:
   positioning: budget
   difficulty: 40
   target_use: general_printing
+  tier: budget
+  category: general
+  finish: standard
   notes: >
     PLA padrão da 3N3. Tolerância ±0.03mm. Nozzle 190-230°C, bed 50°C.
     Density 1.24 g/cm³, Tg 55°C, fusão 115°C. ~316m/kg (PLA) ou ~330m/kg.
@@ -36,6 +39,9 @@ lines:
   positioning: functional
   difficulty: 55
   target_use: mechanical_parts
+  tier: standard
+  category: mechanical
+  finish: standard
   notes: >
     PETG 3N3 com glicol modificado. Combinação de resistência do ABS
     com facilidade de impressão do PLA. Tolerância ±0.03mm.

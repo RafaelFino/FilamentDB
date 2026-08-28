@@ -12,6 +12,9 @@ lines:
   positioning: balanced
   difficulty: 40
   target_use: general_printing
+  tier: standard
+  category: general
+  finish: standard
   notes: >
     PLA com tolerância ±0.02mm, matéria-prima virgem. Extrusão uniforme,
     boa aderência entre camadas. Foco em qualidade e consistência.
@@ -31,6 +34,9 @@ lines:
   positioning: aesthetic
   difficulty: 45
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: silk
   notes: Acabamento sedoso/metálico. Tolerância ±0.02mm.
   color_options:
   - Gold
@@ -43,6 +49,9 @@ lines:
   positioning: aesthetic
   difficulty: 45
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: matte
   notes: Acabamento fosco que esconde linhas de camada. Tolerância ±0.02mm.
   color_options:
   - Black
@@ -55,6 +64,9 @@ lines:
   positioning: functional
   difficulty: 55
   target_use: mechanical_parts
+  tier: standard
+  category: mechanical
+  finish: standard
   notes: PETG padrão com tolerância ±0.02mm. Boa adesão entre camadas.
   color_options:
   - Black
@@ -66,6 +78,9 @@ lines:
   positioning: engineering
   difficulty: 65
   target_use: mechanical_heat_resistant
+  tier: standard
+  category: high_temp
+  finish: standard
   notes: ABS padrão. Tolerância ±0.02mm. Requer câmara fechada.
   color_options:
   - Black
@@ -75,6 +90,9 @@ lines:
   positioning: flexible
   difficulty: 75
   target_use: flexible_parts
+  tier: standard
+  category: flexible
+  finish: standard
   notes: TPU flexível. Tolerância ±0.02mm. Velocidade baixa obrigatória.
   color_options:
   - Black

@@ -13,6 +13,9 @@ lines:
   positioning: budget
   difficulty: 40
   target_use: general_printing
+  tier: standard
+  category: general
+  finish: standard
   notes: >
     PLA Premium da Brasfila. Tolerância ±0.05mm. Nozzle 190-210°C.
     Preço acessível (~R$97/kg). Boa variedade de cores sólidas.
@@ -34,6 +37,9 @@ lines:
   positioning: aesthetic
   difficulty: 45
   target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: silk
   notes: >
     PLA com acabamento sedoso/metálico. Tolerância ±0.05mm. Nozzle 190-210°C.
     Preço similar ao PLA Premium (~R$116/kg).
@@ -49,6 +55,9 @@ lines:
   positioning: functional
   difficulty: 55
   target_use: mechanical_parts
+  tier: standard
+  category: mechanical
+  finish: standard
   notes: PETG padrão. Tolerância ±0.05mm.
   color_options:
   - Black

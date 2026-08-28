@@ -12,6 +12,9 @@ lines:
   positioning: performance
   difficulty: 40
   target_use: high_speed_printing
+  tier: standard
+  category: high_speed
+  finish: standard
   notes: >
     Specs oficiais: nozzle 185-210°C, bed 50-70°C, density 1.24 g/cm³,
     MVS 29 mm³/s, tolerância ±0.03mm (controle a laser), ~370m/kg.
@@ -32,6 +35,9 @@ lines:
   positioning: functional
   difficulty: 55
   target_use: mechanical_parts
+  tier: standard
+  category: mechanical
+  finish: standard
   notes: >
     Specs oficiais: nozzle 225-240°C, bed 60-70°C, density 1.27 g/cm³,
     tolerância ±0.03mm, ~380m/kg. Sem MVS declarado.
@@ -44,6 +50,9 @@ lines:
   positioning: engineering
   difficulty: 65
   target_use: mechanical_heat_resistant
+  tier: premium
+  category: high_temp
+  finish: standard
   notes: >
     ABS MG-94 puro. Nozzle 225-250°C, bed 60-70°C.
     Tolerância ±0.03mm. Boa fluidez.

@@ -8,6 +8,9 @@ lines:
   positioning: premium
   difficulty: 30
   target_use: precision_printing
+  tier: professional
+  category: general
+  finish: standard
   notes: Padrão ouro de consistência global
   color_options:
   - Natural
@@ -17,6 +20,9 @@ lines:
   positioning: engineering
   difficulty: 65
   target_use: mechanical_heat_resistant
+  tier: professional
+  category: high_temp
+  finish: standard
   notes: Altíssima confiabilidade técnica
   color_options:
   - Black
