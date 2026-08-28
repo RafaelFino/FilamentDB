@@ -8,6 +8,10 @@ Pangolin (email/senha) dentro do próprio app e a sessão fica salva para as
 próximas aberturas. Estruturado para evoluir depois (bridge JS↔Kotlin para
 integração com a impressora — ver `MainActivity.kt`, seção `PrinterBridge`).
 
+> **Roteiro e decisões**: o plano de trabalho, as fases pendentes e o histórico
+> de decisões estão em [`../mobile-roadmap.md`](../mobile-roadmap.md) (raiz do
+> repo). Este README cobre só o build.
+
 ## Requisitos
 
 - Android Studio (Ladybug ou mais recente) **ou** SDK Android via linha de comando
