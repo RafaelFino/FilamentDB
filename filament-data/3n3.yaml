@@ -63,17 +63,12 @@ materials:
       glass_transition_temp: 55
       melting_point: 115
       diameter_tolerance: "1.75±0.03mm"
-      confidence: 75
       recommendation: >
         PLA básico e barato. Funcional para velocidades baixas (~100 mm/s).
         Na K2, o MVS baixo limita severamente a velocidade efetiva (~133 mm/s).
         Bom para protótipos descartáveis onde tempo não importa.
       color: Black
       surface_finish: Standard
-      material_strength: 55
-      material_flexibility: 48
-      material_temperature_resistance: 45
-      material_uv_resistance: 28
   PETG:
     profiles:
     - line: PETG Line
@@ -89,13 +84,8 @@ materials:
       flow_ratio: 0.98
       max_volumetric_speed: 11
       diameter_tolerance: "1.75±0.03mm"
-      confidence: 72
       recommendation: >
         PETG básico. Funcional mas lento. MVS estimado conservador.
         Adequado para peças funcionais sem pressa.
       color: Black
       surface_finish: Standard
-      material_strength: 58
-      material_flexibility: 50
-      material_temperature_resistance: 55
-      material_uv_resistance: 30

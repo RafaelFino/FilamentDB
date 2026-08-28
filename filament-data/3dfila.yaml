@@ -89,17 +89,12 @@ materials:
       flow_ratio: 1.0
       max_volumetric_speed: 11
       diameter_tolerance: "1.75±0.05mm"
-      confidence: 68
       recommendation: >
         PLA barato mas com tolerância frouxa (±0.05mm). Pode causar inconsistência
         de fluxo em alta velocidade. Usar apenas em perfis Safe/Standard lentos.
         Não recomendado para K2 em velocidade máxima.
       color: Black
       surface_finish: Standard
-      material_strength: 55
-      material_flexibility: 48
-      material_temperature_resistance: 45
-      material_uv_resistance: 28
     - line: PLA HT Line
       commercial_name: PLA HT
       profile_name: 3DFila PLA HT
@@ -113,16 +108,11 @@ materials:
       flow_ratio: 1.0
       max_volumetric_speed: 12
       diameter_tolerance: "1.75±0.05mm"
-      confidence: 65
       recommendation: >
         PLA de alta temperatura. Útil para peças que ficarão em ambientes quentes.
         Pós-processamento térmico (annealing) melhora propriedades.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 45
-      material_temperature_resistance: 65
-      material_uv_resistance: 30
     - line: PLA Silk Line
       commercial_name: PLA Silk
       profile_name: 3DFila PLA Silk
@@ -136,14 +126,9 @@ materials:
       flow_ratio: 1.05
       max_volumetric_speed: 10
       diameter_tolerance: "1.75±0.05mm"
-      confidence: 68
       recommendation: Acabamento brilhante para peças decorativas. Velocidade baixa.
       color: Gold
       surface_finish: Silky
-      material_strength: 52
-      material_flexibility: 48
-      material_temperature_resistance: 45
-      material_uv_resistance: 28
   PETG:
     profiles:
     - line: PETG XT Line
@@ -159,16 +144,11 @@ materials:
       flow_ratio: 0.98
       max_volumetric_speed: 11
       diameter_tolerance: "1.75±0.05mm"
-      confidence: 68
       recommendation: >
         PETG funcional de baixo custo. Tolerância frouxa pode causar stringing
         variável. Adequado para peças onde acabamento não é prioridade.
       color: Black
       surface_finish: Standard
-      material_strength: 58
-      material_flexibility: 50
-      material_temperature_resistance: 55
-      material_uv_resistance: 30
   ABS:
     profiles:
     - line: ABS Line
@@ -184,11 +164,6 @@ materials:
       flow_ratio: 1.0
       max_volumetric_speed: 10
       diameter_tolerance: "1.75±0.05mm"
-      confidence: 65
       recommendation: ABS básico. Requer câmara fechada. Tolerância frouxa.
       color: Black
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 48
-      material_temperature_resistance: 68
-      material_uv_resistance: 30

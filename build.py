@@ -29,6 +29,7 @@ import yaml
 ROOT_DIR = Path(__file__).resolve().parent
 DB_PATH = os.environ.get("FILAMENT_DB_PATH", str(ROOT_DIR / "filament.db"))
 DATA_DIR = ROOT_DIR / "filament-data"
+MATERIAL_DATA_PATH = ROOT_DIR / "material-data" / "materials.yaml"
 PROCESS_BASE_DIR = ROOT_DIR / "process-base"
 EXPORT_FILAMENTS_DIR = ROOT_DIR / "Creality-Print" / "filaments"
 EXPORT_PROCESS_DIR = ROOT_DIR / "Creality-Print" / "process"
@@ -268,9 +269,70 @@ def create_schema():
 # STEP 2: SEED FILAMENTS
 # =============================================================================
 
+# =============================================================================
+# Material definitions + derived confidence
+# =============================================================================
+
+def load_material_defs():
+    """Carrega as propriedades canônicas dos materiais (material-data/materials.yaml).
+
+    Este arquivo é a fonte de verdade das propriedades mecânicas. Se faltar, o build
+    FALHA em vez de cair em defaults silenciosos — do contrário um deploy no server
+    (git pull sem o arquivo versionado) geraria um banco com todos os materiais em
+    50/50 sem nenhum aviso, corrompendo a base sem quebrar visivelmente.
+    """
+    if not MATERIAL_DATA_PATH.exists():
+        error(f"material-data não encontrado em {MATERIAL_DATA_PATH}. "
+              f"Este arquivo é obrigatório e deve estar versionado no git. "
+              f"Verifique se 'material-data/materials.yaml' foi commitado.")
+    with open(MATERIAL_DATA_PATH, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    materials = data.get("materials", {})
+    if not materials:
+        error(f"material-data em {MATERIAL_DATA_PATH} está vazio ou malformado "
+              f"(sem chave 'materials'). Build abortado para não corromper a base.")
+    return materials
+
+
+# Marcas de uso corrente do Fino (recebem bônus de confiança: perfis mais testados).
+CURRENT_USE_BRANDS = {"Voolt3D", "Sunlu", "Creality"}
+
+
+def derive_confidence(material_name, manufacturer_name, profile, material_defs):
+    """Deriva o confidence (0-100) de fatores objetivos e rastreáveis.
+
+    confidence = base_material (maturidade/facilidade do polímero)
+               + bônus de marca de uso corrente (perfis mais rodados na K2)
+               + bônus/penalidade por riqueza de dados técnicos (datasheet)
+
+    Substitui a nota manual subjetiva por uma função explicável. Clamp 40-95.
+    """
+    mdef = material_defs.get(material_name, {})
+    base = mdef.get("confidence_base", 65)
+
+    # +7 se marca de uso corrente (perfis efetivamente testados na impressora)
+    brand_bonus = 7 if manufacturer_name in CURRENT_USE_BRANDS else 0
+
+    # Riqueza de dados técnicos: presença de specs indica fonte confiável.
+    tech_keys = ("density", "glass_transition_temp", "diameter_tolerance",
+                 "tensile_strength_mpa", "heat_deflection_temp",
+                 "flexural_strength_mpa", "drying_temperature")
+    tech_count = sum(1 for k in tech_keys if profile.get(k) is not None)
+    if tech_count >= 3:
+        data_adj = 3
+    elif tech_count == 0:
+        data_adj = -5
+    else:
+        data_adj = 0
+
+    return max(40, min(95, base + brand_bonus + data_adj))
+
+
 def seed_filaments():
     """Importa perfis de filamentos dos YAMLs em data/."""
     info("Importando filamentos de filament-data/*.yaml...")
+
+    material_defs = load_material_defs()
 
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
@@ -289,12 +351,34 @@ def seed_filaments():
         row = cur.fetchone()
         if row:
             return row[0]
+        # Propriedades canônicas do polímero (material-data/materials.yaml).
+        # Fallback para 50/neutro se o material não estiver definido.
+        m = material_defs.get(name, {})
         cur.execute("""
             INSERT INTO materials(name, description, average_cost, difficulty, strength,
                 flexibility, temperature_resistance, uv_resistance, food_safe,
-                indoor, outdoor, abrasive, requires_enclosure, recommended_nozzle_temp, recommended_bed_temp)
-            VALUES (?, '', 50, 50, 50, 50, 50, 50, 0, 1, 0, 0, 0, 220, 60)
-        """, (name,))
+                indoor, outdoor, abrasive, requires_enclosure,
+                recommended_nozzle_temp, recommended_bed_temp, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            name,
+            m.get("description", ""),
+            m.get("average_cost", 50),
+            # difficulty: inverso da facilidade (confidence_base). Fácil -> difficulty baixa.
+            max(0, min(100, 100 - m.get("confidence_base", 50))),
+            m.get("strength", 50),
+            m.get("flexibility", 50),
+            m.get("temp_resist", 50),
+            m.get("uv_resist", 50),
+            m.get("food_safe", 0),
+            m.get("indoor", 1),
+            m.get("outdoor", 0),
+            m.get("abrasive", 0),
+            m.get("requires_enclosure", 0),
+            m.get("recommended_nozzle_temp", 220),
+            m.get("recommended_bed_temp", 60),
+            (m.get("notes") or "").strip(),
+        ))
         return cur.lastrowid
 
     def get_inherits_for_material(material_name):
@@ -310,8 +394,9 @@ def seed_filaments():
         }
         return mapping.get(material_name, "Hyper PLA @Creality K2 0.4 nozzle")
 
-    def insert_profile(manufacturer_id, material_id, profile, material_name):
+    def insert_profile(manufacturer_id, material_id, profile, material_name, manufacturer_name):
         inherits = profile.get("inherits", get_inherits_for_material(material_name))
+        confidence = derive_confidence(material_name, manufacturer_name, profile, material_defs)
         cur.execute("""
             INSERT INTO filament_profiles(
                 manufacturer_id, material_id, commercial_name, profile_name,
@@ -334,7 +419,7 @@ def seed_filaments():
             profile["nozzle"]["initial"], profile["nozzle"]["min"], profile["nozzle"]["max"],
             profile["bed"]["initial"], profile["bed"]["temp"],
             profile.get("flow_ratio", 1.0), profile.get("max_volumetric_speed", 12),
-            profile.get("profile_version", 1), profile.get("confidence", 70),
+            profile.get("profile_version", 1), confidence,
             profile.get("line"), profile.get("line_description"),
             profile.get("line_positioning"), profile.get("line_target_use"),
             json.dumps(profile.get("line_color_options", []), ensure_ascii=False)
@@ -405,7 +490,7 @@ def seed_filaments():
                     suffix = "Standard"
                 profile["profile_name"] = f"{material_name} - {manufacturer_name} - {suffix}"
 
-                insert_profile(manufacturer_id, material_id, profile, material_name)
+                insert_profile(manufacturer_id, material_id, profile, material_name, manufacturer_name)
                 count += 1
 
     conn.commit()
@@ -572,25 +657,41 @@ def seed_processes():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
-    # Garantir que os materiais de processo existam
-    process_materials = [
-        ("PLA", "Polylactic Acid", 220, 60),
-        ("PETG", "Polyethylene Terephthalate Glycol", 230, 75),
-        ("TPU", "Thermoplastic Polyurethane", 220, 50),
-        ("ABS", "Acrylonitrile Butadiene Styrene", 250, 100),
-        ("PLA-CF", "PLA com fibra de carbono", 220, 60),
-        ("PETG-CF", "PETG com fibra de carbono", 230, 75),
-    ]
-    for name, desc, nozzle_temp, bed_temp in process_materials:
+    # Garantir que os materiais de processo existam. Materiais como PLA-CF/PETG-CF
+    # só aparecem em perfis de processo (não têm filamento próprio), então podem
+    # não ter sido criados no seed_filaments. Usamos as MESMAS propriedades
+    # canônicas (material-data/materials.yaml) para não recair em defaults 50/50.
+    material_defs = load_material_defs()
+    process_materials = ["PLA", "PETG", "TPU", "ABS", "PLA-CF", "PETG-CF"]
+    for name in process_materials:
         cur.execute("SELECT id FROM materials WHERE name = ?", (name,))
-        if not cur.fetchone():
-            cur.execute("""
-                INSERT INTO materials(name, description, average_cost, difficulty, strength,
-                    flexibility, temperature_resistance, uv_resistance, food_safe,
-                    indoor, outdoor, abrasive, requires_enclosure,
-                    recommended_nozzle_temp, recommended_bed_temp)
-                VALUES (?, ?, 50, 50, 50, 50, 50, 50, 0, 1, 0, 0, 0, ?, ?)
-            """, (name, desc, nozzle_temp, bed_temp))
+        if cur.fetchone():
+            continue
+        m = material_defs.get(name, {})
+        cur.execute("""
+            INSERT INTO materials(name, description, average_cost, difficulty, strength,
+                flexibility, temperature_resistance, uv_resistance, food_safe,
+                indoor, outdoor, abrasive, requires_enclosure,
+                recommended_nozzle_temp, recommended_bed_temp, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            name,
+            m.get("description", ""),
+            m.get("average_cost", 50),
+            max(0, min(100, 100 - m.get("confidence_base", 50))),
+            m.get("strength", 50),
+            m.get("flexibility", 50),
+            m.get("temp_resist", 50),
+            m.get("uv_resist", 50),
+            m.get("food_safe", 0),
+            m.get("indoor", 1),
+            m.get("outdoor", 0),
+            m.get("abrasive", 0),
+            m.get("requires_enclosure", 0),
+            m.get("recommended_nozzle_temp", 220),
+            m.get("recommended_bed_temp", 60),
+            (m.get("notes") or "").strip(),
+        ))
 
     conn.commit()
 

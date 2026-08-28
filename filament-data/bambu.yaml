@@ -78,14 +78,9 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      confidence: 98
       recommendation: Altíssima consistência e facilidade de impressão
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
     - line: Matte Line
       commercial_name: PLA Matte
       profile_name: Bambu PLA Matte
@@ -101,14 +96,9 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      confidence: 97
       recommendation: Acabamento premium fosco com alta consistência
       color: Natural
       surface_finish: Matte
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
     - line: Silk Line
       commercial_name: PLA Silk
       profile_name: Bambu PLA Silk
@@ -124,14 +114,9 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      confidence: 95
       recommendation: Acabamento brilhante altamente estético
       color: Natural
       surface_finish: Silky
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
   PETG:
     profiles:
     - line: Basic Line
@@ -149,14 +134,9 @@ materials:
       diameter: 1.75
       drying_temperature: 65
       drying_time: 8.0
-      confidence: 98
       recommendation: PETG extremamente consistente e confiável
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
   ABS:
     profiles:
     - line: Engineering Line
@@ -174,14 +154,9 @@ materials:
       diameter: 1.75
       drying_temperature: 80
       drying_time: 6.0
-      confidence: 98
       recommendation: ABS de alta estabilidade dimensional
       color: Black
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
   ASA:
     profiles:
     - line: Engineering Line
@@ -199,14 +174,9 @@ materials:
       diameter: 1.75
       drying_temperature: 80
       drying_time: 6.0
-      confidence: 98
       recommendation: Excelente resistência UV e estabilidade externa
       color: White
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
   TPU:
     profiles:
     - line: Tough Line
@@ -224,14 +194,9 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      confidence: 95
       recommendation: Flexível com alta consistência e controle de extrusão
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
   SUPPORT:
     profiles:
     - line: Support Line
@@ -249,11 +214,6 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 4.0
-      confidence: 95
       recommendation: Material de suporte dedicado para geometrias complexas
       color: White
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30

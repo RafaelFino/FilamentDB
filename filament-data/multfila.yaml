@@ -97,16 +97,11 @@ materials:
       flow_ratio: 1.0
       max_volumetric_speed: 15
       diameter_tolerance: "1.75±0.02mm"
-      confidence: 80
       recommendation: >
         PLA com boa tolerância. Não otimizado para alta velocidade mas consistente.
         Velocidade efetiva ~165 mm/s na K2 (limitado pelo MVS).
       color: Black
       surface_finish: Standard
-      material_strength: 58
-      material_flexibility: 50
-      material_temperature_resistance: 48
-      material_uv_resistance: 30
     - line: PLA Silk Line
       commercial_name: PLA Silk
       profile_name: Multfila PLA Silk
@@ -119,14 +114,9 @@ materials:
         temp: 60
       flow_ratio: 1.05
       max_volumetric_speed: 12
-      confidence: 78
       recommendation: Acabamento silk/metálico. Velocidade mais baixa por causa do aditivo.
       color: Gold
       surface_finish: Silky
-      material_strength: 55
-      material_flexibility: 48
-      material_temperature_resistance: 48
-      material_uv_resistance: 30
     - line: PLA Matte Line
       commercial_name: PLA Matte
       profile_name: Multfila PLA Matte
@@ -139,14 +129,9 @@ materials:
         temp: 60
       flow_ratio: 1.0
       max_volumetric_speed: 14
-      confidence: 78
       recommendation: Acabamento fosco que esconde camadas. Boa alternativa ao Voolt3D Velvet.
       color: Black
       surface_finish: Matte
-      material_strength: 56
-      material_flexibility: 50
-      material_temperature_resistance: 48
-      material_uv_resistance: 30
   PETG:
     profiles:
     - line: PETG Line
@@ -162,14 +147,9 @@ materials:
       flow_ratio: 0.98
       max_volumetric_speed: 12
       diameter_tolerance: "1.75±0.02mm"
-      confidence: 78
       recommendation: PETG padrão com boa tolerância. Conservador em velocidade.
       color: Black
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 55
-      material_uv_resistance: 30
   ABS:
     profiles:
     - line: ABS Line
@@ -184,14 +164,9 @@ materials:
         temp: 100
       flow_ratio: 1.0
       max_volumetric_speed: 10
-      confidence: 75
       recommendation: ABS padrão. Requer câmara fechada para evitar warping.
       color: Black
       surface_finish: Standard
-      material_strength: 62
-      material_flexibility: 50
-      material_temperature_resistance: 70
-      material_uv_resistance: 30
   TPU:
     profiles:
     - line: TPU Line
@@ -206,11 +181,6 @@ materials:
         temp: 50
       flow_ratio: 1.05
       max_volumetric_speed: 8
-      confidence: 72
       recommendation: TPU flexível padrão. Velocidade baixa obrigatória.
       color: Black
       surface_finish: Flexible
-      material_strength: 55
-      material_flexibility: 85
-      material_temperature_resistance: 50
-      material_uv_resistance: 30

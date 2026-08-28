@@ -58,14 +58,9 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      confidence: 95
       recommendation: PLA extremamente consistente e fácil
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
   PETG:
     profiles:
     - line: HD Line
@@ -83,11 +78,6 @@ materials:
       diameter: 1.75
       drying_temperature: 65
       drying_time: 8.0
-      confidence: 95
       recommendation: PETG premium com alta confiabilidade
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30

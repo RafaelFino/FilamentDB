@@ -604,14 +604,27 @@ def get_simulation_options():
 # ─── Ranking: All combinations scored ────────────────────────────────────────
 # =============================================================================
 
-# Profile type finish scores (same logic as frontend calcCombinationScore)
+# Finish model (layer-height-dominant, same logic as frontend calcCombinationScore).
+# Surface roughness on FDM scales primarily with layer height, so it is the dominant
+# factor (65%). Profile type modulates (25%), wall sequence fine-tunes (10%).
 _PROFILE_TYPE_FINISH = {
-    "detail": 95,
-    "safe": 75,
-    "standard": 65,
+    "detail": 100,
+    "safe": 85,
+    "standard": 70,
     "strong": 60,
+    "economy": 45,
     "fast": 30,
 }
+
+# Useful layer-height range on the K2 with a 0.4 nozzle.
+_LH_FINISH_MIN = 0.08  # finest we produce -> best finish
+_LH_FINISH_MAX = 0.28  # coarsest we produce -> worst finish
+
+
+def _lh_finish_score(layer_height):
+    """Layer-height finish component (0-100). 0.08mm -> 100, 0.28mm -> 20 (linear)."""
+    lh = max(_LH_FINISH_MIN, min(_LH_FINISH_MAX, float(layer_height)))
+    return round(100 - (lh - _LH_FINISH_MIN) / (_LH_FINISH_MAX - _LH_FINISH_MIN) * 80)
 
 
 def _calc_score(proc_dict, fil_dict, layer_height, mvs):
@@ -637,13 +650,13 @@ def _calc_score(proc_dict, fil_dict, layer_height, mvs):
         avg_effective = 0
         speed_score = 0
 
-    # Finish score: profile type + wall_sequence bonus + layer height bonus
+    # Finish score: layer height dominant (65%), profile type (25%), wall sequence (10%)
     profile_type = proc_dict.get("profile_type", "standard")
+    lh_score = _lh_finish_score(layer_height)
     type_score = _PROFILE_TYPE_FINISH.get(profile_type, 50)
     wall_seq = proc_dict.get("wall_sequence") or ""
-    wall_seq_bonus = 10 if "outer" in wall_seq else 0
-    lh_bonus = round((0.20 - layer_height) * 100)
-    finish_score = min(100, max(0, type_score + wall_seq_bonus + lh_bonus))
+    wall_score = 100 if "outer" in wall_seq else 50
+    finish_score = min(100, max(0, round(lh_score * 0.65 + type_score * 0.25 + wall_score * 0.10)))
 
     # Confidence: from filament profile
     confidence = int(fil_dict.get("confidence") or 50)

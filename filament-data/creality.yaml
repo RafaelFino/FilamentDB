@@ -109,14 +109,13 @@ materials:
       tensile_strength_mpa: 52.99
       elongation_at_break_pct: 6.3
       diameter_tolerance: "1.75±0.02mm"
-      confidence: 95
-      recommendation: Melhor PLA da Creality para velocidade e produção. Suporta até 600mm/s.
+      recommendation: >
+        PLA de referência da Creality, feito para a própria K2 (datasheet cita 600mm/s; MVS 23).
+        Perfil de fábrica bem calibrado, tende a "só funcionar". Bom tensile para PLA (53 MPa).
+        Quando escolher: default de produção rápida na K2 quando você quer o menor atrito possível.
+        Continua PLA — sem calor. Para acabamento estético, prefira um matte/velvet de outra marca.
       color: Natural
       surface_finish: Standard
-      material_strength: 65
-      material_flexibility: 48
-      material_temperature_resistance: 52
-      material_uv_resistance: 30
       drying_temperature: 50
       drying_time: 8.0
       variants:
@@ -221,14 +220,13 @@ materials:
         temp: 65
       flow_ratio: 0.98
       max_volumetric_speed: 12
-      confidence: 85
-      recommendation: PLA propenso a warping. Usar perfil Safe, brim obrigatório, bed 65°C.
+      recommendation: >
+        PLA legado da Creality, mais problemático que o Hyper: propenso a warping e com fusão
+        entre camadas exigente. Use perfil Safe, brim obrigatório e cola na mesa, bed 65°C.
+        MVS baixo (12). Quando escolher: só se já tiver em estoque — não é a primeira opção.
+        Para PLA sem dor de cabeça na K2, prefira Hyper PLA.
       color: Natural
       surface_finish: Standard
-      material_strength: 55
-      material_flexibility: 50
-      material_temperature_resistance: 48
-      material_uv_resistance: 30
       drying_temperature: 50
       drying_time: 6.0
     - line: Ender Series
@@ -243,14 +241,13 @@ materials:
         temp: 55
       flow_ratio: 1.02
       max_volumetric_speed: 12
-      confidence: 80
-      recommendation: PLA mais tolerante e fácil de imprimir
+      recommendation: >
+        PLA de entrada da Creality, o mais tolerante da marca — perdoa temperatura e velocidade
+        fora do ponto ideal. MVS baixo (12), acabamento e resistência comuns. Quando escolher:
+        aprendizado, calibração de máquina, peças descartáveis. Para produção séria na K2,
+        o Hyper PLA rende muito mais.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
   PETG:
     profiles:
     - line: CR PETG Line
@@ -265,14 +262,13 @@ materials:
         temp: 80
       flow_ratio: 0.98
       max_volumetric_speed: 15
-      confidence: 90
-      recommendation: PETG padrão para peças mecânicas
+      recommendation: >
+        PETG padrão da Creality (linha CR) para peças mecânicas. Fluxo comum (MVS 15),
+        confiável e sem surpresas. Gruda em suporte como todo PETG — use gaps generosos.
+        Quando escolher: peças funcionais utilitárias sem pressa. Se quiser velocidade,
+        o Hyper PETG entrega quase o dobro de fluxo.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 65
       drying_time: 8.0
       variants:
@@ -316,14 +312,13 @@ materials:
         temp: 85
       flow_ratio: 0.97
       max_volumetric_speed: 23
-      confidence: 92
-      recommendation: PETG otimizado para alta velocidade
+      recommendation: >
+        PETG de alta velocidade da Creality (MVS 23) — aproveita a K2 para peças funcionais rápidas.
+        Mesma resistência do CR PETG, mas com fluxo bem maior. Requer bed mais quente (85°C).
+        Quando escolher: peças mecânicas em série ou grandes onde você quer PETG sem perder tempo.
+        Seque antes: PETG úmido faz stringing e perde qualidade.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 65
       drying_time: 8.0
       variants:
@@ -369,14 +364,13 @@ materials:
         temp: 100
       flow_ratio: 1.0
       max_volumetric_speed: 12
-      confidence: 90
-      recommendation: ABS industrial para peças resistentes
+      recommendation: >
+        ABS industrial da Creality para peças que enfrentam calor (~100°C) e impacto. Na K2
+        exige câmara fechada e cama 100°C, senão empena e delamina. Libera VOC — ventile.
+        Quando escolher: peças funcionais quentes de uso interno. Para exterior/sol, use ASA
+        (o ABS amarela e fragiliza no UV).
       color: Black
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 80
       drying_time: 6.0
       variants:
@@ -408,14 +402,13 @@ materials:
         temp: 100
       flow_ratio: 1.0
       max_volumetric_speed: 12
-      confidence: 90
-      recommendation: Ideal para uso externo e UV
+      recommendation: >
+        ASA é o material para peças externas: mesma resistência térmica/mecânica do ABS, mas
+        não amarela nem fragiliza ao sol. Comporta-se como ABS na impressão — câmara fechada e
+        cama 100°C, propenso a warping. Quando escolher: suportes de câmera, peças de jardim,
+        qualquer coisa exposta ao tempo. Se a peça fica dentro de casa, ABS resolve mais barato.
       color: White
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 80
       drying_time: 6.0
       variants:
@@ -447,14 +440,13 @@ materials:
         temp: 50
       flow_ratio: 1.05
       max_volumetric_speed: 10
-      confidence: 90
-      recommendation: Flexível padrão, baixa velocidade
+      recommendation: >
+        TPU 95A da Creality para peças flexíveis. MVS 10 (um pouco acima de outros TPU),
+        o Direct Drive da K2 ajuda, mas ainda pede velocidade baixa e retração mínima.
+        Quando escolher: juntas, protetores, amortecedores, pés. Seque antes — TPU pega umidade
+        rápido e bolha. Firme-flexível (95A), não é mole tipo borracha.
       color: Natural
       surface_finish: Flexible
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 50
       drying_time: 8.0
       variants:

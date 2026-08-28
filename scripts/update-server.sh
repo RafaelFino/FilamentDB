@@ -5,6 +5,17 @@
 # Faz git pull, rebuild do banco e reinicia o serviço.
 # Pensado para rodar via cron diariamente.
 #
+# Pipeline de dados (fonte de verdade → banco servido):
+#   filament-data/*.yaml      → perfis de filamento (por marca)
+#   material-data/materials.yaml → propriedades dos materiais (por polímero) + confidence base
+#   process-base/                → herança dos perfis de processo
+#         └── build.py gera filament.db a partir desses YAMLs/JSONs
+#
+# IMPORTANTE: material-data/ e filament-data/ PRECISAM estar versionados no git.
+# Se material-data/materials.yaml faltar, o build.py ABORTA de propósito (não cai
+# em defaults silenciosos), impedindo que o serviço reinicie com dados corrompidos.
+# O filament.db NÃO é versionado — é sempre regenerado aqui pelo build.py.
+#
 # IMPORTANTE: Este script precisa rodar como root (ou com sudo) porque:
 #   - systemctl restart requer privilégio de root
 #   - o serviço filamentdb.service é gerenciado pelo systemd

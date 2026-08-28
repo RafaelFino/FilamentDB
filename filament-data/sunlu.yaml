@@ -146,14 +146,13 @@ materials:
         temp: 60
       flow_ratio: 1.0
       max_volumetric_speed: 14
-      confidence: 85
-      recommendation: PLA confiável e fácil de imprimir
+      recommendation: >
+        PLA básico e barato da Sunlu, o cavalo de batalha para protótipos e peças descartáveis.
+        Imprime sem exigência, MVS conservador (14). Acabamento e resistência são medianos.
+        Quando escolher: rascunhos, testes de encaixe, qualquer coisa onde custo baixo importa
+        mais que qualidade. Para peça final ou estética, suba para PLA+ ou Meta.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
     - line: PLA+ Line
       commercial_name: PLA+
       profile_name: Sunlu PLA+
@@ -166,14 +165,13 @@ materials:
         temp: 60
       flow_ratio: 1.02
       max_volumetric_speed: 15
-      confidence: 88
-      recommendation: PLA mais resistente e estável
+      recommendation: >
+        PLA+ tem mais tenacidade que o PLA comum — quebra menos ao impacto, aguenta rosca e encaixe.
+        Bom meio-termo entre facilidade do PLA e durabilidade. Quando escolher: peças que sofrem
+        um pouco de esforço mas não justificam PETG (clipes, suportes leves, engrenagens de baixa carga).
+        Continua sendo PLA: nada de calor. É o PLA que uso quando a peça vai ser manuseada.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
     - line: High Speed Line
       commercial_name: PLA High Speed
       profile_name: Sunlu PLA High Speed
@@ -195,16 +193,12 @@ materials:
       elongation_at_break_pct: 12
       mfi_g_10min: 7
       diameter_tolerance: "1.75±0.02mm"
-      confidence: 90
       recommendation: >
-        Excelente para impressão rápida até 600mm/s. Dados do datasheet oficial:
-        density 1.28 g/cm³, Vicat 54°C, HDT 57°C, tensile 39 MPa, flexural 70 MPa,
-        retraction 0.8-1.2mm a 30-40mm/s.
+        PLA de alta velocidade da Sunlu, feito para produção rápida (datasheet cita até 600mm/s;
+        MVS 22 na K2). Bom custo por rolo e ampla paleta de cores. Tensile 39 MPa é mais baixo
+        que o PLA+ — priorize velocidade, não resistência. Quando escolher: lotes, peças grandes,
+        protótipos onde tempo manda. Datasheet: density 1.28, Vicat 54°C, HDT 57°C, flexural 70 MPa.
       surface_finish: Standard
-      material_strength: 65
-      material_flexibility: 52
-      material_temperature_resistance: 48
-      material_uv_resistance: 30
       variants:
       - color: Red
         hex: "#CC2200"
@@ -259,15 +253,12 @@ materials:
       flexural_strength_mpa: 85
       mfi_g_10min: 5
       diameter_tolerance: "1.75±0.02mm"
-      confidence: 92
       recommendation: >
-        Excelente acabamento com cores pastéis, fluxo otimizado para impressão rápida
-        em baixas temperaturas. Density mais baixa (1.21) que PLA convencional.
+        PLA Meta combina bom acabamento (cores pastel macaron) com fluxo alto que imprime bem
+        até em temperatura mais baixa. Melhor tensile da linha PLA da Sunlu (50 MPa) e density
+        baixa (1.21) — rende mais metros por rolo. Quando escolher: peças decorativas em tons suaves
+        que também precisam de alguma resistência. É o PLA "premium" da Sunlu para o dia a dia.
       surface_finish: Standard
-      material_strength: 68
-      material_flexibility: 52
-      material_temperature_resistance: 52
-      material_uv_resistance: 32
       variants:
       - color: Grey
         hex: "#808080"
@@ -313,14 +304,13 @@ materials:
         temp: 60
       flow_ratio: 1.05
       max_volumetric_speed: 12
-      confidence: 85
-      recommendation: Acabamento brilhante para peças estéticas
+      recommendation: >
+        PLA silk brilhante para peças decorativas (inclui cores metálicas e rainbow). O brilho
+        realça a geometria mas denuncia falhas de camada e costura — cuide do seam. MVS 12 pede
+        velocidade moderada. Quando escolher: enfeites, presentes, vasos. Camada entre camadas é mais
+        fraca que PLA comum (silk sacrifica adesão) — evite peças que sofram esforço.
       color: Natural
       surface_finish: Silky
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
   PETG:
     profiles:
     - line: PETG Line
@@ -335,14 +325,13 @@ materials:
         temp: 80
       flow_ratio: 0.98
       max_volumetric_speed: 12
-      confidence: 85
-      recommendation: Boa resistência mecânica e química
+      recommendation: >
+        PETG padrão da Sunlu para peças funcionais: resistência química e mecânica boas,
+        aguenta calor moderado. Fluxo comum (MVS 12), acabamento sem efeito. Como todo PETG,
+        gruda em suporte e faz stringing se úmido — seque antes. Quando escolher: peças utilitárias
+        do dia a dia. Se quiser velocidade e acabamento matte, vá de PETG High Speed Matte.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
     - line: PETG High Speed Matte Line
       commercial_name: PETG High Speed Matte
       profile_name: Sunlu PETG HS
@@ -371,16 +360,14 @@ materials:
       diameter_tolerance: "1.75±0.02mm"
       drying_temperature: 50
       drying_time: 6.0
-      confidence: 88
       recommendation: >
-        PETG premium de alto fluxo para impressão rápida. Equivalente ao Voolt3D PETG HF.
-        Acabamento matte elegante. Exige controle de umidade rigoroso — stringing severo se úmido.
+        O melhor PETG da Sunlu: alto fluxo (MVS 18, MFR 4.4) para velocidade + acabamento matte
+        elegante que esconde camadas. Equivalente direto ao Voolt3D PETG HF. Melhores números
+        mecânicos da linha (tensile 48, flexural 78 MPa). Ponto crítico: MUITO sensível à umidade —
+        stringing severo se não estiver seco (<20% RH). Quando escolher: peças funcionais que
+        também precisam parecer bem. É o meu PETG de referência para funcional+estético.
       color: Black
       surface_finish: Matte
-      material_strength: 70
-      material_flexibility: 55
-      material_temperature_resistance: 65
-      material_uv_resistance: 45
       variants:
       - color: Black
         hex: "#000000"
@@ -426,14 +413,13 @@ materials:
         temp: 100
       flow_ratio: 1.0
       max_volumetric_speed: 10
-      confidence: 80
-      recommendation: Peças resistentes ao calor e impacto
+      recommendation: >
+        ABS da Sunlu para peças resistentes a calor e impacto. Na K2 só vale a pena com câmara
+        fechada e cama 100°C — sem isso, empena. Libera VOC, ventile o ambiente. Quando escolher:
+        peças que esquentam e precisam de tenacidade. Para exterior/sol prefira ASA. Não é material
+        para iniciante nem para peça grande sem enclosure decente.
       color: Black
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
   TPU:
     profiles:
     - line: TPU Line
@@ -448,11 +434,10 @@ materials:
         temp: 50
       flow_ratio: 1.05
       max_volumetric_speed: 8
-      confidence: 80
-      recommendation: Flexível padrão, baixa velocidade obrigatória
+      recommendation: >
+        TPU 95A flexível da Sunlu para juntas, protetores e peças que dobram. Velocidade baixa
+        obrigatória (MVS 8) — o Direct Drive da K2 ajuda, mas force pouco. Retração mínima para
+        evitar oozing. Seque bem antes: TPU absorve umidade e bolha. Quando escolher: qualquer peça
+        elástica. Dureza 95A é firme-flexível (não é mole tipo borracha).
       color: Natural
       surface_finish: Flexible
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30

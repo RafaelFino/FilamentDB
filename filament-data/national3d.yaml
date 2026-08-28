@@ -73,16 +73,14 @@ materials:
       max_volumetric_speed: 29
       density: 1.24
       diameter_tolerance: "1.75±0.03mm"
-      confidence: 70
       recommendation: >
-        MVS muito alto declarado pelo fabricante. Se real, excelente custo-benefício
-        para K2. Requer validação prática — valor pode ser otimista.
+        PLA de alta velocidade nacional com o MVS declarado mais alto da base (29 mm³/s) — acima do
+        Voolt3D Velvet (25). Se o número se confirmar em uso real, é o melhor custo-benefício para
+        produção rápida na K2. ALERTA: MVS é declaração de fabricante, não medido por mim — pode ser
+        otimista, valide com um teste de fluxo antes de confiar em perfil Fast. Tolerância ±0.03mm, AMS-ready.
+        Quando escolher: lotes e peças grandes, depois de validar o fluxo real.
       color: Black
       surface_finish: Standard
-      material_strength: 58
-      material_flexibility: 50
-      material_temperature_resistance: 48
-      material_uv_resistance: 30
   PETG:
     profiles:
     - line: PETG Line
@@ -99,14 +97,13 @@ materials:
       max_volumetric_speed: 12
       density: 1.27
       diameter_tolerance: "1.75±0.03mm"
-      confidence: 75
-      recommendation: PETG padrão de custo acessível. Sem dados de MVS — estimado conservador.
+      recommendation: >
+        PETG nacional de custo acessível para peças funcionais. O fabricante não declara MVS,
+        então o valor (12) é estimativa conservadora minha — dá para tentar subir com teste de fluxo.
+        Comportamento típico de PETG: gruda em suporte, stringing se úmido. Quando escolher: peças
+        utilitárias quando o custo por rolo é prioridade. Para funcional+velocidade, um PETG HF/HS rende mais.
       color: Black
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 55
-      material_uv_resistance: 30
   ABS:
     profiles:
     - line: ABS MG-94 Premium Line
@@ -121,11 +118,10 @@ materials:
         temp: 100
       flow_ratio: 1.0
       max_volumetric_speed: 12
-      confidence: 70
-      recommendation: ABS MG-94 com boa fluidez. Requer câmara fechada para melhores resultados.
+      recommendation: >
+        ABS MG-94 puro (grade de boa fluidez) da National 3D, para peças resistentes a calor.
+        A fluidez ajuda no fluxo, mas os desafios do ABS continuam: câmara fechada e cama 100°C
+        na K2, senão empena. Libera VOC, ventile. Quando escolher: peças funcionais internas que
+        esquentam, com bom custo. Para exterior use ASA — ABS amarela ao sol.
       color: Black
       surface_finish: Standard
-      material_strength: 65
-      material_flexibility: 50
-      material_temperature_resistance: 70
-      material_uv_resistance: 30

@@ -71,17 +71,12 @@ materials:
       flow_ratio: 1.0
       max_volumetric_speed: 11
       diameter_tolerance: "1.75±0.05mm"
-      confidence: 68
       recommendation: >
         PLA básico e barato. Tolerância frouxa (±0.05mm) não ideal para K2 em
         alta velocidade. Funcional para impressões lentas e protótipos descartáveis.
         Range de temperatura estreito (190-210°C).
       color: Black
       surface_finish: Standard
-      material_strength: 55
-      material_flexibility: 48
-      material_temperature_resistance: 45
-      material_uv_resistance: 28
     - line: PLA Silk Line
       commercial_name: PLA Silk
       profile_name: Brasfila PLA Silk
@@ -95,14 +90,9 @@ materials:
       flow_ratio: 1.05
       max_volumetric_speed: 10
       diameter_tolerance: "1.75±0.05mm"
-      confidence: 65
       recommendation: Acabamento silk de baixo custo. Velocidade conservadora.
       color: Gold
       surface_finish: Silky
-      material_strength: 52
-      material_flexibility: 48
-      material_temperature_resistance: 45
-      material_uv_resistance: 28
   PETG:
     profiles:
     - line: PETG Premium Line
@@ -118,13 +108,8 @@ materials:
       flow_ratio: 0.98
       max_volumetric_speed: 10
       diameter_tolerance: "1.75±0.05mm"
-      confidence: 65
       recommendation: >
         PETG básico e barato. Tolerância frouxa pode causar stringing imprevisível.
         Adequado para peças funcionais sem exigência de acabamento.
       color: Black
       surface_finish: Standard
-      material_strength: 58
-      material_flexibility: 50
-      material_temperature_resistance: 55
-      material_uv_resistance: 30

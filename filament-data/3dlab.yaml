@@ -189,14 +189,13 @@ materials:
         temp: 60
       flow_ratio: 1.01
       max_volumetric_speed: 14
-      confidence: 85
-      recommendation: PLA premium NatureWorks, melhor acabamento e estabilidade dimensional
+      recommendation: >
+        PLA premium nacional com matéria-prima NatureWorks e tolerância apertada (±0.05mm),
+        o que se traduz em consistência de lote e boa estabilidade dimensional. Paleta enorme
+        de cores. MVS conservador (14). Quando escolher: peças onde precisão de encaixe e
+        repetibilidade importam. É PLA — sem calor. Bom default nacional quando qualidade de fio importa.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 45
-      material_uv_resistance: 30
       drying_temperature: 50
       drying_time: 8.0
       variants:
@@ -469,14 +468,13 @@ materials:
         temp: 60
       flow_ratio: 0.99
       max_volumetric_speed: 22
-      confidence: 83
-      recommendation: Ideal para impressão em alta velocidade
+      recommendation: >
+        PLA de alta velocidade da 3DLab (MVS 22) para produção rápida mantendo a qualidade de fio
+        da marca. Acabamento e resistência comuns de PLA. Quando escolher: lotes e peças grandes
+        onde tempo pesa mais que detalhe, sem abrir mão de tolerância dimensional decente.
+        Para acabamento fino, baixe o layer height ou use um silk/cetim da própria 3DLab.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 45
-      material_uv_resistance: 30
       drying_temperature: 50
       drying_time: 8.0
       variants:
@@ -582,14 +580,13 @@ materials:
         temp: 80
       flow_ratio: 0.98
       max_volumetric_speed: 11
-      confidence: 82
-      recommendation: PETG FoodSafe com boa estabilidade mecânica
+      recommendation: >
+        PETG da 3DLab com matéria-prima de certificação FoodSafe europeia — diferencial para peças
+        que contatam alimento (lembrando que a impressão FDM em si tem microporos, o FoodSafe é da
+        resina). Boa resistência mecânica, química e térmica moderada. Gruda em suporte como todo PETG.
+        Quando escolher: peças funcionais, recipientes, itens de cozinha não sujeitos a calor alto.
       color: Natural
       surface_finish: Semi-Gloss
-      material_strength: 65
-      material_flexibility: 55
-      material_temperature_resistance: 65
-      material_uv_resistance: 50
       drying_temperature: 65
       drying_time: 8.0
       variants:
@@ -658,14 +655,13 @@ materials:
         temp: 100
       flow_ratio: 1.0
       max_volumetric_speed: 10
-      confidence: 80
-      recommendation: ABS de qualidade premium para peças funcionais
+      recommendation: >
+        ABS Premium da 3DLab para peças funcionais resistentes a calor. Exige câmara fechada e
+        cama 100°C na K2 — sem isso, warping garantido. Libera VOC, ventile. Quando escolher:
+        peças internas que esquentam e precisam de tenacidade. Para exterior/sol, não serve (use ASA).
+        Não é material para começar nem para peça grande sem enclosure firme.
       color: Black
       surface_finish: Standard
-      material_strength: 65
-      material_flexibility: 45
-      material_temperature_resistance: 80
-      material_uv_resistance: 25
       drying_temperature: 80
       drying_time: 6.0
       variants:
@@ -732,14 +728,13 @@ materials:
         temp: 50
       flow_ratio: 1.05
       max_volumetric_speed: 8
-      confidence: 80
-      recommendation: TPU flexível para peças elásticas
+      recommendation: >
+        TPU 98A da 3DLab — bem flexível (98A é mais macio que o 95A comum), para peças que dobram
+        bastante. MVS 8, velocidade baixa obrigatória mesmo com o Direct Drive da K2. Seque antes.
+        Quando escolher: juntas maleáveis, protetores, peças elásticas. Para algo mais firme que
+        ainda flexione, use o Semi Flex 65D da própria 3DLab.
       color: Natural
       surface_finish: Flexible
-      material_strength: 40
-      material_flexibility: 92
-      material_temperature_resistance: 50
-      material_uv_resistance: 40
       drying_temperature: 50
       drying_time: 8.0
       variants:
@@ -778,14 +773,13 @@ materials:
         temp: 55
       flow_ratio: 1.02
       max_volumetric_speed: 10
-      confidence: 78
-      recommendation: TPU semi-rígido para peças com maior resistência mecânica
+      recommendation: >
+        TPU Semi Flex 65D: bem mais rígido que o 98A, flexiona pouco e aguenta mais carga mecânica.
+        Um meio-termo entre TPU flexível e material rígido. Imprime um pouco mais fácil que o 98A
+        (MVS 10). Quando escolher: peças que precisam ceder levemente sob esforço mas manter forma —
+        buchas, batentes, engates. Para algo que dobra de verdade, use o Flex 98A.
       color: Natural
       surface_finish: Flexible
-      material_strength: 55
-      material_flexibility: 70
-      material_temperature_resistance: 55
-      material_uv_resistance: 40
       drying_temperature: 50
       drying_time: 8.0
       variants:

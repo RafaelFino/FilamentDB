@@ -447,6 +447,7 @@ manufacturerBtns.forEach(btn => {
         manufacturerBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         renderTable(btn.dataset.manufacturer);
+        closeAppsMenu();
     });
 });
 
@@ -928,28 +929,51 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 
         if (currentView === 'inventory') loadInventory();
 
-        // No mobile, recolhe a sidebar após escolher uma view
-        collapseSidebarOnMobile();
+        // Fecha o menu dropdown após escolher uma view
+        closeAppsMenu();
     });
 });
 
-// ─── Sidebar mobile toggle ──────────────────────────────────────────────────
-const sidebarEl = document.querySelector('.sidebar');
-const sidebarToggle = document.getElementById('sidebar-toggle');
-sidebarToggle?.addEventListener('click', () => {
-    sidebarEl?.classList.toggle('nav-collapsed');
-});
-function collapseSidebarOnMobile() {
-    if (window.matchMedia('(max-width:820px)').matches) {
-        sidebarEl?.classList.add('nav-collapsed');
-    }
+// ─── Apps menu dropdown ──────────────────────────────────────────────────────
+const appsBtn = document.getElementById('apps-btn');
+const menuDropdown = document.getElementById('menu-dropdown');
+
+function openAppsMenu() {
+    menuDropdown?.classList.add('open');
+    appsBtn?.setAttribute('aria-expanded', 'true');
 }
+function closeAppsMenu() {
+    menuDropdown?.classList.remove('open');
+    appsBtn?.setAttribute('aria-expanded', 'false');
+}
+function toggleAppsMenu() {
+    if (menuDropdown?.classList.contains('open')) closeAppsMenu();
+    else openAppsMenu();
+}
+
+appsBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleAppsMenu();
+});
+
+// Fecha ao clicar fora
+document.addEventListener('click', (e) => {
+    if (!menuDropdown?.classList.contains('open')) return;
+    if (menuDropdown.contains(e.target) || appsBtn?.contains(e.target)) return;
+    closeAppsMenu();
+});
+
+// Fecha com ESC
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAppsMenu();
+});
 
 materialBtns.forEach(btn => {
     btn.addEventListener('click', () => {
         materialBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         renderProcessTable(btn.dataset.material);
+        closeAppsMenu();
     });
 });
 
@@ -1323,20 +1347,21 @@ function calcCombinationScore(data) {
     // 1. Confiabilidade (0-100): direto do perfil do filamento
     const confidence = data.filament.confidence || 50;
 
-    // 2. Acabamento (0-100): baseado no profile type, wall sequence, layer height
+    // 2. Acabamento (0-100): altura de camada domina (rugosidade FDM escala com layer height).
+    //    Layer height 65%, profile type 25%, wall sequence 10%.
     const profileTypeFinish = {
-        detail: 95, safe: 75, standard: 65, strong: 60, fast: 30,
+        detail: 100, safe: 85, standard: 70, strong: 60, economy: 45, fast: 30,
     };
     const typeScore = profileTypeFinish[data.process.profile_type] || 50;
 
-    // Wall sequence: outer-first é melhor para acabamento
-    const wallSeqBonus = (data.process.wall_sequence || '').includes('outer') ? 10 : 0;
+    // Layer height (componente dominante): 0.08mm → 100, 0.28mm → 20 (linear)
+    const lh = Math.max(0.08, Math.min(0.28, data.process.layer_height || 0.2));
+    const lhScore = Math.round(100 - (lh - 0.08) / (0.28 - 0.08) * 80);
 
-    // Layer height: menor = melhor acabamento (0.08 → +20, 0.20 → 0, 0.28 → -10)
-    const lh = data.process.layer_height || 0.2;
-    const lhBonus = Math.round((0.20 - lh) * 100); // 0.08→+12, 0.12→+8, 0.16→+4, 0.20→0, 0.24→-4, 0.28→-8
+    // Wall sequence: outer-first melhora acabamento externo
+    const wallScore = (data.process.wall_sequence || '').includes('outer') ? 100 : 50;
 
-    const finish = Math.min(100, Math.max(0, typeScore + wallSeqBonus + lhBonus));
+    const finish = Math.min(100, Math.max(0, Math.round(lhScore * 0.65 + typeScore * 0.25 + wallScore * 0.10)));
 
     // 3. Velocidade (0-100): quanto do potencial da máquina é aproveitado
     // Baseado na proporção de velocidades efetivas vs. máximo da K2 (500 mm/s para extrusão)

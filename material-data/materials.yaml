@@ -1,0 +1,164 @@
+# =============================================================================
+# Definição canônica dos materiais (polímeros)
+# =============================================================================
+#
+# As propriedades mecânicas/ambientais são características do POLÍMERO, não da
+# marca. Um PLA da Voolt3D e um PLA da Sunlu têm essencialmente a mesma
+# resistência térmica, rigidez, etc. — quem define isso é o material base.
+#
+# Escala 0-100, RELATIVA entre os materiais que usamos na K2 (não é valor
+# absoluto de norma). Serve para comparar materiais entre si e alimentar o
+# ranking. Baseado em datasheets consolidados de FDM.
+#
+#   strength     — resistência mecânica útil (tração/impacto combinados na prática FDM)
+#   flexibility  — capacidade de deformar sem quebrar (rígido/frágil = baixo, elastômero = alto)
+#   temp_resist  — resistência ao calor em serviço (proxy da Tg / HDT)
+#   uv_resist    — resistência à degradação por UV / uso externo
+#
+# confidence_base — maturidade/facilidade de impressão do material na K2.
+#   Serve de base para o confidence derivado por perfil (ver build.py).
+#   Materiais fáceis e previsíveis = alto; difíceis (warping, abrasão, flex) = baixo.
+# =============================================================================
+
+materials:
+  PLA:
+    description: Poliácido láctico. Fácil de imprimir, rígido e preciso, mas frágil e com baixa resistência térmica.
+    strength: 55          # boa tração, mas quebra sem avisar (baixa tenacidade)
+    flexibility: 25       # rígido e frágil
+    temp_resist: 20       # Tg ~55-60°C, deforma em carro/sol
+    uv_resist: 25         # amarela e fragiliza com UV
+    confidence_base: 85   # o material mais previsível e fácil
+    food_safe: 0
+    indoor: 1
+    outdoor: 0
+    abrasive: 0
+    requires_enclosure: 0
+    recommended_nozzle_temp: 210
+    recommended_bed_temp: 60
+    notes: >
+      Padrão para protótipos, peças decorativas e uso interno. Não usar em peças
+      expostas a calor (sol, dentro de carro) ou esforço com impacto.
+
+  PETG:
+    description: Poliéster glicol-modificado. Bom equilíbrio entre resistência, tenacidade e facilidade. Mais durável que PLA.
+    strength: 62          # mais tenaz que PLA, aguenta impacto
+    flexibility: 55       # dobra antes de quebrar
+    temp_resist: 45       # Tg ~80°C, tolera calor moderado
+    uv_resist: 55         # razoável ao tempo, melhor que PLA
+    confidence_base: 76   # fácil, mas stringing e cooling exigem calibração
+    food_safe: 0          # depende de aditivos/cor; não garantir por padrão
+    indoor: 1
+    outdoor: 1
+    abrasive: 0
+    requires_enclosure: 0
+    recommended_nozzle_temp: 240
+    recommended_bed_temp: 80
+    notes: >
+      Meio-termo ideal para peças funcionais que não precisam de resistência
+      térmica alta. Boa adesão entre camadas (cuidado com suporte grudando).
+
+  ABS:
+    description: Acrilonitrila butadieno estireno. Resistente ao calor e tenaz, mas warp e libera VOC. Requer câmara fechada.
+    strength: 58          # tenaz, aguenta impacto e usinagem
+    flexibility: 50
+    temp_resist: 75       # Tg ~105°C, serve para peças quentes
+    uv_resist: 30         # degrada ao sol (usar ASA para externo)
+    confidence_base: 62   # warping e delaminação; precisa enclosure e cama quente
+    food_safe: 0
+    indoor: 1
+    outdoor: 0
+    abrasive: 0
+    requires_enclosure: 1
+    recommended_nozzle_temp: 245
+    recommended_bed_temp: 100
+    notes: >
+      Peças funcionais que enfrentam calor. Exige câmara fechada e ventilação
+      (VOC). Propenso a warping — não é o material para começar.
+
+  ASA:
+    description: Acrilonitrila estireno acrilato. Como ABS na mecânica/térmica, mas com resistência a UV excelente para uso externo.
+    strength: 60
+    flexibility: 50
+    temp_resist: 75       # semelhante ao ABS
+    uv_resist: 92         # excelente ao tempo — feito para exterior
+    confidence_base: 60   # mesmos desafios do ABS (warping, enclosure)
+    food_safe: 0
+    indoor: 1
+    outdoor: 1
+    abrasive: 0
+    requires_enclosure: 1
+    recommended_nozzle_temp: 250
+    recommended_bed_temp: 100
+    notes: >
+      A escolha para peças externas expostas ao sol. Comportamento de impressão
+      parecido com ABS (warping, requer câmara fechada), mas não amarela ao UV.
+
+  TPU:
+    description: Poliuretano termoplástico. Elastômero flexível. Direct Drive ajuda muito. Baixa velocidade.
+    strength: 35          # resistência à tração baixa, mas altíssima resistência a fadiga/impacto
+    flexibility: 98       # é o material flexível por definição
+    temp_resist: 40       # varia com a dureza (Shore); moderado
+    uv_resist: 45
+    confidence_base: 55   # exige velocidade baixa e retração cuidadosa
+    food_safe: 0
+    indoor: 1
+    outdoor: 1
+    abrasive: 0
+    requires_enclosure: 0
+    recommended_nozzle_temp: 225
+    recommended_bed_temp: 45
+    notes: >
+      Peças flexíveis (juntas, protetores, correias). A K2 é Direct Drive, o que
+      ajuda, mas ainda exige velocidade baixa. Dureza (Shore) muda o comportamento.
+
+  PLA-CF:
+    description: PLA com fibra de carbono. Muito mais rígido e estável que PLA puro, porém quebradiço e abrasivo (desgasta bico).
+    strength: 65          # rigidez alta pela fibra
+    flexibility: 12       # muito quebradiço
+    temp_resist: 30       # a fibra ajuda um pouco vs PLA puro
+    uv_resist: 30
+    confidence_base: 62   # abrasivo (exige bico endurecido), tende a entupir
+    food_safe: 0
+    indoor: 1
+    outdoor: 0
+    abrasive: 1
+    requires_enclosure: 0
+    recommended_nozzle_temp: 220
+    recommended_bed_temp: 60
+    notes: >
+      Peças rígidas e estáveis dimensionalmente com acabamento fosco. Abrasivo:
+      exige bico endurecido. Frágil a impacto. Só em 0.20mm Standard na K2.
+
+  PETG-CF:
+    description: PETG com fibra de carbono. Rígido e tenaz, herda a resistência química do PETG. Abrasivo.
+    strength: 70          # rigidez da fibra + tenacidade do PETG
+    flexibility: 20
+    temp_resist: 50       # um pouco acima do PETG puro
+    uv_resist: 55
+    confidence_base: 60   # abrasivo + desafios do PETG (cooling, stringing)
+    food_safe: 0
+    indoor: 1
+    outdoor: 1
+    abrasive: 1
+    requires_enclosure: 0
+    recommended_nozzle_temp: 250
+    recommended_bed_temp: 80
+    notes: >
+      Peças funcionais rígidas que precisam de resistência química/térmica.
+      Abrasivo: exige bico endurecido. Só em 0.20mm Standard na K2.
+
+  SUPPORT:
+    description: Material de suporte (breakaway/solúvel). Não é material estrutural.
+    strength: 0
+    flexibility: 0
+    temp_resist: 0
+    uv_resist: 0
+    confidence_base: 60
+    food_safe: 0
+    indoor: 1
+    outdoor: 0
+    abrasive: 0
+    requires_enclosure: 0
+    recommended_nozzle_temp: 220
+    recommended_bed_temp: 60
+    notes: Material dedicado a suportes. Propriedades mecânicas não se aplicam.

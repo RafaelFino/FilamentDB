@@ -92,14 +92,13 @@ materials:
       density: 1.24
       glass_transition_temp: 55
       diameter_tolerance: 0.02
-      confidence: 92
-      recommendation: Melhor acabamento estético da Voolt3D. Acabamento aveludado, reduz visibilidade de camadas, pode ser lixado.
+      recommendation: >
+        Escolha para peças decorativas onde acabamento importa mais que resistência.
+        O toque aveludado esconde linhas de camada e aceita lixamento/pintura.
+        MVS alto (25) aproveita bem a K2. Ponto fraco: é PLA — nada de calor ou impacto.
+        Quando escolher: modelos à mostra, action figures, peças pintadas.
       color: Natural
       surface_finish: Velvet
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 50
       drying_time: 8.0
       variants:
@@ -270,14 +269,13 @@ materials:
         temp: 60
       flow_ratio: 1.0
       max_volumetric_speed: 20
-      confidence: 88
-      recommendation: PLA equilibrado para uso geral
+      recommendation: >
+        PLA "faz-tudo" da Voolt3D para o dia a dia. Sem drama, custo equilibrado,
+        MVS 20 dá boa velocidade na K2. Acabamento gloss comum, sem efeito especial.
+        Quando escolher: protótipos, peças de encaixe, uso interno sem exigência estética
+        ou mecânica. É o default seguro quando você não precisa de nada específico.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 50
       drying_time: 8.0
       variants:
@@ -415,14 +413,13 @@ materials:
         temp: 60
       flow_ratio: 0.98
       max_volumetric_speed: 25
-      confidence: 85
-      recommendation: Otimizado para alta velocidade
+      recommendation: >
+        PLA para quando o objetivo é tempo de impressão. MVS 25 sustenta perfis Fast
+        sem faltar fluxo. Acabamento e precisão cedem um pouco em troca de velocidade.
+        Quando escolher: lotes, protótipos rápidos, peças grandes onde o relógio pesa
+        mais que o detalhe. Para acabamento fino, prefira Velvet ou baixe o layer height.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 50
       drying_time: 8.0
       variants:
@@ -460,14 +457,13 @@ materials:
         temp: 60
       flow_ratio: 1.02
       max_volumetric_speed: 15
-      confidence: 85
-      recommendation: PLA com acabamento sedoso/metálico, ótimo reflexo
+      recommendation: >
+        PLA silk com reflexo metálico (dourado/inox) para peças de vitrine.
+        O brilho realça a geometria, mas também evidencia imperfeições e costuras —
+        capriche no seam e na primeira camada. MVS 15 pede velocidade moderada.
+        Quando escolher: troféus, enfeites, presentes. Não é para peça funcional.
       color: Natural
       surface_finish: Silk
-      material_strength: 55
-      material_flexibility: 50
-      material_temperature_resistance: 45
-      material_uv_resistance: 30
       drying_temperature: 50
       drying_time: 8.0
       variants:
@@ -510,14 +506,13 @@ materials:
         temp: 80
       flow_ratio: 0.98
       max_volumetric_speed: 12
-      confidence: 85
-      recommendation: PETG com fluxo otimizado, boa resistência mecânica e química
+      recommendation: >
+        PETG principal para peças funcionais: tenaz, resiste a calor moderado e químicos.
+        A variante HF (High Fluidity) flui melhor que PETG comum, ajudando na velocidade.
+        Ponto de atenção: alta adesão faz o suporte grudar — use os gaps generosos do perfil.
+        Quando escolher: suportes mecânicos, caixas, peças que sofrem esforço ou ficam mornas.
       color: Natural
       surface_finish: Semi-Gloss
-      material_strength: 65
-      material_flexibility: 55
-      material_temperature_resistance: 65
-      material_uv_resistance: 50
       drying_temperature: 65
       drying_time: 8.0
       variants:
@@ -776,14 +771,13 @@ materials:
         temp: 90
       flow_ratio: 0.95
       max_volumetric_speed: 10
-      confidence: 80
-      recommendation: Alta rigidez com fibra de carbono - usar bico endurecido
+      recommendation: >
+        PETG-CF para peças rígidas e estáveis dimensionalmente, com acabamento fosco que
+        disfarça camadas. A fibra aumenta a rigidez mas deixa o material mais quebradiço.
+        EXIGE bico de aço endurecido — a fibra desgasta bico de latão rápido. Produto esgotado.
+        Quando escolher: fixadores, braços, peças estruturais que não podem flexionar.
       color: Black
       surface_finish: Matte
-      material_strength: 80
-      material_flexibility: 35
-      material_temperature_resistance: 70
-      material_uv_resistance: 50
       drying_temperature: 65
       drying_time: 8.0
       variants:
@@ -813,14 +807,13 @@ materials:
         temp: 100
       flow_ratio: 1.0
       max_volumetric_speed: 10
-      confidence: 80
-      recommendation: Peças funcionais com resistência térmica
+      recommendation: >
+        ABS para peças que enfrentam calor (~100°C) e precisam de tenacidade. Na K2 exige
+        câmara fechada e cama a 100°C — sem isso, warping e delaminação são quase certos.
+        Libera VOC: ventile. Quando escolher: peças de motor/eletrônica que esquentam,
+        suportes internos de carro. Para uso externo ao sol, prefira ASA (ABS amarela no UV).
       color: Black
       surface_finish: Standard
-      material_strength: 65
-      material_flexibility: 45
-      material_temperature_resistance: 75
-      material_uv_resistance: 25
       drying_temperature: 80
       drying_time: 6.0
       variants:
@@ -849,14 +842,13 @@ materials:
         temp: 50
       flow_ratio: 1.05
       max_volumetric_speed: 8
-      confidence: 80
-      recommendation: Flexível padrão, baixa velocidade
+      recommendation: >
+        TPU 95A para peças flexíveis (juntas, protetores, pés antiderrapantes). A K2 é
+        Direct Drive, o que facilita, mas ainda pede velocidade baixa (MVS 8) e retração mínima
+        para evitar oozing. Quando escolher: qualquer peça que precise dobrar/amortecer.
+        Não serve para nada rígido. Seque bem — TPU absorve umidade rápido.
       color: Natural
       surface_finish: Flexible
-      material_strength: 40
-      material_flexibility: 90
-      material_temperature_resistance: 50
-      material_uv_resistance: 40
       drying_temperature: 50
       drying_time: 8.0
       variants:

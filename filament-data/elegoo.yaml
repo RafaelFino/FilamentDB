@@ -213,13 +213,8 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      confidence: 85
       recommendation: PLA básico confiável e fácil de imprimir
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       variants:
       - color: Black
         hex: "#1C1C1C"
@@ -271,13 +266,8 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      confidence: 82
       recommendation: PLA econômico com ampla seleção de cores
       surface_finish: Standard
-      material_strength: 55
-      material_flexibility: 50
-      material_temperature_resistance: 45
-      material_uv_resistance: 28
       variants:
       - color: Black
         hex: "#1C1C1C"
@@ -334,13 +324,8 @@ materials:
       density: 1.26
       glass_transition_temp: 63
       diameter_tolerance: "1.75±0.02mm"
-      confidence: 88
       recommendation: Mais resistente que PLA padrão, specs verificadas no site oficial
       surface_finish: Standard
-      material_strength: 68
-      material_flexibility: 52
-      material_temperature_resistance: 55
-      material_uv_resistance: 32
       variants:
       - color: Black
         hex: "#1C1C1C"
@@ -392,13 +377,8 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      confidence: 86
       recommendation: PLA profissional com melhor acabamento e resistência
       surface_finish: Standard
-      material_strength: 70
-      material_flexibility: 52
-      material_temperature_resistance: 55
-      material_uv_resistance: 33
       variants:
       - color: Black
         hex: "#1C1C1C"
@@ -436,13 +416,8 @@ materials:
       drying_temperature: 50
       drying_time: 8.0
       diameter_tolerance: "1.75±0.02mm"
-      confidence: 87
       recommendation: Otimizado para alta velocidade até 600mm/s, specs verificadas no site oficial
       surface_finish: Standard
-      material_strength: 65
-      material_flexibility: 50
-      material_temperature_resistance: 52
-      material_uv_resistance: 30
       variants:
       - color: Black
         hex: "#1C1C1C"
@@ -483,13 +458,8 @@ materials:
       drying_time: 8.0
       glass_transition_temp: 64
       diameter_tolerance: "1.75±0.02mm"
-      confidence: 85
       recommendation: Melhor acabamento estético fosco, specs verificadas no site oficial
       surface_finish: Matte
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 52
-      material_uv_resistance: 35
       variants:
       - color: Matte Black
         hex: "#2C2C2C"
@@ -530,13 +500,8 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      confidence: 85
       recommendation: Acabamento sedoso, ideal para peças decorativas
       surface_finish: Silky
-      material_strength: 58
-      material_flexibility: 50
-      material_temperature_resistance: 48
-      material_uv_resistance: 30
       variants:
       - color: Silk Gold
         hex: "#D4AF37"
@@ -593,13 +558,8 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      confidence: 83
       recommendation: Efeito galáxia com partículas brilhantes para peças decorativas
       surface_finish: Sparkle
-      material_strength: 58
-      material_flexibility: 50
-      material_temperature_resistance: 48
-      material_uv_resistance: 30
       variants:
       - color: Galaxy Black
         hex: "#1C1C1C"
@@ -622,13 +582,8 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      confidence: 82
       recommendation: Maior rigidez com fibra de carbono, requer bico endurecido (hardened nozzle)
       surface_finish: Matte
-      material_strength: 80
-      material_flexibility: 35
-      material_temperature_resistance: 58
-      material_uv_resistance: 35
       variants:
       - color: Black
         hex: "#1C1C1C"
@@ -649,14 +604,9 @@ materials:
       diameter: 1.75
       drying_temperature: 65
       drying_time: 8.0
-      confidence: 85
       recommendation: Boa resistência mecânica e química
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
   ABS:
     profiles:
     - line: Engineering Line
@@ -674,14 +624,9 @@ materials:
       diameter: 1.75
       drying_temperature: 80
       drying_time: 6.0
-      confidence: 80
       recommendation: Peças estruturais e resistentes ao calor
       color: Black
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
   TPU:
     profiles:
     - line: Flex Line
@@ -699,11 +644,6 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      confidence: 75
       recommendation: Flexível padrão, baixa velocidade obrigatória
       color: Natural
       surface_finish: Flexible
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30

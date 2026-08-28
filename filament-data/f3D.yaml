@@ -66,14 +66,13 @@ materials:
         temp: 60
       flow_ratio: 1.0
       max_volumetric_speed: 14
-      confidence: 85
-      recommendation: PLA equilibrado com bom acabamento superficial
+      recommendation: >
+        PLA Premium nacional da F3D, foco em acabamento superficial e tolerância dimensional
+        consistente. MVS conservador (14), sem efeito estético especial. Quando escolher:
+        peças de uso geral e protótipos onde você quer um fio confiável de custo acessível.
+        É PLA — nada de calor ou impacto forte. Opção sólida de fabricante nacional.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 50
       drying_time: 8.0
       variants:
@@ -176,14 +175,13 @@ materials:
         temp: 80
       flow_ratio: 0.98
       max_volumetric_speed: 12
-      confidence: 85
-      recommendation: Boa resistência mecânica e estabilidade dimensional
+      recommendation: >
+        PETG da linha Industrial da F3D para peças funcionais: boa resistência mecânica e
+        estabilidade dimensional. Fluxo comum (MVS 12). Gruda em suporte como todo PETG,
+        stringing se úmido — seque antes. Quando escolher: suportes, caixas e peças utilitárias
+        que sofrem esforço ou calor moderado. Material funcional padrão da F3D.
       color: Natural
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 65
       drying_time: 8.0
       variants:
@@ -243,14 +241,13 @@ materials:
         temp: 100
       flow_ratio: 1.0
       max_volumetric_speed: 10
-      confidence: 80
-      recommendation: Peças resistentes a temperatura e impacto
+      recommendation: >
+        ABS Industrial da F3D para peças resistentes a calor (~100°C) e impacto. Na K2 exige
+        câmara fechada e cama 100°C — sem isso, empena e delamina. Libera VOC, ventile.
+        Quando escolher: peças funcionais internas que esquentam. Para exterior/sol, use ASA
+        (ABS amarela no UV). Não é material para peça grande sem enclosure decente.
       color: Black
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 80
       drying_time: 6.0
       variants:
@@ -282,14 +279,13 @@ materials:
         temp: 100
       flow_ratio: 1.0
       max_volumetric_speed: 10
-      confidence: 80
-      recommendation: Uso externo com resistência UV
+      recommendation: >
+        ASA da F3D para peças externas: resistência UV excelente, não amarela ao sol como o ABS.
+        Mesmo comportamento de impressão do ABS — câmara fechada, cama 100°C, propenso a warping.
+        Quando escolher: suportes externos, peças de jardim/varanda, qualquer coisa exposta ao tempo.
+        Se a peça fica dentro de casa, o ABS resolve mais barato.
       color: White
       surface_finish: Standard
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 80
       drying_time: 6.0
       variants:
@@ -321,14 +317,13 @@ materials:
         temp: 50
       flow_ratio: 1.05
       max_volumetric_speed: 8
-      confidence: 75
-      recommendation: Flexível padrão, exige baixa velocidade
+      recommendation: >
+        TPU 95A da F3D para peças flexíveis (juntas, protetores, pés). Velocidade baixa obrigatória
+        (MVS 8) e retração mínima — o Direct Drive da K2 ajuda, mas não force. Seque antes: TPU pega
+        umidade e bolha. Quando escolher: qualquer peça que precise dobrar/amortecer. Firme-flexível
+        (95A), não é mole tipo borracha.
       color: Natural
       surface_finish: Flexible
-      material_strength: 60
-      material_flexibility: 50
-      material_temperature_resistance: 50
-      material_uv_resistance: 30
       drying_temperature: 50
       drying_time: 8.0
       variants:
