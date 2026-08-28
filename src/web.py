@@ -6,7 +6,7 @@ import time
 
 from flask import jsonify, request, render_template, send_file
 
-from src import database, inventory, services
+from src import auth, buildinfo, database, inventory, services
 
 
 def _probe(connect_fn, path, probe_sql):
@@ -266,6 +266,7 @@ def register_routes(app):
         return jsonify(item)
 
     @app.post("/api/inventory")
+    @auth.require_writer
     def create_inventory_item():
         data = request.get_json(silent=True) or {}
         try:
@@ -277,6 +278,7 @@ def register_routes(app):
         return jsonify(item), 201
 
     @app.patch("/api/inventory/<int:item_id>")
+    @auth.require_writer
     def update_inventory_item(item_id):
         data = request.get_json(silent=True) or {}
         try:
@@ -288,6 +290,7 @@ def register_routes(app):
         return jsonify(item)
 
     @app.post("/api/inventory/<int:item_id>/use")
+    @auth.require_writer
     def use_inventory_item(item_id):
         """Marca uso: decrementa `amount` rolos (default 1)."""
         data = request.get_json(silent=True) or {}
@@ -298,6 +301,7 @@ def register_routes(app):
         return jsonify(item)
 
     @app.delete("/api/inventory/<int:item_id>")
+    @auth.require_writer
     def delete_inventory_item(item_id):
         ok = inventory.delete_item(item_id)
         if not ok:
@@ -315,6 +319,7 @@ def register_routes(app):
         return jsonify(inventory.export_data())
 
     @app.post("/api/inventory/import")
+    @auth.require_writer
     def import_inventory():
         """Importa um envelope de export com upsert idempotente por uid.
 
@@ -330,6 +335,22 @@ def register_routes(app):
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         return jsonify({"status": "imported", "replace": replace, "summary": summary})
+
+    # ─── Identidade / build info ─────────────────────────────────────────────
+
+    @app.get("/api/me")
+    def whoami():
+        """Identidade e permissão do usuário atual (para a UI).
+
+        Com auth desligada: {"user": "guest", "can_write": true, ...}.
+        Com auth ligada: o e-mail do header do proxy e se ele pode escrever.
+        """
+        return jsonify(auth.me())
+
+    @app.get("/api/build-info")
+    def build_info():
+        """Data/commit da última atualização bem-sucedida (escrita pelo update-server.sh)."""
+        return jsonify(buildinfo.read())
 
     # ─── Tree and pages ──────────────────────────────────────────────────────
 

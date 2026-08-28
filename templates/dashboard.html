@@ -540,6 +540,58 @@
         .sim-section td { background:linear-gradient(90deg,rgba(61,214,255,.08),transparent); color:var(--yellow); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
 
         /* ── Inventory (estoque) ────────────────────────────────────────────── */
+        .mfr-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .mfr-selector-label {
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .mfr-select {
+            min-width: 240px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            color: var(--text);
+            font-size: .88rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .mfr-select:focus { outline: none; border-color: var(--sel-ring); }
+        .inv-header-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .inv-user   { color: var(--blue); border-color: var(--sel-ring); }
+        .inv-build  { color: var(--muted); }
+        .inv-readonly-banner {
+            background: rgba(255,149,0,.12);
+            border: 1px solid var(--orange);
+            color: var(--orange);
+            padding: 9px 14px;
+            border-radius: 9px;
+            font-size: .82rem;
+            font-weight: 600;
+        }
+        /* Modo somente-leitura: esconde toda ação de escrita do estoque.
+           A garantia real é o gate no servidor (403); isto é só UX. */
+        body.readonly #inv-add-btn,
+        body.readonly [data-inv-move],
+        body.readonly [data-inv-edit],
+        body.readonly [data-inv-del],
+        body.readonly [data-inv-use],
+        body.readonly [data-inv-add-spool],
+        body.readonly [data-inv-restore] {
+            display: none !important;
+        }
         .inv-summary {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -904,15 +956,6 @@
                     <button type="button" class="nav-btn" data-view="ranking">🏆 Ranking</button>
                 </div>
 
-                <div class="menu-section" id="filament-nav" style="display: none;">
-                    <div class="menu-section-title">Fabricantes</div>
-                    {% for manufacturer in tree.keys() %}
-                    <button type="button" class="mfr-btn manufacturer-btn" data-manufacturer="{{ manufacturer }}">
-                        {{ manufacturer }}
-                    </button>
-                    {% endfor %}
-                </div>
-
                 <div class="menu-section" id="process-nav" style="display: none;">
                     <div class="menu-section-title">Materiais</div>
                     {% for material in process_tree.keys() %}
@@ -942,9 +985,20 @@
                 <span class="badge">K2 Combo · Creality Print 7.0</span>
             </div>
 
+            <!-- Seletor de fabricante (combo no topo da tela) -->
+            <div class="mfr-selector">
+                <label class="mfr-selector-label" for="mfr-select">Fabricante</label>
+                <select id="mfr-select" class="mfr-select">
+                    <option value="">— Selecione um fabricante —</option>
+                    {% for manufacturer in tree.keys() %}
+                    <option value="{{ manufacturer }}">{{ manufacturer }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <!-- Manufacturer card -->
             <div id="mfr-card">
-                <div class="muted-txt" style="font-size:.85rem">Selecione um fabricante no menu.</div>
+                <div class="muted-txt" style="font-size:.85rem">Selecione um fabricante acima.</div>
             </div>
 
             <!-- Toolbar -->
@@ -1123,7 +1177,15 @@
         <div id="inventory-view" class="view-content active">
             <div class="page-header">
                 <h1>Estoque de Filamentos</h1>
-                <span class="badge">Meus materiais · K2 mono-material</span>
+                <div class="inv-header-meta">
+                    <span class="badge">Meus materiais · K2 mono-material</span>
+                    <span class="badge inv-user" id="inv-user" title="Usuário identificado pelo proxy">👤 —</span>
+                    <span class="badge inv-build" id="inv-build" title="Última atualização do servidor">🕗 —</span>
+                </div>
+            </div>
+            <!-- Aviso de modo somente-leitura (exibido quando o usuário não pode escrever) -->
+            <div id="inv-readonly-banner" class="inv-readonly-banner" style="display:none;">
+                🔒 Modo somente leitura — você não tem permissão para alterar o estoque.
             </div>
 
             <!-- Summary strip -->
@@ -1229,6 +1291,6 @@
 
 <script>window.treeData = {{ tree | tojson }};</script>
 <script>window.processTreeData = {{ process_tree | tojson }};</script>
-<script src="{{ url_for('static', filename='main.js') }}?v=33"></script>
+<script src="{{ url_for('static', filename='main.js') }}?v=34"></script>
 </body>
 </html>

@@ -11,7 +11,6 @@ const comparedProcessProfiles = new Map(); // profileId -> process profile objec
 const tableContainer     = document.getElementById('table-container');
 const currentLabel       = document.getElementById('current-label');
 const mfrCard            = document.getElementById('mfr-card');
-const manufacturerBtns   = document.querySelectorAll('.manufacturer-btn');
 const compareTableWrap   = document.getElementById('compare-table-wrap');
 const compareTable       = document.getElementById('compare-table');
 const comparePlaceholder = document.getElementById('compare-placeholder');
@@ -224,6 +223,8 @@ function renderDetailPanel(profile, material) {
 // ─── Render top table ─────────────────────────────────────────────────────────
 function renderTable(manufacturer) {
     currentManufacturer = manufacturer;
+    // Mantém o combo em sincronia caso renderTable seja chamado programaticamente.
+    if (mfrSelect && mfrSelect.value !== manufacturer) mfrSelect.value = manufacturer;
     const mfData = treeData[manufacturer] || {};
     renderMfrCard(manufacturer);
 
@@ -441,14 +442,12 @@ function renderCompare() {
     });
 }
 
-// ─── Sidebar buttons ──────────────────────────────────────────────────────────
-manufacturerBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        manufacturerBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        renderTable(btn.dataset.manufacturer);
-        closeAppsMenu();
-    });
+// ─── Manufacturer selector (combo no topo da tela de Filamentos) ───────────────
+const mfrSelect = document.getElementById('mfr-select');
+mfrSelect?.addEventListener('change', () => {
+    const mfr = mfrSelect.value;
+    if (!mfr) return;
+    renderTable(mfr);
 });
 
 // ─── Toolbar buttons ──────────────────────────────────────────────────────────
@@ -922,9 +921,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
         document.getElementById(`${currentView}-view`)?.classList.add('active');
 
-        const filamentNav = document.getElementById('filament-nav');
         const processNav = document.getElementById('process-nav');
-        if (filamentNav) filamentNav.style.display = currentView === 'filaments' ? 'block' : 'none';
         if (processNav) processNav.style.display = currentView === 'process' ? 'block' : 'none';
 
         if (currentView === 'inventory') loadInventory();
@@ -2542,7 +2539,52 @@ invCatVariant?.addEventListener('change', () => {
 });
 
 
+// ─── Identidade do usuário + permissão (auth feature flag) ────────────────────
+// Busca /api/me: com auth desligada retorna guest/can_write=true; com ligada,
+// o e-mail do header do proxy e se ele pode escrever. Aplica o modo somente
+// leitura na UI (esconder botões de escrita). Isto é apenas UX — a fronteira
+// de segurança é o gate no servidor (403 nos endpoints de escrita).
+async function loadIdentity() {
+    const userEl = document.getElementById('inv-user');
+    try {
+        const me = await (await fetch('/api/me')).json();
+        const user = me.user || 'guest';
+        if (userEl) userEl.textContent = `👤 ${user}`;
+
+        const readonly = !me.can_write;
+        document.body.classList.toggle('readonly', readonly);
+        const banner = document.getElementById('inv-readonly-banner');
+        if (banner) banner.style.display = readonly ? 'block' : 'none';
+    } catch (err) {
+        // Falha ao consultar identidade: assume o pior (somente leitura) por segurança.
+        if (userEl) userEl.textContent = '👤 —';
+        document.body.classList.add('readonly');
+    }
+}
+
+// ─── Data da última atualização do servidor (build-info) ──────────────────────
+async function loadBuildInfo() {
+    const el = document.getElementById('inv-build');
+    if (!el) return;
+    try {
+        const info = await (await fetch('/api/build-info')).json();
+        if (info.updated_at) {
+            const d = new Date(info.updated_at);
+            const when = isNaN(d) ? info.updated_at : d.toLocaleString('pt-BR');
+            const commit = info.commit ? ` · ${info.commit}` : '';
+            el.textContent = `🕗 Atualizado ${when}${commit}`;
+            el.title = info.commit_subject || 'Última atualização do servidor';
+        } else {
+            el.textContent = '🕗 Atualização desconhecida';
+        }
+    } catch (err) {
+        el.textContent = '🕗 —';
+    }
+}
+
 // ─── Inicialização: Estoque é a tela principal ────────────────────────────────
 // A view de inventory começa ativa (definido no HTML e em currentView), então
 // carregamos o estoque no load da página.
+loadIdentity();
+loadBuildInfo();
 loadInventory();

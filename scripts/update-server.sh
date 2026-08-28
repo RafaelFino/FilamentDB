@@ -54,7 +54,25 @@ if [ -f "${REPO_DIR}/config.env" ]; then
     . "${REPO_DIR}/config.env"
     set +a
     log "Config carregada de ${REPO_DIR}/config.env"
+else
+    log "AVISO: ${REPO_DIR}/config.env não existe — usando defaults do código."
 fi
+
+# ── Sanidade da config de autorização ──
+# config.env contém segredos (allowlist de e-mails) e é gerenciado MANUALMENTE
+# no servidor — nunca vem do git nem é sobrescrito por este script. Se a auth
+# está ligada mas a allowlist está vazia, provavelmente o arquivo foi perdido
+# ou não preenchido: alerta (mas não bloqueia — leitura continua funcionando).
+case "${FILAMENTDB_AUTH_ENABLED:-0}" in
+    1|true|yes|on|TRUE|YES|ON)
+        if [ -z "${FILAMENTDB_WRITERS:-}" ]; then
+            err "AUTH ligada mas FILAMENTDB_WRITERS vazia — NINGUÉM poderá escrever."
+            err "  Preencha FILAMENTDB_WRITERS em ${REPO_DIR}/config.env (gerenciado à mão)."
+        else
+            log "Auth ligada; allowlist de writers presente."
+        fi
+        ;;
+esac
 
 # ── Backup dos bancos antes de qualquer alteração ──
 # Rede de segurança contra perda/corrupção de dados. O inventory.db (estoque
@@ -205,5 +223,19 @@ if command -v curl >/dev/null 2>&1; then
 else
     err "curl ausente — dump JSON do estoque pulado (backup binário permanece válido)."
 fi
+
+# ── Registrar build-info (data/commit da atualização bem-sucedida) ──
+# Escrito só aqui, no fim: se qualquer etapa acima abortou (set -e / exit 1),
+# este arquivo NÃO é atualizado, refletindo que a última atualização com
+# sucesso foi a anterior. A UI lê via /api/build-info.
+BUILD_INFO_PATH="${FILAMENTDB_BUILD_INFO_PATH:-${REPO_DIR}/build-info.env}"
+CURRENT_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+CURRENT_SUBJECT="$(git log -1 --pretty=%s 2>/dev/null | tr -d '\n' | tr '"' "'" || echo '')"
+{
+    echo "updated_at=$(date '+%Y-%m-%dT%H:%M:%S%z')"
+    echo "commit=${CURRENT_COMMIT}"
+    echo "commit_subject=${CURRENT_SUBJECT}"
+} > "$BUILD_INFO_PATH"
+log "build-info gravado em ${BUILD_INFO_PATH} (commit ${CURRENT_COMMIT})."
 
 log "Atualização concluída."

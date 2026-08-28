@@ -32,7 +32,14 @@ _DEFAULTS = {
     "FILAMENT_DB_PATH": str(ROOT_DIR / "filament.db"),
     "FILAMENT_INVENTORY_DB_PATH": str(ROOT_DIR / "inventory.db"),
     "FILAMENTDB_BACKUP_DIR": str(ROOT_DIR / "backups"),
+    "FILAMENTDB_BUILD_INFO_PATH": str(ROOT_DIR / "build-info.env"),
     "PORT": "5000",
+    # Autorização (feature flag desligada por padrão → sistema aberto).
+    "FILAMENTDB_AUTH_ENABLED": "0",
+    "FILAMENTDB_WRITERS": "",
+    "FILAMENTDB_IDENTITY_HEADER": "Remote-Email",
+    "FILAMENTDB_PROXY_SECRET": "",
+    "FILAMENTDB_DEV_OPEN": "0",
 }
 
 _loaded = False

@@ -149,7 +149,12 @@ _ADDABLE_COLUMNS = {
     "notes": "TEXT",
 }
 
-_initialized = False
+# Rastreia QUAL arquivo foi inicializado (não um simples booleano). Se o path
+# mudar ou o arquivo sumir/for recriado, a checagem barata abaixo detecta e
+# reinicializa — evita o "no such table" quando o .db é removido/trocado em
+# runtime (ex.: restore de backup, mudança de config, ou o próprio arquivo
+# recriado vazio por outro processo).
+_initialized_path = None
 
 
 def _table_exists(conn, name):
@@ -175,9 +180,19 @@ def init_db(force=False):
     Projetado para deploy por `git pull`: o inventory.db não vem no repo, então
     o app o materializa sozinho na primeira execução.
     """
-    global _initialized
-    if _initialized and not force:
-        return
+    global _initialized_path
+
+    # Fast-path: só pula se JÁ inicializamos ESTE mesmo arquivo E ele ainda
+    # contém a tabela. A verificação de schema_master é barata (uma linha) e
+    # blinda contra o arquivo ter sido removido/recriado depois do primeiro
+    # init — causa raiz do erro "no such table: inventory_items" em runtime.
+    if not force and _initialized_path == INVENTORY_DB_PATH:
+        conn = get_connection()
+        try:
+            if _table_exists(conn, "inventory_items"):
+                return
+        finally:
+            conn.close()
 
     conn = get_connection()
     try:
@@ -214,7 +229,7 @@ def init_db(force=False):
         # dois itens físicos nunca compartilhem identidade.
         cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_inv_uid ON inventory_items(uid);")
         conn.commit()
-        _initialized = True
+        _initialized_path = INVENTORY_DB_PATH
     finally:
         conn.close()
 
