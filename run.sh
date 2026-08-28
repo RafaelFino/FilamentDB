@@ -65,11 +65,20 @@ pip install --quiet --require-virtualenv -r requirements.txt
 # ---------------------------------------------------------------------------
 # 4. Banco de dados
 # ---------------------------------------------------------------------------
-if [[ ! -f "$DB_PATH" ]]; then
-    info "Banco nao encontrado. Executando build..."
-    FILAMENT_DB_PATH="$DB_PATH" python3 build.py
+# Reconstrói o banco se ele estiver ausente OU inválido (sem a tabela
+# principal). Só checar "arquivo existe" não basta: um filament.db vazio ou
+# defasado passaria e o serviço subiria com "no such table: filament_profiles".
+db_valid() {
+    [[ -f "$DB_PATH" ]] || return 1
+    python3 -c "import sqlite3,sys; c=sqlite3.connect('$DB_PATH'); \
+        c.execute('SELECT 1 FROM filament_profiles LIMIT 1'); sys.exit(0)" 2>/dev/null
+}
+
+if db_valid; then
+    info "Banco existente e válido: ${DB_PATH}"
 else
-    info "Banco existente: ${DB_PATH}"
+    info "Banco ausente ou inválido. Executando build..."
+    FILAMENT_DB_PATH="$DB_PATH" python3 build.py
 fi
 
 # ---------------------------------------------------------------------------

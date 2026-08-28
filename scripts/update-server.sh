@@ -66,17 +66,34 @@ git pull --ff-only origin main 2>&1 || { err "git pull falhou"; exit 1; }
 AFTER=$(git rev-parse HEAD)
 
 if [ "$BEFORE" = "$AFTER" ]; then
-    log "Sem alterações (HEAD: ${BEFORE:0:8}). Nada a fazer."
-    exit 0
+    log "Sem commits novos (HEAD: ${BEFORE:0:8})."
+else
+    log "Atualizado: ${BEFORE:0:8} → ${AFTER:0:8}"
+    log "Commits novos:"
+    git log --oneline "$BEFORE..$AFTER" | sed 's/^/  /'
 fi
 
-log "Atualizado: ${BEFORE:0:8} → ${AFTER:0:8}"
-log "Commits novos:"
-git log --oneline "$BEFORE..$AFTER" | sed 's/^/  /'
-
 # ── Rebuild ──
+# SEMPRE reconstrói o banco. Motivos:
+#   1. filament.db não é versionado e foi removido na limpeza acima — precisa
+#      ser regenerado a cada execução, mesmo sem commits novos.
+#   2. Evita servir um banco ausente/defasado (causa de "no such table").
+# O build.py aborta (exit != 0) se material-data faltar; nesse caso NÃO
+# reiniciamos o serviço, deixando-o no estado anterior em vez de subir quebrado.
 log "Executando build..."
-python3 build.py 2>&1 | sed 's/^/  /'
+if ! python3 build.py 2>&1 | sed 's/^/  /'; then
+    err "build.py falhou. Serviço NÃO será reiniciado (mantém estado anterior)."
+    exit 1
+fi
+
+# Validação: garante que o banco foi criado e tem a tabela principal antes de
+# reiniciar. Barreira final contra subir o serviço com banco inválido.
+if ! python3 -c "import sqlite3,sys; c=sqlite3.connect('${REPO_DIR}/filament.db'); \
+    c.execute('SELECT 1 FROM filament_profiles LIMIT 1'); sys.exit(0)" 2>/dev/null; then
+    err "filament.db inválido ou sem tabela filament_profiles após o build. Serviço NÃO reiniciado."
+    exit 1
+fi
+log "Banco validado (filament_profiles presente)."
 
 # ── Restart serviço ──
 log "Reiniciando ${SERVICE}..."
