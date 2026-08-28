@@ -12,6 +12,10 @@ from flask import Flask
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
+from src import config  # carrega config.env antes de tudo (paths, porta)
+
+config.load()
+
 from src import inventory
 from src.web import register_routes
 

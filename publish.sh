@@ -19,6 +19,16 @@ set -euo pipefail
 # --- Configuração -----------------------------------------------------------
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Config centralizada (fonte única de verdade). Carrega config.env se existir,
+# sem sobrescrever variáveis já presentes no ambiente.
+if [[ -f "${SCRIPT_DIR}/config.env" ]]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "${SCRIPT_DIR}/config.env"
+    set +a
+fi
+
 SOURCE_FILAMENTS="${SCRIPT_DIR}/Creality-Print/filaments"
 SOURCE_PROCESS="${SCRIPT_DIR}/Creality-Print/process"
 SOURCE_ORCA_FILAMENTS="${SCRIPT_DIR}/OrcaSlicer/filament"

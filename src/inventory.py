@@ -14,13 +14,23 @@ Persistência:
 
 import os
 import sqlite3
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+
+from src import config  # carrega config.env no os.environ antes de resolver paths
+
+config.load()
 
 INVENTORY_DB_PATH = os.environ.get(
     "FILAMENT_INVENTORY_DB_PATH",
     str(Path(__file__).resolve().parent.parent / "inventory.db"),
 )
+
+# Versão do formato de export/import do estoque. Incrementar quando o formato
+# do envelope ou o significado dos campos mudar de forma incompatível. O
+# import usa isso para aplicar migrações e manter retrocompatibilidade.
+INVENTORY_SCHEMA_VERSION = 1
 
 # Status/localização de um item de estoque.
 # Representa ONDE o rolo está (ou se já foi usado), escolhido pelo usuário.
@@ -105,6 +115,11 @@ def get_connection():
 # Usado para criar o schema e para validar/migrar bancos já existentes.
 _SCHEMA_COLUMNS = {
     "id":           "INTEGER PRIMARY KEY AUTOINCREMENT",
+    # uid: identificador estável e único do item FÍSICO. Diferente do `id`
+    # (autoincrement, local ao arquivo .db), o uid sobrevive a export/import e
+    # à recriação do banco. É a chave natural do upsert na importação. Um rolo
+    # físico é único — não pode existir em dois lugares.
+    "uid":          "TEXT",
     "material":     "TEXT NOT NULL",
     "manufacturer": "TEXT NOT NULL",
     "color_name":   "TEXT NOT NULL",
@@ -123,6 +138,7 @@ _SCHEMA_COLUMNS = {
 # Colunas que podem ser adicionadas via ALTER TABLE numa migração (todas exceto
 # a PK e as NOT NULL sem default, que precisam existir desde a criação).
 _ADDABLE_COLUMNS = {
+    "uid": "TEXT",
     "hex_color": "TEXT",
     "finish": "TEXT",
     "weight_g": "INTEGER DEFAULT 1000",
@@ -179,8 +195,24 @@ def init_db(force=False):
                 if name not in existing:
                     cur.execute(f"ALTER TABLE inventory_items ADD COLUMN {name} {ddl};")
 
+        # Backfill de uid: itens de bancos antigos (criados antes da coluna uid)
+        # ficam sem identificador estável. Geramos um uuid4 para cada um, de
+        # forma idempotente (só onde está nulo/vazio). Sem isso o export/import
+        # não teria chave natural para esses itens.
+        rows = cur.execute(
+            "SELECT id FROM inventory_items WHERE uid IS NULL OR uid = ''"
+        ).fetchall()
+        for r in rows:
+            cur.execute(
+                "UPDATE inventory_items SET uid = ? WHERE id = ?",
+                (str(uuid.uuid4()), r[0]),
+            )
+
         cur.execute("CREATE INDEX IF NOT EXISTS idx_inv_material ON inventory_items(material);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_inv_status ON inventory_items(status);")
+        # uid é único: garante que o upsert do import não crie duplicatas e que
+        # dois itens físicos nunca compartilhem identidade.
+        cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_inv_uid ON inventory_items(uid);")
         conn.commit()
         _initialized = True
     finally:
@@ -241,6 +273,9 @@ def add_item(data):
     spools = int(data.get("spools", 1) or 0)
     status = _normalize_status(data.get("status"))
     now = _now()
+    # uid pode vir do payload (ex.: reimportação de um item existente); se não
+    # vier, geramos um novo. Sempre único por item físico.
+    item_uid = (data.get("uid") or "").strip() or str(uuid.uuid4())
 
     limit = STATUS_LIMITS.get(status)
     if limit is not None and slots_used(status) + spools > limit:
@@ -252,13 +287,13 @@ def add_item(data):
     cur.execute(
         """
         INSERT INTO inventory_items(
-            material, manufacturer, color_name, hex_color, finish,
+            uid, material, manufacturer, color_name, hex_color, finish,
             weight_g, spools, status, variant_id, sku, notes,
             created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            material, manufacturer, color_name,
+            item_uid, material, manufacturer, color_name,
             data.get("hex_color"), data.get("finish"),
             int(data.get("weight_g", 1000) or 1000),
             spools, status,
@@ -343,6 +378,202 @@ def delete_item(item_id):
     conn.commit()
     conn.close()
     return True
+
+
+# ─── Export / Import (backup lógico versionado) ──────────────────────────────
+# Formato intermediário desacoplado do schema físico do SQLite. Permite backup,
+# migração entre versões e restauração sem ficar preso à estrutura do .db.
+
+# Campos de cada item que fazem parte do contrato de export. `id` é omitido de
+# propósito: é local ao arquivo .db e não deve atravessar import (a identidade
+# estável é o `uid`). created_at/updated_at são preservados para manter histórico.
+_EXPORT_FIELDS = (
+    "uid", "material", "manufacturer", "color_name", "hex_color", "finish",
+    "weight_g", "spools", "status", "variant_id", "sku", "notes",
+    "created_at", "updated_at",
+)
+
+
+def export_data():
+    """Exporta todo o estoque num envelope versionado (dump lógico).
+
+    Formato:
+      {
+        "schema_version": <int>,
+        "exported_at": "<iso8601>",
+        "count": <int>,
+        "items": [ { <campos de _EXPORT_FIELDS> }, ... ]
+      }
+
+    Estável entre versões do banco: o import de uma versão futura sabe ler
+    (e migrar) envelopes gerados por versões anteriores via schema_version.
+    """
+    items = list_items()
+    exported = [{k: it.get(k) for k in _EXPORT_FIELDS} for it in items]
+    return {
+        "schema_version": INVENTORY_SCHEMA_VERSION,
+        "exported_at": _now(),
+        "count": len(exported),
+        "items": exported,
+    }
+
+
+def _migrate_item(item, from_version):
+    """Migra o dict de um item de um schema_version antigo para o atual.
+
+    Ponto único de evolução: ao subir INVENTORY_SCHEMA_VERSION, adicione aqui
+    a transformação incremental (v1→v2, v2→v3, ...). Hoje só existe a v1, então
+    é identidade. Mantido explícito para deixar o caminho de retrocompat pronto.
+    """
+    v = from_version
+    # Exemplo de padrão futuro:
+    # if v < 2:
+    #     item["novo_campo"] = derive(item); v = 2
+    return item
+
+
+def import_data(payload, replace=False):
+    """Importa um envelope de export, com upsert idempotente por uid.
+
+    Args:
+        payload: dict no formato de export_data() (aceita também apenas uma
+            lista de itens; nesse caso assume-se schema_version atual).
+        replace: se True, apaga todos os itens que NÃO estão no payload
+            (sincronização espelho). Se False (default), faz merge: cria/atualiza
+            os itens do payload e deixa os demais intactos.
+
+    Idempotência: itens são casados pelo `uid`. Reimportar o mesmo envelope não
+    duplica nada — apenas reaplica os mesmos valores.
+
+    Returns:
+        dict com resumo: {"created", "updated", "deleted", "skipped", "errors"}.
+    """
+    if isinstance(payload, list):
+        items_in = payload
+        from_version = INVENTORY_SCHEMA_VERSION
+    elif isinstance(payload, dict):
+        items_in = payload.get("items", [])
+        from_version = int(payload.get("schema_version", INVENTORY_SCHEMA_VERSION))
+    else:
+        raise ValueError("payload deve ser um objeto de export ou uma lista de itens")
+
+    if from_version > INVENTORY_SCHEMA_VERSION:
+        raise ValueError(
+            f"schema_version {from_version} é mais novo que o suportado "
+            f"({INVENTORY_SCHEMA_VERSION}). Atualize o servidor antes de importar."
+        )
+
+    init_db()
+    created = updated = skipped = 0
+    errors = []
+    seen_uids = set()
+
+    conn = get_connection()
+    try:
+        for raw in items_in:
+            try:
+                item = _migrate_item(dict(raw), from_version)
+                item_uid = (item.get("uid") or "").strip()
+                if not item_uid:
+                    # Item sem uid (ex.: exportado por ferramenta externa): gera
+                    # um novo e trata como criação.
+                    item_uid = str(uuid.uuid4())
+                    item["uid"] = item_uid
+                seen_uids.add(item_uid)
+
+                existing = conn.execute(
+                    "SELECT id FROM inventory_items WHERE uid = ?", (item_uid,)
+                ).fetchone()
+
+                if existing is None:
+                    _insert_from_import(conn, item)
+                    created += 1
+                else:
+                    _update_from_import(conn, existing[0], item)
+                    updated += 1
+            except Exception as exc:  # não deixa um item ruim abortar o lote
+                errors.append({"uid": raw.get("uid") if isinstance(raw, dict) else None,
+                               "error": str(exc)})
+                skipped += 1
+
+        deleted = 0
+        if replace:
+            # Remove itens ausentes do payload (modo espelho).
+            all_rows = conn.execute("SELECT id, uid FROM inventory_items").fetchall()
+            stale = [r[0] for r in all_rows if r[1] not in seen_uids]
+            for sid in stale:
+                conn.execute("DELETE FROM inventory_items WHERE id = ?", (sid,))
+            deleted = len(stale)
+
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "created": created,
+        "updated": updated,
+        "deleted": deleted,
+        "skipped": skipped,
+        "errors": errors,
+    }
+
+
+def _insert_from_import(conn, item):
+    """Insere um item vindo do import preservando uid e timestamps.
+
+    Não passa por add_item de propósito: o import não deve aplicar validação de
+    capacidade (CFS/spool cheios) — está restaurando um estado que já era válido,
+    e abortar por limite quebraria a restauração. A validação de capacidade é
+    responsabilidade das operações interativas (add/update via UI/API).
+    """
+    now = _now()
+    conn.execute(
+        """
+        INSERT INTO inventory_items(
+            uid, material, manufacturer, color_name, hex_color, finish,
+            weight_g, spools, status, variant_id, sku, notes,
+            created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            item["uid"],
+            (item.get("material") or "").strip(),
+            (item.get("manufacturer") or "").strip(),
+            (item.get("color_name") or "").strip(),
+            item.get("hex_color"), item.get("finish"),
+            int(item.get("weight_g", 1000) or 1000),
+            int(item.get("spools", 1) or 0),
+            _normalize_status(item.get("status")),
+            item.get("variant_id"), item.get("sku"), item.get("notes"),
+            item.get("created_at") or now,
+            item.get("updated_at") or now,
+        ),
+    )
+
+
+def _update_from_import(conn, item_id, item):
+    """Atualiza (por id) um item existente identificado pelo uid, com os valores do import."""
+    conn.execute(
+        """
+        UPDATE inventory_items SET
+            material = ?, manufacturer = ?, color_name = ?, hex_color = ?,
+            finish = ?, weight_g = ?, spools = ?, status = ?, variant_id = ?,
+            sku = ?, notes = ?, updated_at = ?
+        WHERE id = ?
+        """,
+        (
+            (item.get("material") or "").strip(),
+            (item.get("manufacturer") or "").strip(),
+            (item.get("color_name") or "").strip(),
+            item.get("hex_color"), item.get("finish"),
+            int(item.get("weight_g", 1000) or 1000),
+            int(item.get("spools", 1) or 0),
+            _normalize_status(item.get("status")),
+            item.get("variant_id"), item.get("sku"), item.get("notes"),
+            item.get("updated_at") or _now(),
+            item_id,
+        ),
+    )
 
 
 # ─── Views agregadas ─────────────────────────────────────────────────────────

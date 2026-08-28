@@ -45,6 +45,66 @@ fi
 
 cd "$REPO_DIR"
 
+# ── Config centralizada (fonte única de verdade) ──
+# Carrega config.env (se existir) sem sobrescrever o que já veio do ambiente.
+# Garante que o backup respalde EXATAMENTE os mesmos arquivos que o serviço usa.
+if [ -f "${REPO_DIR}/config.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    . "${REPO_DIR}/config.env"
+    set +a
+    log "Config carregada de ${REPO_DIR}/config.env"
+fi
+
+# ── Backup dos bancos antes de qualquer alteração ──
+# Rede de segurança contra perda/corrupção de dados. O inventory.db (estoque
+# mutável do usuário) NÃO é tocado pelo pipeline, mas fazemos backup mesmo
+# assim para blindar contra mudanças futuras e falhas de disco. O filament.db
+# é regenerável, mas incluímos para permitir rollback rápido do catálogo.
+#
+# Respeita os mesmos paths que o backend/build usam (env override + default).
+FILAMENT_DB="${FILAMENT_DB_PATH:-${REPO_DIR}/filament.db}"
+INVENTORY_DB="${FILAMENT_INVENTORY_DB_PATH:-${REPO_DIR}/inventory.db}"
+BACKUP_DIR="${FILAMENTDB_BACKUP_DIR:-${REPO_DIR}/backups}"
+MAX_DB_BACKUPS="${MAX_DB_BACKUPS:-30}"
+
+backup_db() {
+    # backup_db <caminho_do_banco> <rotulo>
+    local src="$1" label="$2"
+    [ -f "$src" ] || { log "Backup: ${label} ausente (${src}), pulando."; return 0; }
+    local ts dest
+    ts="$(date '+%Y%m%d_%H%M%S')"
+    dest="${BACKUP_DIR}/${label}_${ts}.db"
+    # sqlite3 .backup faz cópia consistente mesmo com o serviço ativo (respeita
+    # o lock do WAL). Fallback para cp caso o binário sqlite3 não exista.
+    if command -v sqlite3 >/dev/null 2>&1; then
+        if sqlite3 "$src" ".backup '${dest}'" 2>/dev/null; then
+            log "Backup: ${label} → ${dest}"
+        else
+            err "Backup de ${label} FALHOU via sqlite3. Abortando para não arriscar os dados."
+            exit 1
+        fi
+    else
+        cp -p "$src" "$dest" || { err "Backup de ${label} (cp) FALHOU. Abortando."; exit 1; }
+        log "Backup (cp): ${label} → ${dest}"
+    fi
+    # Rotação: mantém apenas os últimos MAX_DB_BACKUPS deste label.
+    local count
+    count=$(find "$BACKUP_DIR" -maxdepth 1 -name "${label}_*.db" -type f 2>/dev/null | wc -l)
+    if [ "$count" -gt "$MAX_DB_BACKUPS" ]; then
+        find "$BACKUP_DIR" -maxdepth 1 -name "${label}_*.db" -type f -printf '%T+ %p\n' \
+            | sort | head -n "$((count - MAX_DB_BACKUPS))" | cut -d' ' -f2- \
+            | while read -r old; do rm -f "$old"; done
+        log "Rotação ${label}: mantidos últimos ${MAX_DB_BACKUPS}."
+    fi
+}
+
+log "Fazendo backup dos bancos..."
+mkdir -p "$BACKUP_DIR"
+# Inventário primeiro: é o dado insubstituível (estoque do usuário).
+backup_db "$INVENTORY_DB" "inventory"
+backup_db "$FILAMENT_DB"  "filament"
+
 # ── Limpeza de artefatos de build antes do pull ──
 # O build.py regenera filament.db (e os exports) a cada execução, sujando o
 # working tree. Se esses artefatos estiverem rastreados/modificados, o git pull
@@ -106,6 +166,44 @@ else
     err "Serviço falhou ao reiniciar!"
     systemctl status "$SERVICE" --no-pager 2>&1 | sed 's/^/  /'
     exit 1
+fi
+
+# ── Dump lógico do estoque (JSON via API) ──
+# Complementa o backup binário do início: um export versionado e desacoplado
+# do schema, restaurável via POST /api/inventory/import. Best-effort — roda
+# após o serviço estar no ar. Se a API não responder, apenas avisa (o backup
+# binário do inventory.db, feito lá no início, já garante a recuperação).
+API_URL="${FILAMENTDB_API_URL:-http://localhost:5000}"
+JSON_BACKUP_DIR="${BACKUP_DIR}/inventory-json"
+MAX_JSON_BACKUPS="${MAX_JSON_BACKUPS:-30}"
+
+if command -v curl >/dev/null 2>&1; then
+    mkdir -p "$JSON_BACKUP_DIR"
+    ts_json="$(date '+%Y%m%d_%H%M%S')"
+    json_dest="${JSON_BACKUP_DIR}/inventory_${ts_json}.json"
+    # --fail: status != 2xx vira erro; --max-time: não trava o cron se o serviço pendurar.
+    if curl -fsS --max-time 15 "${API_URL}/api/inventory/export" -o "$json_dest" 2>/dev/null; then
+        # Sanidade: precisa ser JSON com a chave "items", senão descarta.
+        if python3 -c "import json,sys; d=json.load(open('$json_dest')); sys.exit(0 if 'items' in d else 1)" 2>/dev/null; then
+            log "Dump JSON do estoque → ${json_dest}"
+        else
+            err "Export JSON retornou conteúdo inesperado. Descartando ${json_dest}."
+            rm -f "$json_dest"
+        fi
+    else
+        rm -f "$json_dest" 2>/dev/null || true
+        err "Export JSON do estoque falhou (API em ${API_URL} não respondeu). Backup binário do início permanece válido."
+    fi
+    # Rotação dos dumps JSON.
+    json_count=$(find "$JSON_BACKUP_DIR" -maxdepth 1 -name "inventory_*.json" -type f 2>/dev/null | wc -l)
+    if [ "$json_count" -gt "$MAX_JSON_BACKUPS" ]; then
+        find "$JSON_BACKUP_DIR" -maxdepth 1 -name "inventory_*.json" -type f -printf '%T+ %p\n' \
+            | sort | head -n "$((json_count - MAX_JSON_BACKUPS))" | cut -d' ' -f2- \
+            | while read -r old; do rm -f "$old"; done
+        log "Rotação dumps JSON: mantidos últimos ${MAX_JSON_BACKUPS}."
+    fi
+else
+    err "curl ausente — dump JSON do estoque pulado (backup binário permanece válido)."
 fi
 
 log "Atualização concluída."

@@ -3,6 +3,10 @@ import os
 import sqlite3
 from pathlib import Path
 
+from src import config  # carrega config.env no os.environ antes de resolver paths
+
+config.load()
+
 DB_PATH = os.environ.get("FILAMENT_DB_PATH", str(Path(__file__).resolve().parent.parent / "filament.db"))
 
 

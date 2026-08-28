@@ -21,13 +21,25 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # ---------------------------------------------------------------------------
+# Config centralizada (fonte única de verdade). Carrega config.env se existir,
+# sem sobrescrever variáveis já presentes no ambiente (systemd/cron > config.env).
+# ---------------------------------------------------------------------------
+if [[ -f "${SCRIPT_DIR}/config.env" ]]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "${SCRIPT_DIR}/config.env"
+    set +a
+fi
+
+# ---------------------------------------------------------------------------
 # Configurações
 # ---------------------------------------------------------------------------
 PORT="${PORT:-5000}"
 HOST="${HOST:-0.0.0.0}"
 FLASK_DEBUG="${FLASK_DEBUG:-0}"
 VENV_DIR="${VENV_DIR:-.venv}"
-DB_PATH="${FILAMENT_DB_PATH:-filament.db}"
+# Default absoluto (não relativo): garante o mesmo arquivo independente do cwd.
+DB_PATH="${FILAMENT_DB_PATH:-${SCRIPT_DIR}/filament.db}"
 
 # ---------------------------------------------------------------------------
 # 1. Python 3

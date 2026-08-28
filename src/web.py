@@ -304,6 +304,33 @@ def register_routes(app):
             return jsonify({"error": "item not found"}), 404
         return jsonify({"status": "deleted", "id": item_id})
 
+    @app.get("/api/inventory/export")
+    def export_inventory():
+        """Dump lógico versionado do estoque (backup/migração).
+
+        Retorna um envelope {schema_version, exported_at, count, items}
+        desacoplado do schema físico. Consumido pelo update-server.sh (backup
+        via curl) e por qualquer restauração posterior via /import.
+        """
+        return jsonify(inventory.export_data())
+
+    @app.post("/api/inventory/import")
+    def import_inventory():
+        """Importa um envelope de export com upsert idempotente por uid.
+
+        Query param opcional `replace=true` ativa o modo espelho (remove itens
+        ausentes do payload). Default é merge (não apaga nada).
+        """
+        payload = request.get_json(silent=True)
+        if payload is None:
+            return jsonify({"error": "corpo JSON ausente ou inválido"}), 400
+        replace = request.args.get("replace", "").lower() in ("1", "true", "yes")
+        try:
+            summary = inventory.import_data(payload, replace=replace)
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        return jsonify({"status": "imported", "replace": replace, "summary": summary})
+
     # ─── Tree and pages ──────────────────────────────────────────────────────
 
     @app.get("/api/tree")

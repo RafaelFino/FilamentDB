@@ -27,6 +27,13 @@ from pathlib import Path
 import yaml
 
 ROOT_DIR = Path(__file__).resolve().parent
+# Garante que o pacote src seja importável e carrega config.env no os.environ
+# antes de resolver qualquer path (fonte única de verdade compartilhada com o app).
+sys.path.insert(0, str(ROOT_DIR))
+from src import config  # noqa: E402
+
+config.load()
+
 DB_PATH = os.environ.get("FILAMENT_DB_PATH", str(ROOT_DIR / "filament.db"))
 DATA_DIR = ROOT_DIR / "filament-data"
 MATERIAL_DATA_PATH = ROOT_DIR / "material-data" / "materials.yaml"
