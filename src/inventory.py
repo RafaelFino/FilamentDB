@@ -421,6 +421,19 @@ def _build_summary(items):
     }
 
 
+def _sort_key_color(item):
+    """
+    Ordenação padrão dos itens do estoque:
+      1º cor (color_name) alfabética
+      2º marca (manufacturer) alfabética
+    Case-insensitive para não separar 'Azul' de 'azul'.
+    """
+    return (
+        (item.get("color_name") or "").strip().lower(),
+        (item.get("manufacturer") or "").strip().lower(),
+    )
+
+
 def _material_groups(items):
     """Agrupa uma lista de itens por material → cores (para a seção de estoque)."""
     groups = {}
@@ -434,7 +447,7 @@ def _material_groups(items):
             "colors_available": len({
                 (i["color_name"], i["hex_color"]) for i in its if i["status"] != STATUS_EMPTY
             }),
-            "items": its,
+            "items": sorted(its, key=_sort_key_color),
         })
     return out
 
@@ -456,12 +469,12 @@ def grouped_by_location():
     def by_status(*statuses):
         return [i for i in items if i["status"] in statuses]
 
-    cfs_items = sorted(by_status(STATUS_CFS), key=lambda i: (i["material"], i["color_name"]))
-    spool_items = sorted(by_status(STATUS_SPOOL), key=lambda i: (i["material"], i["color_name"]))
-    drybox_items = sorted(by_status(STATUS_DRYBOX), key=lambda i: (i["material"], i["color_name"]))
-    open_items = sorted(by_status(STATUS_OPEN), key=lambda i: (i["material"], i["color_name"]))
+    cfs_items = sorted(by_status(STATUS_CFS), key=_sort_key_color)
+    spool_items = sorted(by_status(STATUS_SPOOL), key=_sort_key_color)
+    drybox_items = sorted(by_status(STATUS_DRYBOX), key=_sort_key_color)
+    open_items = sorted(by_status(STATUS_OPEN), key=_sort_key_color)
     sealed_items = by_status(STATUS_IN_STOCK)
-    empty_items = sorted(by_status(STATUS_EMPTY), key=lambda i: (i["material"], i["color_name"]))
+    empty_items = sorted(by_status(STATUS_EMPTY), key=_sort_key_color)
 
     return {
         "printer": {
