@@ -19,7 +19,7 @@
     "gap_infill_speed": "350",
     "default_acceleration": "18000",
     "inner_wall_acceleration": "12000",
-    "outer_wall_acceleration": "6000",
+    "outer_wall_acceleration": "4500",
     "top_surface_acceleration": "5000",
     "wall_loops": "4",
     "top_shell_layers": "5",

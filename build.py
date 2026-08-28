@@ -422,7 +422,7 @@ PROFILE_MULTIPLIERS = {
     "economy": {"speed": 1.0, "accel": 1.0},
     "standard": {"speed": 1.0, "accel": 1.0},
     "strong": {"speed": 0.85, "accel": 0.80},
-    "detail": {"speed": 0.80, "accel": 0.75, "quality_speed": 0.45},
+    "detail": {"speed": 0.80, "accel": 0.75, "quality_speed": 0.30},
     "safe": {"speed": 0.70, "accel": 0.60, "quality_speed": 0.50},
 }
 
@@ -431,6 +431,7 @@ PROFILE_MULTIPLIERS = {
 # All other speed fields use the regular 'speed' multiplier.
 QUALITY_SPEED_FIELDS = {
     "outer_wall_speed", "top_surface_speed", "initial_layer_speed",
+    "gap_infill_speed",
 }
 
 # Nozzle diameter and default line width (kept for reference)

@@ -16,7 +16,7 @@
     "initial_layer_speed": "27",
     "travel_speed": "420",
     "support_speed": "175",
-    "gap_infill_speed": "175",
+    "gap_infill_speed": "125",
     "default_acceleration": "9000",
     "inner_wall_acceleration": "4800",
     "outer_wall_acceleration": "3000",

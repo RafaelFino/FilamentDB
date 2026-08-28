@@ -4,7 +4,7 @@ web.py — Rotas da API e páginas web.
 
 from flask import jsonify, request, render_template, send_file
 
-from src import database, services
+from src import database, inventory, services
 
 
 def register_routes(app):
@@ -179,6 +179,71 @@ def register_routes(app):
         if data is None:
             return jsonify({"error": "no process profiles found"}), 404
         return send_file(data, mimetype="application/zip", as_attachment=True, download_name=filename)
+
+    # ─── Inventory API (controle de estoque) ─────────────────────────────────
+    # Único conjunto de endpoints de ESCRITA do projeto. Persistido em
+    # inventory.db (separado do catálogo), que sobrevive aos rebuilds.
+
+    @app.get("/api/inventory")
+    def list_inventory():
+        """Estoque organizado por localização física (impressora → drybox → aberto → estoque)."""
+        return jsonify(inventory.grouped_by_location())
+
+    @app.get("/api/inventory/by-material")
+    def list_inventory_by_material():
+        """Estoque agrupado por material (paletas de cor por material)."""
+        return jsonify(inventory.grouped_by_material())
+
+    @app.get("/api/inventory/items")
+    def list_inventory_items():
+        """Lista plana de todos os itens de estoque."""
+        return jsonify(inventory.list_items())
+
+    @app.get("/api/inventory/<int:item_id>")
+    def get_inventory_item(item_id):
+        item = inventory.get_item(item_id)
+        if item is None:
+            return jsonify({"error": "item not found"}), 404
+        return jsonify(item)
+
+    @app.post("/api/inventory")
+    def create_inventory_item():
+        data = request.get_json(silent=True) or {}
+        try:
+            item = inventory.add_item(data)
+        except inventory.LocationFullError as exc:
+            return jsonify({"error": str(exc), "code": "location_full", "status": exc.status}), 409
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        return jsonify(item), 201
+
+    @app.patch("/api/inventory/<int:item_id>")
+    def update_inventory_item(item_id):
+        data = request.get_json(silent=True) or {}
+        try:
+            item = inventory.update_item(item_id, data)
+        except inventory.LocationFullError as exc:
+            return jsonify({"error": str(exc), "code": "location_full", "status": exc.status}), 409
+        if item is None:
+            return jsonify({"error": "item not found"}), 404
+        return jsonify(item)
+
+    @app.post("/api/inventory/<int:item_id>/use")
+    def use_inventory_item(item_id):
+        """Marca uso: decrementa `amount` rolos (default 1)."""
+        data = request.get_json(silent=True) or {}
+        amount = int(data.get("amount", 1) or 1)
+        item = inventory.use_item(item_id, amount)
+        if item is None:
+            return jsonify({"error": "item not found"}), 404
+        return jsonify(item)
+
+    @app.delete("/api/inventory/<int:item_id>")
+    def delete_inventory_item(item_id):
+        ok = inventory.delete_item(item_id)
+        if not ok:
+            return jsonify({"error": "item not found"}), 404
+        return jsonify({"status": "deleted", "id": item_id})
 
     # ─── Tree and pages ──────────────────────────────────────────────────────
 

@@ -24,6 +24,6 @@
     "brim_object_gap": 0.1,
     "ironing_type": "top",
     "ironing_speed": 30.0,
-    "ironing_flow": 10.0,
+    "ironing_flow": 8.0,
     "ironing_spacing": 0.1
 }

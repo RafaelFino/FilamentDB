@@ -12,6 +12,7 @@ from flask import Flask
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
+from src import inventory
 from src.web import register_routes
 
 app = Flask(
@@ -19,6 +20,12 @@ app = Flask(
     static_folder=str(ROOT_DIR / "static"),
     template_folder=str(ROOT_DIR / "templates"),
 )
+
+# Garante que o banco de estoque existe e está com a estrutura correta.
+# Importante para deploy por `git pull`: o inventory.db não vem no repo,
+# então é criado/validado aqui no startup.
+inventory.init_db()
+
 register_routes(app)
 
 

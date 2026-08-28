@@ -925,8 +925,25 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         const processNav = document.getElementById('process-nav');
         if (filamentNav) filamentNav.style.display = currentView === 'filaments' ? 'block' : 'none';
         if (processNav) processNav.style.display = currentView === 'process' ? 'block' : 'none';
+
+        if (currentView === 'inventory') loadInventory();
+
+        // No mobile, recolhe a sidebar após escolher uma view
+        collapseSidebarOnMobile();
     });
 });
+
+// ─── Sidebar mobile toggle ──────────────────────────────────────────────────
+const sidebarEl = document.querySelector('.sidebar');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+sidebarToggle?.addEventListener('click', () => {
+    sidebarEl?.classList.toggle('nav-collapsed');
+});
+function collapseSidebarOnMobile() {
+    if (window.matchMedia('(max-width:820px)').matches) {
+        sidebarEl?.classList.add('nav-collapsed');
+    }
+}
 
 materialBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1790,4 +1807,650 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         if (btn.dataset.view === 'ranking') loadRanking();
     });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── Inventory view — Controle de estoque ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const invContainer   = document.getElementById('inventory-container');
+const invSummary     = document.getElementById('inv-summary');
+const invCharts      = document.getElementById('inv-charts');
+const invFormPanel   = document.getElementById('inv-form-panel');
+const invFormTitle   = document.getElementById('inv-form-title');
+const invAddBtn      = document.getElementById('inv-add-btn');
+const invSaveBtn     = document.getElementById('inv-save-btn');
+const invCancelBtn   = document.getElementById('inv-cancel-btn');
+const invShowUsed    = document.getElementById('inv-show-used');
+
+// Form fields
+const invF = {
+    material:     document.getElementById('inv-material'),
+    manufacturer: document.getElementById('inv-manufacturer'),
+    colorName:    document.getElementById('inv-color-name'),
+    hex:          document.getElementById('inv-hex'),
+    hexPicker:    document.getElementById('inv-hex-picker'),
+    finish:       document.getElementById('inv-finish'),
+    weight:       document.getElementById('inv-weight'),
+    spools:       document.getElementById('inv-spools'),
+    status:       document.getElementById('inv-status'),
+    notes:        document.getElementById('inv-notes'),
+};
+
+// Catalog selects (pre-fill from window.treeData)
+const invCatMfr     = document.getElementById('inv-cat-manufacturer');
+const invCatMat     = document.getElementById('inv-cat-material');
+const invCatVariant = document.getElementById('inv-cat-variant');
+const invCatPreview = document.getElementById('inv-cat-preview');
+
+let invEditingId = null;   // null = criando, número = editando
+let invLoaded = false;
+
+const STATUS_LABEL = {
+    in_stock: '📦 Em estoque',
+    cfs:      '🎡 No CFS',
+    spool:    '🎣 No spool',
+    drybox:   '🌡️ No Drybox',
+    open:     '⚠️ Aberto',
+    empty:    '✔️ Usado',
+};
+const STATUS_ORDER = ['in_stock', 'cfs', 'spool', 'drybox', 'open', 'empty'];
+
+// ─── Load + render ────────────────────────────────────────────────────────────
+async function loadInventory() {
+    if (!invContainer) return;
+    if (!invLoaded) populateCatalogManufacturers();
+    invLoaded = true;
+    try {
+        const res = await fetch('/api/inventory');
+        const data = await res.json();
+        renderInventory(data);
+    } catch (err) {
+        invContainer.innerHTML = `<div class="empty">Erro ao carregar estoque: ${err}</div>`;
+    }
+}
+
+function renderInventory(data) {
+    const { summary = {} } = data;
+
+    const cfsUsed = summary.cfs_used || 0;
+    const cfsMax = summary.cfs_max || 4;
+    const cfsFull = cfsUsed >= cfsMax;
+    const spoolUsed = summary.spool_used || 0;
+    const spoolMax = summary.spool_max || 1;
+    const spoolFull = spoolUsed >= spoolMax;
+    const activeInputs = cfsUsed + spoolUsed;   // entradas ativas na impressora (máx 5)
+    const openCount = summary.open_count || 0;
+
+    invSummary.innerHTML = `
+        <div class="inv-summary-card"><div class="num">${summary.materials || 0}</div><span class="lbl">Materiais</span></div>
+        <div class="inv-summary-card"><div class="num">${summary.total_items || 0}</div><span class="lbl">Itens (cores)</span></div>
+        <div class="inv-summary-card"><div class="num">${summary.total_spools || 0}</div><span class="lbl">Rolos no total</span></div>
+        <div class="inv-summary-card">
+            <div class="num" style="color:${cfsFull ? 'var(--red)' : 'var(--blue)'}">${cfsUsed}/${cfsMax}</div>
+            <span class="lbl">CFS ${cfsFull ? '(cheio)' : ''}</span>
+        </div>
+        <div class="inv-summary-card">
+            <div class="num" style="color:${spoolFull ? 'var(--yellow)' : 'var(--green)'}">${spoolUsed}/${spoolMax}</div>
+            <span class="lbl">Spool holder</span>
+        </div>
+        <div class="inv-summary-card">
+            <div class="num" style="color:${activeInputs >= 5 ? 'var(--yellow)' : 'var(--text)'}">${activeInputs}/5</div>
+            <span class="lbl">Entradas ativas</span>
+        </div>
+        ${openCount ? `<div class="inv-summary-card">
+            <div class="num" style="color:var(--orange)">${openCount}</div>
+            <span class="lbl">⚠️ Abertos</span>
+        </div>` : ''}
+    `;
+
+    renderInvCharts(data);
+
+    const anyItems = (summary.total_items || 0) + (summary.used_count || 0);
+    if (!anyItems) {
+        invContainer.innerHTML = `<div class="empty">Estoque vazio. Clique em "+ Adicionar filamento" para começar.</div>`;
+        return;
+    }
+
+    const showUsed = invShowUsed?.checked;
+    const printer = data.printer || { cfs: {}, spool: {} };
+    const cfs = printer.cfs || { items: [], used: 0, max: 4 };
+    const spool = printer.spool || { items: [], used: 0, max: 1 };
+    const drybox = (data.drybox && data.drybox.items) || [];
+    const open = (data.open && data.open.items) || [];
+    const sealedMaterials = (data.sealed && data.sealed.materials) || [];
+    const empty = (data.empty && data.empty.items) || [];
+
+    let html = '';
+
+    // ── 1. Na impressora (CFS + spool holder) ──
+    const cfsSlots = renderCfsSlots(cfs);
+    const spoolCards = spool.items.length
+        ? spool.items.map(renderInvCard).join('')
+        : `<div class="inv-slot-empty">Spool holder livre</div>`;
+    html += `
+    <section class="inv-section inv-section-printer">
+        <div class="inv-section-head">
+            <span class="inv-section-title">🖨️ Na impressora</span>
+            <span class="inv-section-meta">${cfs.used}/${cfs.max} no CFS · ${spool.used}/${spool.max} no spool · ${cfs.used + spool.used}/5 entradas</span>
+        </div>
+        <div class="inv-subsection-label">CFS <span class="inv-slot-count">${cfs.used}/${cfs.max}</span></div>
+        <div class="inv-cards">${cfsSlots}</div>
+        <div class="inv-subsection-label">Spool holder <span class="inv-slot-count">${spool.used}/${spool.max}</span></div>
+        <div class="inv-cards">${spoolCards}</div>
+    </section>`;
+
+    // ── 2. Nos dryboxes (prontos para engatar) ──
+    if (drybox.length) {
+        html += renderLocationSection('🌡️ Nos dryboxes', 'Secos, prontos para engatar', drybox, 'inv-section-drybox');
+    }
+
+    // ── 3. Abertos (alerta) ──
+    if (open.length) {
+        html += renderLocationSection('⚠️ Abertos (fora do drybox)', 'Expostos à umidade — engate num drybox ou guarde', open, 'inv-section-open');
+    }
+
+    // ── 4. Estoque fechado (por material → cor) ──
+    let sealedHtml = '';
+    for (const group of sealedMaterials) {
+        if (!group.items.length) continue;
+        const palette = group.items.map(i =>
+            `<span class="inv-palette-dot" style="background:${i.hex_color || '#333'}" title="${escapeHtml(i.color_name)}"></span>`
+        ).join('');
+        sealedHtml += `
+        <div class="inv-material-group">
+            <div class="inv-group-header">
+                <span class="chip chip-standard inv-group-mat">${escapeHtml(group.material)}</span>
+                <span class="inv-group-meta">${group.colors_available} cor(es) · ${group.total_spools} rolo(s)</span>
+                <div class="inv-group-palette">${palette}</div>
+            </div>
+            <div class="inv-cards">${group.items.map(renderInvCard).join('')}</div>
+        </div>`;
+    }
+    if (sealedHtml) {
+        html += `
+        <section class="inv-section">
+            <div class="inv-section-head">
+                <span class="inv-section-title">📦 Estoque fechado</span>
+                <span class="inv-section-meta">Lacrados/guardados, por material</span>
+            </div>
+            ${sealedHtml}
+        </section>`;
+    }
+
+    // ── 5. Usados — escondidos por padrão; só aparecem com "Exibir rolos usados" ──
+    // Não entram em gráficos nem estatísticas (já foram consumidos).
+    if (empty.length && showUsed) {
+        html += `
+        <section class="inv-section inv-section-empty">
+            <details open>
+                <summary class="inv-section-title">✔️ Usados (${empty.length})</summary>
+                <div class="inv-cards" style="margin-top:12px;">${empty.map(renderInvCard).join('')}</div>
+            </details>
+        </section>`;
+    }
+
+    invContainer.innerHTML = html || `<div class="empty">Nenhum item para exibir com o filtro atual.</div>`;
+
+    invContainer.querySelectorAll('[data-inv-use]').forEach(btn =>
+        btn.addEventListener('click', () => invUse(+btn.dataset.invUse)));
+    invContainer.querySelectorAll('[data-inv-add-spool]').forEach(btn =>
+        btn.addEventListener('click', () => invAddSpool(+btn.dataset.invAddSpool)));
+    invContainer.querySelectorAll('[data-inv-edit]').forEach(btn =>
+        btn.addEventListener('click', () => invStartEdit(+btn.dataset.invEdit)));
+    invContainer.querySelectorAll('[data-inv-del]').forEach(btn =>
+        btn.addEventListener('click', () => invDelete(+btn.dataset.invDel)));
+    invContainer.querySelectorAll('[data-inv-move]').forEach(btn =>
+        btn.addEventListener('click', () => invMove(+btn.dataset.invMove, btn.dataset.target)));
+    invContainer.querySelectorAll('[data-inv-restore]').forEach(btn =>
+        btn.addEventListener('click', () => invRestore(+btn.dataset.invRestore)));
+}
+
+// Cores das localizações (batem com os badges de status)
+const LOC_COLORS = {
+    cfs:      '#3dd6ff',
+    spool:    '#50e8a0',
+    drybox:   '#c792ff',
+    open:     '#ffaa4d',
+    in_stock: '#8a95a8',
+};
+const LOC_LABELS = {
+    cfs: 'CFS', spool: 'Spool', drybox: 'Drybox', open: 'Aberto', in_stock: 'Estoque',
+};
+
+// Junta todos os itens (exceto vazios) a partir da estrutura por localização.
+function collectAllItems(data) {
+    const items = [];
+    (data.printer?.cfs?.items || []).forEach(i => items.push(i));
+    (data.printer?.spool?.items || []).forEach(i => items.push(i));
+    (data.drybox?.items || []).forEach(i => items.push(i));
+    (data.open?.items || []).forEach(i => items.push(i));
+    (data.sealed?.materials || []).forEach(m => (m.items || []).forEach(i => items.push(i)));
+    return items;
+}
+
+function renderInvCharts(data) {
+    if (!invCharts) return;
+    const items = collectAllItems(data);
+    if (!items.length) { invCharts.innerHTML = ''; return; }
+
+    // ── 1. Distribuição de rolos por localização (barra empilhada) ──
+    const spoolsByLoc = {};
+    for (const it of items) {
+        spoolsByLoc[it.status] = (spoolsByLoc[it.status] || 0) + (it.spools || 0);
+    }
+    const order = ['cfs', 'spool', 'drybox', 'open', 'in_stock'];
+    const totalSpools = order.reduce((s, k) => s + (spoolsByLoc[k] || 0), 0) || 1;
+    const segs = order.filter(k => spoolsByLoc[k]).map(k => {
+        const pct = (spoolsByLoc[k] / totalSpools) * 100;
+        return `<div class="inv-dist-seg" style="width:${pct}%;background:${LOC_COLORS[k]}" title="${LOC_LABELS[k]}: ${spoolsByLoc[k]}"></div>`;
+    }).join('');
+    const legend = order.filter(k => spoolsByLoc[k]).map(k =>
+        `<span class="inv-dist-key"><span class="inv-dist-swatch" style="background:${LOC_COLORS[k]}"></span>${LOC_LABELS[k]} <strong>${spoolsByLoc[k]}</strong></span>`
+    ).join('');
+
+    // ── 2. Paleta por material (cores que tenho, com quantidade) ──
+    const byMat = {};
+    for (const it of items) {
+        (byMat[it.material] = byMat[it.material] || []).push(it);
+    }
+    // Ordena materiais por total de rolos desc
+    const matRows = Object.entries(byMat)
+        .sort((a, b) => b[1].reduce((s, i) => s + i.spools, 0) - a[1].reduce((s, i) => s + i.spools, 0))
+        .map(([mat, its]) => {
+            // agrupa por cor (name+hex) somando rolos
+            const byColor = {};
+            for (const i of its) {
+                const key = `${i.color_name}|${i.hex_color}`;
+                if (!byColor[key]) byColor[key] = { name: i.color_name, hex: i.hex_color, qty: 0 };
+                byColor[key].qty += i.spools;
+            }
+            const chips = Object.values(byColor)
+                .sort((a, b) => b.qty - a.qty)
+                .map(c => `<span class="inv-palette-chip" style="background:${c.hex || '#333'}" title="${escapeHtml(c.name)} — ${c.qty} rolo(s)">${c.qty > 1 ? `<span class="qty">${c.qty}</span>` : ''}</span>`)
+                .join('');
+            return `<div class="inv-palette-row">
+                <span class="inv-palette-mat">${escapeHtml(mat)}</span>
+                <div class="inv-palette-swatches">${chips}</div>
+            </div>`;
+        }).join('');
+
+    // ── 3. Barra por material: quantidade de rolos, cores empilhadas ──
+    // Largura da barra proporcional entre materiais; segmentos internos = cores.
+    const matTotals = Object.entries(byMat).map(([mat, its]) => ({
+        mat, total: its.reduce((s, i) => s + i.spools, 0), its,
+    })).sort((a, b) => b.total - a.total);
+    const maxTotal = matTotals.length ? matTotals[0].total : 1;
+
+    // Escala global: 1 rolo = 1/maxTotal da largura, IGUAL em todas as barras.
+    // Assim a barra do material com mais rolos preenche 100% e as demais ficam
+    // proporcionais à quantidade real (didático: dá para "contar" os rolos).
+    const unitPct = 100 / (maxTotal || 1);
+
+    const matBarRows = matTotals.map(({ mat, total, its }) => {
+        // agrupa por cor somando rolos
+        const byColor = {};
+        for (const i of its) {
+            const key = `${i.color_name}|${i.hex_color}`;
+            if (!byColor[key]) byColor[key] = { name: i.color_name, hex: i.hex_color, qty: 0 };
+            byColor[key].qty += i.spools;
+        }
+        const colors = Object.values(byColor).sort((a, b) => b.qty - a.qty);
+        // Cada segmento = (qtd de rolos da cor) * unidade global.
+        // A largura da track é 100% (representa maxTotal rolos); o material
+        // preenche apenas as posições que possui, deixando o resto vazio.
+        const segsInner = colors.map(c => {
+            const wpct = c.qty * unitPct;
+            return `<div class="inv-matbar-seg" style="width:${wpct}%;background:${c.hex || '#333'};color:${textColorFor(c.hex)}" title="${escapeHtml(c.name)}: ${c.qty} rolo(s)">${wpct >= (unitPct * 0.9) && c.qty >= 1 ? c.qty : ''}</div>`;
+        }).join('');
+        const filledPct = total * unitPct;
+        return `<div class="inv-matbar-row">
+            <span class="inv-matbar-label">${escapeHtml(mat)}</span>
+            <div class="inv-matbar-track" style="--unit:${unitPct}%">
+                <div class="inv-matbar-fill" style="width:${filledPct}%">${segsInner}</div>
+            </div>
+            <span class="inv-matbar-total"><strong>${total}</strong> rolo(s)</span>
+        </div>`;
+    }).join('');
+
+    invCharts.innerHTML = `
+        <div class="inv-chart">
+            <div class="inv-chart-title">Distribuição por localização (${totalSpools} rolos)</div>
+            <div class="inv-dist-bar">${segs}</div>
+            <div class="inv-dist-legend">${legend}</div>
+        </div>
+        <div class="inv-chart">
+            <div class="inv-chart-title">Paleta por material</div>
+            <div class="inv-palette-rows">${matRows}</div>
+        </div>
+        <div class="inv-chart inv-chart-wide">
+            <div class="inv-chart-title">Rolos por material e cor</div>
+            <div class="inv-matbar-rows">${matBarRows}</div>
+        </div>
+    `;
+}
+
+// Escolhe texto claro ou escuro para contraste sobre um fundo hex (luminância).
+function textColorFor(hex) {
+    if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return '#05070a';
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    // luminância relativa aproximada
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return lum > 0.55 ? '#05070a' : '#ffffff';
+}
+
+// Renderiza os 4 slots do CFS: cada rolo ocupa 1 slot; slots vazios aparecem como placeholders.
+function renderCfsSlots(cfs) {
+    const cards = [];
+    for (const item of cfs.items) {
+        // Um item com N rolos ocupa N slots — mostramos o card uma vez com a contagem de rolos.
+        cards.push(renderInvCard(item));
+    }
+    let html = cards.join('');
+    const free = Math.max(0, (cfs.max || 4) - (cfs.used || 0));
+    for (let i = 0; i < free; i++) {
+        html += `<div class="inv-slot-empty">Slot ${(cfs.used || 0) + i + 1} livre</div>`;
+    }
+    return html;
+}
+
+function renderLocationSection(title, subtitle, items, extraClass = '') {
+    return `
+    <section class="inv-section ${extraClass}">
+        <div class="inv-section-head">
+            <span class="inv-section-title">${title}</span>
+            <span class="inv-section-meta">${subtitle} · ${items.length} item(ns)</span>
+        </div>
+        <div class="inv-cards">${items.map(renderInvCard).join('')}</div>
+    </section>`;
+}
+
+// Destinos de movimentação disponíveis a partir de cada status.
+// Mostra atalhos contextuais (não repete o status atual).
+const MOVE_TARGETS = [
+    { status: 'cfs',      label: 'CFS',     icon: '🎡' },
+    { status: 'spool',    label: 'Spool',   icon: '🎣' },
+    { status: 'drybox',   label: 'Drybox',  icon: '🌡️' },
+    { status: 'open',     label: 'Aberto',  icon: '⚠️' },
+    { status: 'in_stock', label: 'Estoque', icon: '📦' },
+];
+
+function renderInvCard(item) {
+    const isEmpty = item.status === 'empty';
+    const notes = item.notes ? `<div class="inv-card-notes">${escapeHtml(item.notes)}</div>` : '';
+
+    // Botões "mover para" — só destinos diferentes do atual, e só se não estiver vazio.
+    let moveButtons = '';
+    if (!isEmpty) {
+        moveButtons = MOVE_TARGETS
+            .filter(t => t.status !== item.status)
+            .map(t => `<button type="button" class="btn-move" data-inv-move="${item.id}" data-target="${t.status}" title="Mover para ${t.label}">${t.icon} ${t.label}</button>`)
+            .join('');
+    }
+
+    // Ações de ciclo de vida
+    let lifecycle = '';
+    if (isEmpty) {
+        // Recuperação de erro: devolver ao estoque
+        lifecycle = `
+            <button type="button" class="btn btn-secondary" data-inv-restore="${item.id}" title="Marquei como usado por engano — voltar ao estoque">↩ Recuperar</button>
+            <button type="button" class="btn btn-ghost" data-inv-edit="${item.id}">Editar</button>
+            <button type="button" class="btn btn-ghost" data-inv-del="${item.id}">Excluir</button>`;
+    } else {
+        lifecycle = `
+            <button type="button" class="btn btn-secondary" data-inv-use="${item.id}" title="Usei um rolo (marca como vazio quando zerar)">− Usei</button>
+            <button type="button" class="btn btn-ghost" data-inv-add-spool="${item.id}" title="Comprei mais um rolo">+ Rolo</button>
+            <button type="button" class="btn btn-ghost" data-inv-edit="${item.id}">Editar</button>
+            <button type="button" class="btn btn-ghost" data-inv-del="${item.id}">Excluir</button>`;
+    }
+
+    return `
+    <div class="inv-card ${isEmpty ? 'is-empty' : ''} status-${item.status}">
+        <div class="inv-card-top">
+            <span class="inv-card-swatch" style="background:${item.hex_color || '#333'}"></span>
+            <div class="inv-card-title">
+                <div class="inv-card-headline">
+                    <span class="inv-card-mat">${escapeHtml(item.material)}</span>
+                    <span class="inv-card-color">${escapeHtml(item.color_name)}</span>
+                </div>
+                <span class="inv-card-sub">${escapeHtml(item.manufacturer)}${item.finish ? ' · ' + escapeHtml(item.finish) : ''} · ${item.weight_g}g</span>
+            </div>
+        </div>
+        <div class="inv-card-badges">
+            <span class="inv-status ${item.status}">${STATUS_LABEL[item.status] || item.status}</span>
+            <span class="inv-spools"><strong>${item.spools}</strong> rolo(s)</span>
+        </div>
+        ${notes}
+        ${moveButtons ? `<div class="inv-move-row"><span class="inv-move-lbl">Mover:</span>${moveButtons}</div>` : ''}
+        <div class="inv-card-actions">
+            ${lifecycle}
+        </div>
+    </div>`;
+}
+
+function escapeHtml(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+}
+
+// ─── Actions ──────────────────────────────────────────────────────────────────
+async function invUse(id) {
+    await fetch(`/api/inventory/${id}/use`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 1 }),
+    });
+    loadInventory();
+}
+
+// Move um rolo para outra localização (CFS/spool/drybox/aberto/estoque).
+async function invMove(id, target) {
+    const res = await fetch(`/api/inventory/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: target }),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Não foi possível mover o rolo.');
+    }
+    loadInventory();
+}
+
+// Recupera um rolo marcado como usado por engano: volta ao estoque com 1 rolo.
+async function invRestore(id) {
+    const item = await (await fetch(`/api/inventory/${id}`)).json();
+    const spools = (item.spools || 0) < 1 ? 1 : item.spools;
+    const res = await fetch(`/api/inventory/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'in_stock', spools }),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Não foi possível recuperar o rolo.');
+    }
+    loadInventory();
+}
+
+async function invAddSpool(id) {
+    const item = await (await fetch(`/api/inventory/${id}`)).json();
+    const res = await fetch(`/api/inventory/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spools: (item.spools || 0) + 1 }),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Não foi possível adicionar mais um rolo.');
+    }
+    loadInventory();
+}
+
+async function invDelete(id) {
+    if (!confirm('Remover este filamento do estoque?')) return;
+    await fetch(`/api/inventory/${id}`, { method: 'DELETE' });
+    loadInventory();
+}
+
+// ─── Form: add / edit ───────────────────────────────────────────────────────
+function invOpenForm(editing = false) {
+    invFormPanel.style.display = 'block';
+    invFormTitle.textContent = editing ? 'Editar filamento' : 'Adicionar filamento ao estoque';
+    invFormPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function invCloseForm() {
+    invFormPanel.style.display = 'none';
+    invEditingId = null;
+    invClearForm();
+}
+
+function invClearForm() {
+    invF.material.value = '';
+    invF.manufacturer.value = '';
+    invF.colorName.value = '';
+    invF.hex.value = '';
+    invF.hexPicker.value = '#3dd6ff';
+    invF.finish.value = '';
+    invF.weight.value = '1000';
+    invF.spools.value = '1';
+    invF.status.value = 'in_stock';
+    invF.notes.value = '';
+    if (invCatMfr) invCatMfr.value = '';
+    if (invCatMat) { invCatMat.innerHTML = '<option value="">Material...</option>'; invCatMat.disabled = true; }
+    if (invCatVariant) { invCatVariant.innerHTML = '<option value="">Cor...</option>'; invCatVariant.disabled = true; }
+    if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
+}
+
+function invStartEdit(id) {
+    fetch(`/api/inventory/${id}`).then(r => r.json()).then(item => {
+        invEditingId = id;
+        invF.material.value = item.material || '';
+        invF.manufacturer.value = item.manufacturer || '';
+        invF.colorName.value = item.color_name || '';
+        invF.hex.value = item.hex_color || '';
+        if (item.hex_color) invF.hexPicker.value = item.hex_color;
+        invF.finish.value = item.finish || '';
+        invF.weight.value = item.weight_g ?? 1000;
+        invF.spools.value = item.spools ?? 1;
+        invF.status.value = item.status || 'in_stock';
+        invF.notes.value = item.notes || '';
+        invOpenForm(true);
+    });
+}
+
+async function invSave() {
+    const payload = {
+        material:     invF.material.value.trim(),
+        manufacturer: invF.manufacturer.value.trim(),
+        color_name:   invF.colorName.value.trim(),
+        hex_color:    invF.hex.value.trim() || null,
+        finish:       invF.finish.value.trim() || null,
+        weight_g:     parseInt(invF.weight.value) || 1000,
+        spools:       parseInt(invF.spools.value) || 0,
+        status:       invF.status.value,
+        notes:        invF.notes.value.trim() || null,
+    };
+    if (!payload.material || !payload.manufacturer || !payload.color_name) {
+        alert('Material, fabricante e cor são obrigatórios.');
+        return;
+    }
+    const url = invEditingId ? `/api/inventory/${invEditingId}` : '/api/inventory';
+    const method = invEditingId ? 'PATCH' : 'POST';
+    const res = await fetch(url, {
+        method, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert('Erro ao salvar: ' + (err.error || res.status));
+        return;
+    }
+    invCloseForm();
+    loadInventory();
+}
+
+invAddBtn?.addEventListener('click', () => {
+    if (invFormPanel.style.display === 'block' && !invEditingId) { invCloseForm(); return; }
+    invEditingId = null;
+    invClearForm();
+    invOpenForm(false);
+});
+invCancelBtn?.addEventListener('click', invCloseForm);
+invSaveBtn?.addEventListener('click', invSave);
+invShowUsed?.addEventListener('change', loadInventory);
+
+// Keep hex text <-> picker in sync
+invF.hexPicker?.addEventListener('input', () => { invF.hex.value = invF.hexPicker.value; });
+invF.hex?.addEventListener('input', () => {
+    if (/^#[0-9a-fA-F]{6}$/.test(invF.hex.value)) invF.hexPicker.value = invF.hex.value;
+});
+
+// ─── Catalog pre-fill (window.treeData) ──────────────────────────────────────
+function populateCatalogManufacturers() {
+    if (!invCatMfr) return;
+    const mfrs = Object.keys(treeData || {}).sort();
+    invCatMfr.innerHTML = '<option value="">Fabricante...</option>' +
+        mfrs.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+}
+
+invCatMfr?.addEventListener('change', () => {
+    const mfr = invCatMfr.value;
+    invCatMat.innerHTML = '<option value="">Material...</option>';
+    invCatVariant.innerHTML = '<option value="">Cor...</option>';
+    invCatVariant.disabled = true;
+    if (!mfr) { invCatMat.disabled = true; return; }
+    const mats = Object.keys(treeData[mfr]?.materials || {}).sort();
+    invCatMat.innerHTML += mats.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+    invCatMat.disabled = false;
+});
+
+invCatMat?.addEventListener('change', () => {
+    const mfr = invCatMfr.value, mat = invCatMat.value;
+    invCatVariant.innerHTML = '<option value="">Cor...</option>';
+    if (!mfr || !mat) { invCatVariant.disabled = true; return; }
+    const profiles = treeData[mfr]?.materials?.[mat]?.profiles || [];
+    // Flatten all variants of all profiles/lines for this material
+    let opts = '';
+    profiles.forEach((p, pi) => {
+        (p.variants || []).forEach((varnt, vi) => {
+            const label = `${varnt.color_name || 'Cor'}${varnt.finish ? ' · ' + varnt.finish : ''} (${p.commercial_name})`;
+            opts += `<option value="${pi}:${vi}">${escapeHtml(label)}</option>`;
+        });
+    });
+    if (!opts) opts = '<option value="" disabled>Sem variantes no catálogo</option>';
+    invCatVariant.innerHTML += opts;
+    invCatVariant.disabled = false;
+    // Pre-fill material + manufacturer even if no variant chosen yet
+    invF.material.value = mat;
+    invF.manufacturer.value = mfr;
+});
+
+invCatVariant?.addEventListener('change', () => {
+    const mfr = invCatMfr.value, mat = invCatMat.value, sel = invCatVariant.value;
+    if (!sel) return;
+    const [pi, vi] = sel.split(':').map(Number);
+    const profile = treeData[mfr]?.materials?.[mat]?.profiles?.[pi];
+    const varnt = profile?.variants?.[vi];
+    if (!varnt) return;
+    invF.material.value = mat;
+    invF.manufacturer.value = mfr;
+    invF.colorName.value = varnt.color_name || '';
+    invF.hex.value = varnt.hex_color || '';
+    if (varnt.hex_color) invF.hexPicker.value = varnt.hex_color;
+    invF.finish.value = varnt.finish || '';
+    invF.weight.value = varnt.weight_g || 1000;
+
+    // Preview visual da cor escolhida no catálogo
+    if (invCatPreview) {
+        invCatPreview.style.display = 'flex';
+        invCatPreview.innerHTML = `
+            <span class="sw" style="background:${varnt.hex_color || '#333'}"></span>
+            <span class="txt">
+                <strong>${escapeHtml(varnt.color_name || 'Cor')}</strong>
+                <span>${escapeHtml(mfr)} ${escapeHtml(mat)}${varnt.finish ? ' · ' + escapeHtml(varnt.finish) : ''}${varnt.sku ? ' · ' + escapeHtml(varnt.sku) : ''}</span>
+            </span>`;
+    }
 });
