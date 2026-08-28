@@ -45,6 +45,20 @@ fi
 
 cd "$REPO_DIR"
 
+# ── Limpeza de artefatos de build antes do pull ──
+# O build.py regenera filament.db (e os exports) a cada execução, sujando o
+# working tree. Se esses artefatos estiverem rastreados/modificados, o git pull
+# falha ("local changes would be overwritten"). Como são sempre regenerados,
+# removemos com segurança antes do pull para garantir um fast-forward limpo.
+log "Limpando artefatos de build (regenerados pelo build.py)..."
+# Remove do índice se ainda estiver rastreado (ex.: db versionado em commits antigos)
+git rm --cached --quiet filament.db 2>/dev/null || true
+# Remove do disco os artefatos gerados que poderiam colidir no merge
+rm -f filament.db 2>/dev/null || true
+# Descarta qualquer modificação local em arquivos ainda rastreados que sejam
+# puramente gerados (defensivo; não toca em fontes como *.yaml)
+git checkout -- filament.db 2>/dev/null || true
+
 # ── Git pull ──
 log "Verificando atualizações..."
 BEFORE=$(git rev-parse HEAD)
