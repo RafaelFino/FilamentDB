@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Alinhado com os design tokens da UI web (dashboard.html). -->
+    <color name="bg">#05070A</color>
+    <color name="panel">#0F141B</color>
+    <color name="yellow">#FFEE00</color>
+    <color name="blue">#00E5FF</color>
+    <color name="border">#263243</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
