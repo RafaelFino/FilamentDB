@@ -11,16 +11,20 @@
             --panel:    #0f141b;
             --panel-2:  #161d27;
             --text:     #eef1f6;
-            --muted:    #8a95a8;
-            --yellow:   #ffd84d;
-            --blue:     #3dd6ff;
-            --green:    #50e8a0;
-            --red:      #ff7b72;
-            --purple:   #c792ff;
-            --orange:   #ffaa4d;
-            --border:   #222d3a;
-            --sel-bg:   rgba(61,214,255,.09);
-            --sel-ring: rgba(61,214,255,.35);
+            --muted:    #93a0b5;
+            /* Paleta NEON de alta saturação sobre fundo escuro.
+               Matizes bem espaçados + luminâncias distintas para legibilidade
+               com daltonismo (não depende só de verde-vs-vermelho). */
+            --yellow:   #ffee00;   /* amarelo neon */
+            --blue:     #00e5ff;   /* ciano neon */
+            --green:    #39ff14;   /* verde-lima neon */
+            --red:      #ff2d55;   /* vermelho-rosa neon */
+            --purple:   #b96bff;   /* violeta neon */
+            --orange:   #ff9500;   /* laranja neon */
+            --pink:     #ff2ec4;   /* magenta neon */
+            --border:   #263243;
+            --sel-bg:   rgba(0,229,255,.12);
+            --sel-ring: rgba(0,229,255,.5);
         }
 
         /* ── Reset / base ───────────────────────────────────────────────────── */
@@ -264,24 +268,25 @@
             font-size: .72rem;
             font-weight: 700;
         }
-        .chip-PLA         { background:rgba(80,232,160,.13); color:#50e8a0; }
-        .chip-PLA\ Matte  { background:rgba(80,232,160,.08); color:#90f0c4; }
-        .chip-PLA\ Silk   { background:rgba(255,216,77,.14);  color:#ffd84d; }
-        .chip-PETG        { background:rgba(61,214,255,.12);  color:#3dd6ff; }
-        .chip-PETG\ CF    { background:rgba(61,214,255,.07);  color:#9ee8ff; }
-        .chip-ABS         { background:rgba(255,123,114,.12); color:#ff9080; }
-        .chip-ASA         { background:rgba(255,170,77,.12);  color:#ffaa4d; }
-        .chip-TPU         { background:rgba(199,146,255,.12); color:#c792ff; }
+        /* Chips de material — neon, matizes distintos */
+        .chip-PLA         { background:rgba(57,255,20,.14);  color:#39ff14; }
+        .chip-PLA\ Matte  { background:rgba(57,255,20,.10);  color:#7dff5c; }
+        .chip-PLA\ Silk   { background:rgba(255,238,0,.16);  color:#ffee00; }
+        .chip-PETG        { background:rgba(0,229,255,.14);  color:#00e5ff; }
+        .chip-PETG\ CF    { background:rgba(0,229,255,.09);  color:#7defff; }
+        .chip-ABS         { background:rgba(255,45,85,.14);  color:#ff5c78; }
+        .chip-ASA         { background:rgba(255,149,0,.14);  color:#ff9500; }
+        .chip-TPU         { background:rgba(185,107,255,.16);color:#b96bff; }
 
         /* ── Profile type chips ─────────────────────────────────────────────── */
-        .chip-draft     { background:rgba(255,123,114,.12); color:#ff9080; }
-        .chip-fast      { background:rgba(80,232,160,.13); color:#50e8a0; }
-        .chip-standard  { background:rgba(61,214,255,.12);  color:#3dd6ff; }
-        .chip-balanced  { background:rgba(255,216,77,.14);  color:#ffd84d; }
-        .chip-strong    { background:rgba(255,170,77,.12);  color:#ffaa4d; }
-        .chip-quality   { background:rgba(199,146,255,.12); color:#c792ff; }
-        .chip-detail    { background:rgba(199,146,255,.12); color:#c792ff; }
-        .chip-safe      { background:rgba(255,123,114,.12); color:#ff7b72; }
+        .chip-draft     { background:rgba(255,45,85,.14);  color:#ff5c78; }
+        .chip-fast      { background:rgba(57,255,20,.14);  color:#39ff14; }
+        .chip-standard  { background:rgba(0,229,255,.14);  color:#00e5ff; }
+        .chip-balanced  { background:rgba(255,238,0,.16);  color:#ffee00; }
+        .chip-strong    { background:rgba(255,149,0,.14);  color:#ff9500; }
+        .chip-quality   { background:rgba(185,107,255,.16); color:#b96bff; }
+        .chip-detail    { background:rgba(185,107,255,.16); color:#b96bff; }
+        .chip-safe      { background:rgba(255,45,85,.14);   color:#ff2d55; }
 
         /* ── Confidence bar ─────────────────────────────────────────────────── */
         .conf-wrap { display:flex; align-items:center; gap:7px; }
@@ -535,6 +540,8 @@
             flex: 1; height: 24px; border-radius: 6px;
             overflow: hidden; background: var(--panel-2);
             border: 1px solid var(--border);
+            display: flex;              /* segmentos lado a lado, largura % da track */
+            justify-content: flex-start;
             /* grade de fundo: uma divisória a cada unidade de rolo (--unit) */
             background-image: repeating-linear-gradient(
                 to right,
@@ -544,12 +551,12 @@
                 rgba(255,255,255,.06) var(--unit)
             );
         }
-        .inv-matbar-fill { display: flex; height: 100%; }
         .inv-matbar-seg {
-            height: 100%; min-width: 2px;
+            height: 100%;
             display: flex; align-items: center; justify-content: center;
             font-size: .62rem; font-weight: 800;
             border-right: 1px solid rgba(0,0,0,.3);
+            overflow: hidden;
         }
         .inv-matbar-seg:last-child { border-right: none; }
         .inv-matbar-total {
@@ -568,10 +575,11 @@
         }
         /* Stacked distribution bar */
         .inv-dist-bar {
-            display: flex; width: 100%; height: 22px; border-radius: 6px;
+            display: flex; width: 100%; height: 24px; border-radius: 6px;
             overflow: hidden; border: 1px solid var(--border);
+            gap: 2px; background: var(--bg);
         }
-        .inv-dist-seg { height: 100%; min-width: 2px; }
+        .inv-dist-seg { height: 100%; min-width: 3px; }
         .inv-dist-legend {
             display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;
             font-size: .74rem; color: var(--muted);
@@ -679,8 +687,8 @@
             margin: 12px 0 8px;
         }
         .inv-slot-count {
-            font-size: .72rem; font-weight: 700; color: var(--blue);
-            background: rgba(61,214,255,.1); padding: 1px 8px; border-radius: 99px;
+            font-size: .72rem; font-weight: 700; color: #00e5ff;
+            background: rgba(0,229,255,.14); padding: 1px 8px; border-radius: 99px;
             letter-spacing: 0;
         }
         .inv-slot-empty {
@@ -691,10 +699,10 @@
             background: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,.015) 8px, rgba(255,255,255,.015) 16px);
         }
         /* Section accents */
-        .inv-section-printer .inv-section-title { color: var(--blue); }
-        .inv-section-drybox .inv-section-title { color: var(--purple); }
-        .inv-section-open .inv-section-title { color: var(--orange); }
-        .inv-section-open { border-left: 2px solid rgba(255,170,77,.4); padding-left: 12px; border-radius: 4px; }
+        .inv-section-printer .inv-section-title { color: #00e5ff; }
+        .inv-section-drybox .inv-section-title { color: #ff9500; }
+        .inv-section-open .inv-section-title { color: #ffee00; }
+        .inv-section-open { border-left: 3px solid #ffee00; padding-left: 12px; border-radius: 4px; }
         .inv-section-empty details summary { cursor: pointer; list-style: revert; }
         .inv-section-empty .inv-cards .inv-card { opacity: .55; }
 
@@ -739,7 +747,7 @@
             padding: 12px;
         }
         .inv-card.is-empty { opacity:.55; }
-        .inv-card.status-open { border-color: rgba(255,170,77,.5); box-shadow: 0 0 0 1px rgba(255,170,77,.25) inset; }
+        .inv-card.status-open { border-color: rgba(255,238,0,.6); box-shadow: 0 0 0 1px rgba(255,238,0,.3) inset; }
         .inv-card-top { display:flex; align-items:center; gap:10px; }
         .inv-card-swatch {
             width: 34px; height: 34px; border-radius:8px;
@@ -749,9 +757,9 @@
         .inv-card-headline { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
         .inv-card-mat {
             font-size:.72rem; font-weight:800; letter-spacing:.03em;
-            color:var(--yellow); background:rgba(255,216,77,.12);
-            border:1px solid rgba(255,216,77,.28); border-radius:6px;
-            padding:1px 7px; text-transform:uppercase; flex-shrink:0;
+            color:#05070a; background:#ffee00;
+            border-radius:6px;
+            padding:2px 8px; text-transform:uppercase; flex-shrink:0;
         }
         .inv-card-color { font-weight:700; font-size:.92rem; }
         .inv-card-sub { font-size:.74rem; color:var(--muted); }
@@ -760,12 +768,15 @@
             font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
             padding: 2px 8px; border-radius: 99px;
         }
-        .inv-status.in_stock { background:rgba(80,232,160,.15); color:var(--green); }
-        .inv-status.cfs      { background:rgba(61,214,255,.15); color:var(--blue); }
-        .inv-status.spool    { background:rgba(80,232,160,.13); color:var(--green); }
-        .inv-status.drybox   { background:rgba(199,146,255,.15); color:var(--purple); }
-        .inv-status.open     { background:rgba(255,170,77,.18); color:var(--orange); }
-        .inv-status.empty    { background:rgba(255,123,114,.15); color:var(--red); }
+        /* Badges de status — cores neon distintas, alinhadas com LOC_COLORS.
+           Cada localização tem matiz + brilho próprios (legível com daltonismo). */
+        .inv-status { border: 1px solid transparent; }
+        .inv-status.cfs      { background:rgba(0,229,255,.16);  color:#00e5ff; border-color:rgba(0,229,255,.45); }
+        .inv-status.spool    { background:rgba(57,255,20,.15);  color:#39ff14; border-color:rgba(57,255,20,.45); }
+        .inv-status.drybox   { background:rgba(255,149,0,.16); color:#ff9500; border-color:rgba(255,149,0,.5); }
+        .inv-status.open     { background:rgba(255,238,0,.16);  color:#ffee00; border-color:rgba(255,238,0,.5); }
+        .inv-status.in_stock { background:rgba(124,140,255,.16);color:#7c8cff; border-color:rgba(124,140,255,.45); }
+        .inv-status.empty    { background:rgba(255,45,85,.15);  color:#ff2d55; border-color:rgba(255,45,85,.4); }
         .inv-status-select {
             border: none; cursor: pointer; -webkit-appearance:none; appearance:none;
             padding: 3px 8px; font-family: inherit;
@@ -858,14 +869,14 @@
 
         <div class="nav-section">
             <div class="nav-section-title">Perfis</div>
-            <button type="button" class="nav-btn active" data-view="filaments">🧵 Filamentos</button>
+            <button type="button" class="nav-btn active" data-view="inventory">📦 Estoque</button>
+            <button type="button" class="nav-btn" data-view="filaments">🧵 Filamentos</button>
             <button type="button" class="nav-btn" data-view="process">⚙️ Processos</button>
-            <button type="button" class="nav-btn" data-view="inventory">📦 Estoque</button>
             <button type="button" class="nav-btn" data-view="simulation">🔬 Simulação</button>
             <button type="button" class="nav-btn" data-view="ranking">🏆 Ranking</button>
         </div>
 
-        <div class="nav-section" id="filament-nav">
+        <div class="nav-section" id="filament-nav" style="display: none;">
             <div class="nav-section-title">Fabricantes</div>
             {% for manufacturer in tree.keys() %}
             <button type="button" class="mfr-btn manufacturer-btn" data-manufacturer="{{ manufacturer }}">
@@ -888,7 +899,7 @@
     <main class="content">
 
         <!-- Filamentos View -->
-        <div id="filaments-view" class="view-content active">
+        <div id="filaments-view" class="view-content">
             <div class="page-header">
                 <h1>Perfis de Filamento</h1>
                 <span class="badge">K2 Combo · Creality Print 7.0</span>
@@ -1072,7 +1083,7 @@
         </div>
 
         <!-- Inventory View -->
-        <div id="inventory-view" class="view-content">
+        <div id="inventory-view" class="view-content active">
             <div class="page-header">
                 <h1>Estoque de Filamentos</h1>
                 <span class="badge">Meus materiais · K2 mono-material</span>
@@ -1131,7 +1142,7 @@
                         <label class="inv-field inv-field-color">
                             <span>Cor (hex)</span>
                             <div class="inv-color-row">
-                                <input type="color" id="inv-hex-picker" value="#3dd6ff" />
+                                <input type="color" id="inv-hex-picker" value="#00e5ff" />
                                 <input type="text" id="inv-hex" class="inv-input" placeholder="#RRGGBB" />
                             </div>
                         </label>
@@ -1181,6 +1192,6 @@
 
 <script>window.treeData = {{ tree | tojson }};</script>
 <script>window.processTreeData = {{ process_tree | tojson }};</script>
-<script src="{{ url_for('static', filename='main.js') }}?v=28"></script>
+<script src="{{ url_for('static', filename='main.js') }}?v=33"></script>
 </body>
 </html>

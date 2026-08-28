@@ -3,7 +3,7 @@ const treeData = window.treeData || {};
 const processTreeData = window.processTreeData || {};
 let currentManufacturer = null;
 let currentMaterial = null;
-let currentView = 'filaments';
+let currentView = 'inventory';
 const comparedProfiles = new Map(); // profileId -> enriched profile object
 const comparedProcessProfiles = new Map(); // profileId -> process profile object
 
@@ -47,7 +47,7 @@ function tempRange(min, ideal, max) {
 
 function confBar(pct) {
     if (!pct) return '—';
-    const color = pct >= 85 ? '#50e8a0' : pct >= 70 ? '#ffd84d' : '#ff7b72';
+    const color = pct >= 85 ? 'var(--green)' : pct >= 70 ? 'var(--yellow)' : 'var(--red)';
     return `<div class="conf-wrap">
         <div class="conf-bar"><div class="conf-fill" style="width:${pct}%;background:${color}"></div></div>
         <span class="conf-val">${pct}%</span>
@@ -138,7 +138,7 @@ function renderDetailPanel(profile, material) {
                     <span class="variant-name">${vr.color_name || '—'}</span>
                     <span class="variant-sku">${vr.sku || ''}</span>
                     <span class="variant-meta">${vr.finish || ''} · ${vr.weight_g ? vr.weight_g+'g' : ''}</span>
-                    ${vr.recommended_use ? `<span class="variant-meta" style="color:#8a95a8">${vr.recommended_use}</span>` : ''}
+                    ${vr.recommended_use ? `<span class="variant-meta" style="color:var(--muted)">${vr.recommended_use}</span>` : ''}
                     ${vr.notes ? `<span class="variant-meta" style="font-style:italic">${vr.notes}</span>` : ''}
                 </div>
             </div>`).join('')
@@ -154,7 +154,7 @@ function renderDetailPanel(profile, material) {
                 <div class="info-cell"><span class="lbl">Posicionamento</span><span class="v">${v(profile.line_positioning)}</span></div>
                 <div class="info-cell"><span class="lbl">Uso alvo</span><span class="v">${v(profile.line_target_use)}</span></div>
                 <div class="info-cell wide"><span class="lbl">Descrição da linha</span><span class="v">${v(profile.line_description)}</span></div>
-                <div class="info-cell wide"><span class="lbl">Recomendação</span><span class="v" style="color:#50e8a0">${v(profile.recommendation)}</span></div>
+                <div class="info-cell wide"><span class="lbl">Recomendação</span><span class="v" style="color:var(--green)">${v(profile.recommendation)}</span></div>
                 <div class="info-cell"><span class="lbl">Acabamento padrão</span><span class="v">${v(profile.surface_finish)}</span></div>
                 <div class="info-cell"><span class="lbl">Cor de referência</span><span class="v">${v(profile.color)}</span></div>
                 <div class="info-cell"><span class="lbl">Cores disponíveis</span><span class="v">${(profile.line_color_options||[]).join(', ') || '—'}</span></div>
@@ -193,7 +193,7 @@ function renderDetailPanel(profile, material) {
                 <div class="info-cell"><span class="lbl">Impressora</span><span class="v">${v(profile.printer_model)}</span></div>
                 <div class="info-cell"><span class="lbl">Bico</span><span class="v">${v(profile.nozzle_size,'mm')}</span></div>
                 <div class="info-cell"><span class="lbl">Versão do perfil</span><span class="v">${v(profile.profile_version)}</span></div>
-                <div class="info-cell"><span class="lbl">Status</span><span class="v">${profile.active ? '<span class="bool-yes">Ativo</span>' : '<span style="color:#ff7b72">Inativo</span>'}</span></div>
+                <div class="info-cell"><span class="lbl">Status</span><span class="v">${profile.active ? '<span class="bool-yes">Ativo</span>' : '<span style="color:var(--red)">Inativo</span>'}</span></div>
             </div>
         </div>
 
@@ -366,7 +366,7 @@ const CMP_ROWS = [
     { sec:'Produto',      lbl:'Posicionamento',    fn: p => v(p.line_positioning) },
     { sec:'Produto',      lbl:'Uso alvo',          fn: p => v(p.line_target_use) },
     { sec:'Produto',      lbl:'Acabamento',        fn: p => v(p.surface_finish) },
-    { sec:'Produto',      lbl:'Recomendação',      fn: p => `<span style="color:#50e8a0;font-size:.78rem">${v(p.recommendation)}</span>` },
+    { sec:'Produto',      lbl:'Recomendação',      fn: p => `<span style="color:var(--green);font-size:.78rem">${v(p.recommendation)}</span>` },
 
     { sec:'Impressão',    lbl:'Bico ideal',        fn: p => v(p.nozzle_temp_initial,'°C') },
     { sec:'Impressão',    lbl:'Bico mín/máx',      fn: p => `<span class="muted-txt">${v(p.nozzle_temp_min)}–${v(p.nozzle_temp_max)} °C</span>` },
@@ -601,7 +601,7 @@ function renderProcessDetailPanel(profile, material) {
                 <div class="info-cell"><span class="lbl">Impressora</span><span class="v">${v(profile.printer_model)}</span></div>
                 <div class="info-cell"><span class="lbl">Bico</span><span class="v">${v(profile.nozzle_size,'mm')}</span></div>
                 <div class="info-cell"><span class="lbl">Versão</span><span class="v">${v(profile.version)}</span></div>
-                <div class="info-cell"><span class="lbl">Status</span><span class="v">${profile.active ? '<span class="bool-yes">Ativo</span>' : '<span style="color:#ff7b72">Inativo</span>'}</span></div>
+                <div class="info-cell"><span class="lbl">Status</span><span class="v">${profile.active ? '<span class="bool-yes">Ativo</span>' : '<span style="color:var(--red)">Inativo</span>'}</span></div>
             </div>
         </div>
 
@@ -645,7 +645,7 @@ function calcProcessSpeedScore(profile) {
 
 function renderSpeedScore(profile) {
     const score = calcProcessSpeedScore(profile);
-    const color = score >= 80 ? 'var(--green)' : score >= 60 ? '#ffd84d' : score >= 40 ? 'var(--orange)' : '#ff7b72';
+    const color = score >= 80 ? 'var(--green)' : score >= 60 ? 'var(--yellow)' : score >= 40 ? 'var(--orange)' : 'var(--red)';
     return `<div style="display:flex;align-items:center;gap:8px;">
         <span style="font-weight:700;color:${color};font-size:.95rem;">${score}</span>
         <div style="flex:1;height:4px;border-radius:2px;background:var(--border);min-width:40px;">
@@ -680,7 +680,7 @@ function calcMaterialUsageScore(profile) {
 function renderMaterialUsageScore(profile) {
     const score = calcMaterialUsageScore(profile);
     // Invert color: LOW usage = green (good for economy), HIGH usage = orange/red
-    const color = score <= 25 ? 'var(--green)' : score <= 45 ? '#ffd84d' : score <= 65 ? 'var(--orange)' : '#ff7b72';
+    const color = score <= 25 ? 'var(--green)' : score <= 45 ? 'var(--yellow)' : score <= 65 ? 'var(--orange)' : 'var(--red)';
     const label = score <= 20 ? 'Mínimo' : score <= 35 ? 'Baixo' : score <= 55 ? 'Moderado' : score <= 75 ? 'Alto' : 'Muito alto';
     return `<div style="display:flex;align-items:center;gap:8px;">
         <span style="font-weight:700;color:${color};font-size:.95rem;">${score}</span>
@@ -712,7 +712,7 @@ function calcProcessStrengthScore(profile) {
 
 function renderStrengthScore(profile) {
     const score = calcProcessStrengthScore(profile);
-    const color = score >= 70 ? 'var(--green)' : score >= 50 ? '#ffd84d' : score >= 30 ? 'var(--orange)' : '#ff7b72';
+    const color = score >= 70 ? 'var(--green)' : score >= 50 ? 'var(--yellow)' : score >= 30 ? 'var(--orange)' : 'var(--red)';
     const label = score >= 75 ? 'Alta' : score >= 55 ? 'Boa' : score >= 35 ? 'Moderada' : 'Baixa';
     return `<div style="display:flex;align-items:center;gap:8px;">
         <span style="font-weight:700;color:${color};font-size:.95rem;">${score}</span>
@@ -1382,9 +1382,9 @@ function calcCombinationScore(data) {
 }
 
 function renderScoreCard(score, label, capInfo) {
-    const colorFor = (val) => val >= 80 ? 'var(--green)' : val >= 60 ? '#ffd84d' : val >= 40 ? 'var(--orange)' : '#ff7b72';
+    const colorFor = (val) => val >= 80 ? 'var(--green)' : val >= 60 ? 'var(--yellow)' : val >= 40 ? 'var(--orange)' : 'var(--red)';
     // Material usage: invert color (low = green = good)
-    const matColorFor = (val) => val <= 25 ? 'var(--green)' : val <= 45 ? '#ffd84d' : val <= 65 ? 'var(--orange)' : '#ff7b72';
+    const matColorFor = (val) => val <= 25 ? 'var(--green)' : val <= 45 ? 'var(--yellow)' : val <= 65 ? 'var(--orange)' : 'var(--red)';
     const capColor = capInfo.count > 0 ? 'var(--orange)' : 'var(--green)';
     const capPct = Math.round((capInfo.count / capInfo.total) * 100);
     const matScore = score.material_usage || 0;
@@ -1721,7 +1721,7 @@ function getFilteredRanking() {
 
 function rankingScoreBar(val, max = 100) {
     const pct = Math.round((val / max) * 100);
-    const color = val >= 80 ? 'var(--green)' : val >= 60 ? '#ffd84d' : val >= 40 ? 'var(--orange)' : '#ff7b72';
+    const color = val >= 80 ? 'var(--green)' : val >= 60 ? 'var(--yellow)' : val >= 40 ? 'var(--orange)' : 'var(--red)';
     return `<div style="display:flex; align-items:center; gap:6px;">
         <span style="font-size:.82rem; font-weight:600; color:${color}; min-width:28px;">${val}</span>
         <div style="flex:1; height:6px; border-radius:3px; background:var(--border); min-width:50px;">
@@ -1858,6 +1858,8 @@ const STATUS_LABEL = {
 const STATUS_ORDER = ['in_stock', 'cfs', 'spool', 'drybox', 'open', 'empty'];
 
 // ─── Load + render ────────────────────────────────────────────────────────────
+let invData = null;   // último estado carregado (para consultas rápidas, ex: materiais no CFS)
+
 async function loadInventory() {
     if (!invContainer) return;
     if (!invLoaded) populateCatalogManufacturers();
@@ -1865,10 +1867,31 @@ async function loadInventory() {
     try {
         const res = await fetch('/api/inventory');
         const data = await res.json();
+        invData = data;
         renderInventory(data);
     } catch (err) {
         invContainer.innerHTML = `<div class="empty">Erro ao carregar estoque: ${err}</div>`;
     }
+}
+
+// Materiais atualmente carregados no CFS (a partir do último estado).
+function materialsInCfs() {
+    const items = invData?.printer?.cfs?.items || [];
+    return items.map(i => i.material);
+}
+
+// Busca um item pelo id no estado carregado (para saber material/cor sem novo fetch).
+function findItemInState(id) {
+    if (!invData) return null;
+    const buckets = [
+        ...(invData.printer?.cfs?.items || []),
+        ...(invData.printer?.spool?.items || []),
+        ...(invData.drybox?.items || []),
+        ...(invData.open?.items || []),
+        ...(invData.empty?.items || []),
+    ];
+    for (const m of (invData.sealed?.materials || [])) buckets.push(...(m.items || []));
+    return buckets.find(i => i.id === id) || null;
 }
 
 function renderInventory(data) {
@@ -2008,12 +2031,14 @@ function renderInventory(data) {
 }
 
 // Cores das localizações (batem com os badges de status)
+// Paleta NEON para as localizações — matizes bem espaçados e brilhos distintos
+// para serem distinguíveis também por quem tem daltonismo.
 const LOC_COLORS = {
-    cfs:      '#3dd6ff',
-    spool:    '#50e8a0',
-    drybox:   '#c792ff',
-    open:     '#ffaa4d',
-    in_stock: '#8a95a8',
+    cfs:      '#00e5ff',   // ciano neon
+    spool:    '#39ff14',   // verde-lima neon
+    drybox:   '#ff9500',   // laranja neon
+    open:     '#ffee00',   // amarelo neon (alerta)
+    in_stock: '#7c8cff',   // azul-violeta neon
 };
 const LOC_LABELS = {
     cfs: 'CFS', spool: 'Spool', drybox: 'Drybox', open: 'Aberto', in_stock: 'Estoque',
@@ -2097,19 +2122,18 @@ function renderInvCharts(data) {
             byColor[key].qty += i.spools;
         }
         const colors = Object.values(byColor).sort((a, b) => b.qty - a.qty);
-        // Cada segmento = (qtd de rolos da cor) * unidade global.
-        // A largura da track é 100% (representa maxTotal rolos); o material
-        // preenche apenas as posições que possui, deixando o resto vazio.
+        // Cada segmento ocupa (qtd de rolos) × unitPct da TRACK inteira.
+        // A track representa 100% = maxTotal rolos; o material preenche só as
+        // posições que possui. Assim 1 rolo tem o MESMO tamanho em toda barra.
         const segsInner = colors.map(c => {
             const wpct = c.qty * unitPct;
-            return `<div class="inv-matbar-seg" style="width:${wpct}%;background:${c.hex || '#333'};color:${textColorFor(c.hex)}" title="${escapeHtml(c.name)}: ${c.qty} rolo(s)">${wpct >= (unitPct * 0.9) && c.qty >= 1 ? c.qty : ''}</div>`;
+            // rótulo só quando o segmento é largo o suficiente para caber
+            const showNum = wpct >= (unitPct * 0.9) && c.qty >= 1;
+            return `<div class="inv-matbar-seg" style="width:${wpct}%;background:${c.hex || '#333'};color:${textColorFor(c.hex)}" title="${escapeHtml(c.name)}: ${c.qty} rolo(s)">${showNum ? c.qty : ''}</div>`;
         }).join('');
-        const filledPct = total * unitPct;
         return `<div class="inv-matbar-row">
             <span class="inv-matbar-label">${escapeHtml(mat)}</span>
-            <div class="inv-matbar-track" style="--unit:${unitPct}%">
-                <div class="inv-matbar-fill" style="width:${filledPct}%">${segsInner}</div>
-            </div>
+            <div class="inv-matbar-track" style="--unit:${unitPct}%">${segsInner}</div>
             <span class="inv-matbar-total"><strong>${total}</strong> rolo(s)</span>
         </div>`;
     }).join('');
@@ -2248,7 +2272,28 @@ async function invUse(id) {
 }
 
 // Move um rolo para outra localização (CFS/spool/drybox/aberto/estoque).
+// Sempre pede confirmação. Ao ir para o CFS com material diferente dos que já
+// estão lá, adiciona um alerta de incompatibilidade (não bloqueia).
 async function invMove(id, target) {
+    const item = findItemInState(id);
+    const label = item ? `${item.material} ${item.color_name}` : 'este rolo';
+    const targetLabel = (STATUS_LABEL[target] || target).replace(/^[^ ]+ /, ''); // sem emoji
+
+    let msg = `Mover ${label} para ${targetLabel}?`;
+
+    // Alerta de material misto no CFS
+    if (target === 'cfs' && item) {
+        const others = materialsInCfs().filter(m => m !== item.material);
+        const distinct = [...new Set(others)];
+        if (distinct.length) {
+            msg += `\n\n⚠️ ATENÇÃO: o CFS já tem ${distinct.join(', ')} e você está adicionando ${item.material}.`
+                 + `\nMateriais diferentes no mesmo CFS podem causar problemas de impressão`
+                 + ` (temperaturas e velocidades incompatíveis). Prossiga apenas se souber o que está fazendo.`;
+        }
+    }
+
+    if (!confirm(msg)) return;
+
     const res = await fetch(`/api/inventory/${id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: target }),
@@ -2312,7 +2357,7 @@ function invClearForm() {
     invF.manufacturer.value = '';
     invF.colorName.value = '';
     invF.hex.value = '';
-    invF.hexPicker.value = '#3dd6ff';
+    invF.hexPicker.value = '#00e5ff';
     invF.finish.value = '';
     invF.weight.value = '1000';
     invF.spools.value = '1';
@@ -2357,6 +2402,22 @@ async function invSave() {
         alert('Material, fabricante e cor são obrigatórios.');
         return;
     }
+
+    // Alerta de material misto ao cadastrar/editar direto no CFS (não bloqueia).
+    if (payload.status === 'cfs') {
+        const others = materialsInCfs().filter(m => m !== payload.material);
+        // ao editar, ignora o próprio item se ele já estava no CFS
+        const distinct = [...new Set(others)];
+        if (distinct.length) {
+            const proceed = confirm(
+                `⚠️ ATENÇÃO: o CFS já tem ${distinct.join(', ')} e você está colocando ${payload.material}.\n\n`
+                + `Materiais diferentes no mesmo CFS podem causar problemas de impressão `
+                + `(temperaturas e velocidades incompatíveis). Deseja continuar mesmo assim?`
+            );
+            if (!proceed) return;
+        }
+    }
+
     const url = invEditingId ? `/api/inventory/${invEditingId}` : '/api/inventory';
     const method = invEditingId ? 'PATCH' : 'POST';
     const res = await fetch(url, {
@@ -2454,3 +2515,9 @@ invCatVariant?.addEventListener('change', () => {
             </span>`;
     }
 });
+
+
+// ─── Inicialização: Estoque é a tela principal ────────────────────────────────
+// A view de inventory começa ativa (definido no HTML e em currentView), então
+// carregamos o estoque no load da página.
+loadInventory();
