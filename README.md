@@ -827,6 +827,337 @@ Os demais ficam no banco (`filament-data/`) para referência. Para incluir fabri
 
 ## Price Intelligence
 
-O catálogo canônico (`filament.db`) também pode marcar perfis elegíveis para monitoramento de preços através do campo `tracking`. O campo é definido explicitamente na linha do fabricante em `filament-data/*.yaml` e propagado para `filament_profiles` pelo `build.py`.
+O FilamentDB possui um módulo de **inteligência de preços** separado do catálogo técnico. O objetivo é acompanhar oportunidades reais de compra de filamentos, preservar séries históricas e permitir comparação por material, fabricante, modelo, cor e loja.
 
-O tracking é opt-in e, no escopo atual, só é propagado para **PLA** e **PETG** das linhas selecionadas como premium ou de acabamento **Velvet/Matte** das marcas prioritárias. O histórico de preços, ofertas e URLs de marketplaces deve permanecer em um banco separado, referenciando o catálogo exclusivamente pelo `filament_id`.
+### Objetivos e escopo
+
+O monitoramento é **opt-in** por meio do campo `tracking` nos perfis de `filament-data/*.yaml`. No escopo atual, o foco é: **PLA e PETG**, priorizando linhas de maior qualidade, premium e acabamentos **Matte/Velvet**, das marcas de interesse.
+
+Marcas prioritárias atuais:
+
+- Voolt3D
+- 3DLab
+- F3D
+- Sunlu
+- eSUN
+- Elegoo
+- Creality
+
+Fontes/lojas monitoradas ou planejadas:
+
+- lojas oficiais da Voolt3D, 3DLab e F3D;
+- Mercado Livre;
+- Amazon.com;
+- Shopee;
+- AliExpress.
+
+A lista de fontes é mantida em `data/price-sources.json`. Uma fonte pode estar cadastrada antes de existirem ofertas coletadas nela; **não se deve inventar uma oferta apenas porque a loja está monitorada**.
+
+### Decisão arquitetural: identidade estável do filamento
+
+O `id` inteiro de `filament_profiles` é um identificador técnico interno e **não deve ser usado como identidade persistente entre bancos**. O build pode recriar `filament.db`, portanto um `AUTOINCREMENT` não é uma identidade estável por si só.
+
+A identidade lógica é `filament_key`, construída deterministicamente como:
+
+```text
+normalize(material) | normalize(manufacturer) | normalize(model)
+```
+
+A normalização:
+
+1. converte para Unicode normalizado;
+2. remove diacríticos/acentos;
+3. converte para lowercase;
+4. remove espaços nas extremidades;
+5. colapsa sequências de espaços em um único espaço.
+
+Exemplos:
+
+```text
+pla|elegoo|pla matte
+pla|voolt3d|pla velvet
+petg|f3d|petg premium
+```
+
+Essa chave é a identidade usada para correlacionar o catálogo regenerável com o banco persistente de preços. A ordem dos registros no build, inclusão de novos fabricantes ou reconstrução do banco não deve alterar essa identidade.
+
+### Cor é variante, não identidade
+
+A cor é relevante para compra, mas não faz parte da `filament_key`. Um mesmo filamento pode ter N variantes de cor:
+
+```text
+pla|elegoo|pla matte
+├── Preto
+├── Branco
+├── Cinza
+└── Vermelho
+```
+
+As variantes vivem em `filament_variants` no catálogo e uma oferta pode apontar para uma variante específica. Isso permite comparar a mesma cor entre diferentes lojas e manter uma única identidade para o modelo do filamento.
+
+### Modelo de dados de preços
+
+`data/price-history.schema.sql` define o banco persistente `price-history.db`. A separação é deliberada:
+
+```text
+filament.db (catálogo técnico, regenerável)
+    │
+    └── filament_key
+             │
+             ▼
+price-history.db (histórico de preços, persistente)
+    │
+    ├── stores
+    ├── offers
+    │     └── filament_key + variant_id + store + URL
+    ├── price_snapshots
+    │     └── preço observado em uma data/hora
+    └── collection_runs
+          └── execução/coleta realizada
+```
+
+#### `stores`
+
+Cadastro das fontes monitoradas. Campos principais: `name`, `domain`, `marketplace`.
+
+#### `offers`
+
+Representa uma oferta concreta e persistente. Uma oferta é identificada pela combinação de loja e URL (`UNIQUE(store_id, url)`) e possui:
+
+- `filament_key` — identidade lógica do filamento;
+- `variant_id` — cor/SKU quando identificável;
+- `filament_id` — campo técnico legado/compatibilidade, não usar como identidade externa;
+- `store_id`;
+- `url` — **URL direta da oferta**, nunca somente a homepage da loja;
+- `external_id`;
+- `seller`;
+- `title`;
+- timestamps de primeira/última observação.
+
+#### `price_snapshots`
+
+Registra o preço observado sem sobrescrever o passado. Uma nova coleta adiciona um snapshot. Campos relevantes:
+
+- `offer_id`;
+- `collected_at`;
+- `price`;
+- `original_price`;
+- `shipping`;
+- `total_price`;
+- `currency`;
+- `available`;
+- `coupon`;
+- `source`;
+- `notes`.
+
+**O histórico nunca deve ser apagado para reconstruir um snapshot.**
+
+#### `collection_runs`
+
+Registra cada execução de coleta, sua fonte, status, período e quantidade de itens encontrados.
+
+### Regra fundamental de associação
+
+Uma oferta **nunca** deve ser associada a um filamento pela posição de um array, pelo `id` AUTOINCREMENT presumido ou por similaridade textual entre títulos. A associação deve resolver:
+
+```text
+oferta encontrada
+    ↓
+material + fabricante + modelo
+    ↓
+filament_key normalizada
+    ↓
+filament.db / filament_profiles
+```
+
+Se a correspondência não for inequívoca, a oferta deve ser descartada da carga ou ficar pendente de validação. É preferível ter menos dados a registrar uma oferta no filamento errado.
+
+Esse princípio existe especificamente para impedir problemas como uma oferta de **Elegoo** aparecer associada a **Voolt3D** depois de uma reconstrução do catálogo.
+
+### Regra para coleta de ofertas
+
+Uma pesquisa pode encontrar várias ofertas para o mesmo filamento. **Todas as ofertas relevantes encontradas devem ser preservadas**, e não apenas a mais barata. O objetivo é construir massa de dados para:
+
+- melhor preço atual;
+- preço médio;
+- mediana;
+- mínimo/máximo histórico;
+- evolução de preço;
+- comparação entre lojas;
+- comparação por cor;
+- identificação de oportunidades.
+
+Exemplo conceitual:
+
+```text
+Elegoo PLA Matte / Preto
+├── Mercado Livre → R$ 139,90
+├── Shopee        → R$ 125,40
+└── Amazon        → R$ ...
+```
+
+Não se deve substituir uma oferta existente por outra apenas porque a nova é mais barata. A oferta é uma entidade; o preço é uma série temporal.
+
+### Procedimento para um agente de coleta de preços
+
+Este procedimento é parte da especificação funcional do projeto e deve ser seguido por qualquer agente (humano ou IA) responsável por alimentar o banco.
+
+#### 1. Descobrir os perfis a monitorar
+
+Ler `filament.db` e selecionar apenas `filament_profiles.tracking = 1`. Usar `filament_key`, material, fabricante e modelo como identidade.
+
+Não assumir uma lista fixa de IDs. IDs podem mudar; `filament_key` é a referência estável.
+
+#### 2. Pesquisar cada filamento
+
+Para cada perfil, procurar ofertas relevantes nas fontes monitoradas. Priorizar:
+
+1. loja oficial do fabricante;
+2. Mercado Livre;
+3. Amazon.com;
+4. Shopee;
+5. AliExpress;
+6. outras fontes explicitamente autorizadas no futuro.
+
+Pesquisar pelo fabricante + modelo + material e, quando aplicável, pela cor.
+
+#### 3. Validar o produto
+
+Antes de registrar uma oferta, confirmar que a página realmente corresponde ao filamento procurado. Validar, sempre que possível:
+
+- fabricante;
+- material;
+- linha/modelo;
+- diâmetro, normalmente 1,75 mm;
+- peso, normalmente 1 kg;
+- acabamento (Matte/Velvet/Premium etc.);
+- cor;
+- vendedor/loja;
+- disponibilidade;
+- preço e condições do preço.
+
+Não confundir uma variante comum com uma linha premium/matte/velvet só porque o título contém palavras parecidas.
+
+#### 4. Registrar a URL direta
+
+Para ofertas que fazem sentido, armazenar a **URL direta da página do produto/anúncio**. Não registrar uma busca, homepage ou categoria como se fosse a oferta.
+
+A URL deve permitir que o usuário abra exatamente o produto encontrado.
+
+#### 5. Identificar a cor
+
+Se a oferta for de uma cor específica, associá-la à variante correspondente. Se o anúncio oferecer várias cores, registrar as variantes somente quando houver evidência suficiente para saber que elas pertencem à mesma oferta/SKU ou registrar cada URL/SKU separadamente quando a loja tratar cada cor como uma oferta independente.
+
+Não criar variantes apenas por inferência.
+
+#### 6. Resolver a `filament_key`
+
+Usar o catálogo como fonte de verdade. A chave deve ser resolvida a partir dos dados canônicos, nunca criada arbitrariamente pelo título do marketplace.
+
+Se houver duas correspondências possíveis, **não carregar automaticamente**.
+
+#### 7. Registrar a oferta
+
+Criar ou atualizar `offers`. A mesma URL na mesma loja representa a mesma oferta e pode receber novos snapshots.
+
+Nunca apagar uma oferta apenas porque ela não apareceu em uma coleta posterior; ela pode ter ficado indisponível temporariamente. Use `active`/`available` e os snapshots para representar o estado observado.
+
+#### 8. Registrar o snapshot
+
+Cada coleta deve registrar o preço observado em `price_snapshots`. Preservar:
+
+- preço anunciado;
+- preço original quando disponível;
+- frete quando disponível;
+- preço total quando puder ser calculado com segurança;
+- moeda;
+- disponibilidade;
+- cupom/desconto;
+- fonte da coleta;
+- observações relevantes.
+
+Não transformar desconto potencial em preço final sem evidência. Por exemplo, se a página diz "10% no Pix", registrar o preço efetivamente calculado apenas quando a condição estiver clara e manter a informação da condição em `notes`/campos apropriados.
+
+#### 9. Não inventar dados
+
+É proibido preencher preço, URL, cor, vendedor ou disponibilidade por estimativa. Se uma fonte não retornar uma oferta verificável, registrar a ausência da oferta, não uma URL genérica.
+
+#### 10. Validar antes de persistir
+
+Antes de finalizar uma coleta, verificar:
+
+```text
+manufacturer da oferta == manufacturer da filament_key
+material da oferta == material da filament_key
+model da oferta == model da filament_key
+URL pertence à loja registrada
+preço é numérico e está em BRL quando aplicável
+cor, se informada, pertence ao filamento
+```
+
+Qualquer inconsistência deve impedir a associação silenciosa.
+
+### Banco de preços e Git
+
+`price-history.db` é diferente de `filament.db`:
+
+- `filament.db` é derivado e regenerável; não é a fonte de verdade;
+- `price-history.db` contém dados históricos e **não deve ser apagado pelo build**;
+- `price-history.db` é intencionalmente rastreável no Git para preservar o histórico junto ao projeto;
+- seeds e schema ficam em `data/` e devem ser versionados;
+- o histórico não deve ser reconstruído destrutivamente só porque o catálogo foi atualizado.
+
+### Configuração de bancos
+
+Não existe caminho hardcoded para `/srv/FilamentDB`. O caminho dos bancos deve ser resolvido por `src/config.py`, com `DB_PATH` como configuração central. Quando `DB_PATH` está ausente/vazio, usa-se o caminho local padrão definido pela configuração (dentro da solução). Isso permite executar a aplicação tanto no servidor quanto no computador de desenvolvimento.
+
+Bancos diferentes devem permanecer organizados no mesmo diretório de dados definido pela configuração. Não criar bancos em diretórios espalhados pela aplicação.
+
+### Build e estabilidade dos IDs
+
+`build.py` pode recriar `filament.db`. Durante o build, IDs técnicos existentes são preservados quando o mesmo perfil já existe, mas essa preservação é uma conveniência de compatibilidade, **não substitui `filament_key` como identidade**.
+
+O build também calcula a origem dos dados do catálogo para permitir que `run.sh` detecte mudanças e reconstrua o banco quando necessário.
+
+### Interface de preços
+
+A página de preços deve ser orientada à comparação, e não apenas a uma lista de cards. A ordenação padrão é:
+
+```text
+material
+  → fabricante
+    → modelo
+```
+
+Cada linha/grupo deve poder apresentar, quando houver dados:
+
+- melhor preço atual;
+- preço de referência/médio;
+- quantidade de ofertas;
+- quantidade de cores;
+- loja da melhor oferta;
+- link direto da oferta;
+- detalhes por cor/loja.
+
+Uma oferta de uma marca nunca deve aparecer em outro fabricante por causa da ordenação, índice do array ou cruzamento incorreto de dados. O backend deve entregar a identidade canônica (`filament_key`) junto da oferta e a UI deve usá-la como chave.
+
+### Snapshot inicial e estado conhecido
+
+O primeiro snapshot foi concebido como ponto de partida do histórico, não como catálogo completo. A intenção é aumentar progressivamente a massa de dados nas coletas seguintes.
+
+Em 29/08/2026, o histórico inicial continha ofertas verificadas de 3D Lab, Creality, Elegoo, Voolt3D e Shopee/Mercado Livre, e posteriormente F3D foi incluída no conjunto monitorado. Esse snapshot deve ser tratado como **baseline histórico**, não como representação exaustiva do mercado.
+
+### Evolução planejada
+
+A evolução natural do módulo é:
+
+1. aumentar a cobertura de ofertas por filamento;
+2. coletar sistematicamente Amazon.com, Shopee e AliExpress;
+3. coletar lojas oficiais de Voolt3D, 3DLab e F3D;
+4. enriquecer variantes de cor;
+5. acumular snapshots ao longo do tempo;
+6. calcular médias, medianas e mínimos históricos;
+7. identificar automaticamente oportunidades de compra;
+8. gerar relatórios HTML com links diretos para as melhores ofertas.
+
+O objetivo final é que a tela de preços responda não apenas "qual é o menor preço agora?", mas também **"este preço é realmente uma boa oportunidade em relação ao histórico?"**.
