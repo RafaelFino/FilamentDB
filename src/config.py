@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 config.py — Carregador leve de configuração a partir de config.env.
 
@@ -7,7 +8,7 @@ unit do systemd via EnvironmentFile). Evita a divergência de "cada módulo
 resolve o path por conta própria e os defaults podem não bater".
 
 Precedência (do mais forte ao mais fraco):
-    1. Variável já presente no ambiente do processo (os.environ)
+    1. Variável já presente no ambiente (os.environ)
     2. Valor definido em config.env
     3. Default embutido no código (fallback)
 
@@ -56,7 +57,6 @@ def _parse_env_file(path):
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
-        # Suporta prefixo `export KEY=VALUE` (comum em .env carregados por shell).
         if line.startswith("export "):
             line = line[len("export "):].lstrip()
         if "=" not in line:
@@ -64,7 +64,6 @@ def _parse_env_file(path):
         key, _, val = line.partition("=")
         key = key.strip()
         val = val.strip()
-        # Remove aspas envolventes, se houver.
         if len(val) >= 2 and val[0] == val[-1] and val[0] in ("'", '"'):
             val = val[1:-1]
         if key:
@@ -73,10 +72,10 @@ def _parse_env_file(path):
 
 
 def load(force=False):
-    """Carrega config.env no os.environ, sem sobrescrever o que já existe.
+    """Carrega config.env no os.environ, sem sobrescrever valores definidos.
 
-    Idempotente. Retorna o dict efetivo (config.env + defaults) para inspeção.
-    Precedência: os.environ (já setado) > config.env > _DEFAULTS.
+    Valor vazio em config.env ou no ambiente é tratado como não configurado,
+    permitindo o fallback para o default canônico.
     """
     global _loaded
     if _loaded and not force:
@@ -84,13 +83,16 @@ def load(force=False):
 
     file_values = _parse_env_file(CONFIG_ENV_PATH)
 
-    # 1) config.env preenche só o que não veio do ambiente do processo.
+    # 1) config.env preenche só o que não veio do ambiente.
+    # Valor vazio significa "não configurado".
     for key, val in file_values.items():
-        os.environ.setdefault(key, val)
+        if val != "" and not os.environ.get(key):
+            os.environ[key] = val
 
-    # 2) defaults preenchem o que ainda estiver ausente.
+    # 2) defaults preenchem o que ainda estiver ausente ou vazio.
     for key, val in _DEFAULTS.items():
-        os.environ.setdefault(key, val)
+        if not os.environ.get(key):
+            os.environ[key] = val
 
     _loaded = True
     return current()
