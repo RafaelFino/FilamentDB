@@ -482,7 +482,7 @@ def seed_filaments():
         columns = "id, " if existing_id is not None else ""
         id_value = (existing_id,) if existing_id is not None else ()
         cur.execute(f"""
-            INSERT INTO filament_profiles({columns}manufacturer_id, material_id, filament_key, commercial_name, profile_name,
+            INSERT OR IGNORE INTO filament_profiles({columns}manufacturer_id, material_id, filament_key, commercial_name, profile_name,
                 printer_model, nozzle_size, inherits, base_id, creality_print_version,
                 nozzle_temp_initial, nozzle_temp_min, nozzle_temp_max,
                 bed_temp_initial, bed_temp, flow_ratio, max_volumetric_speed,
@@ -516,7 +516,15 @@ def seed_filaments():
             profile.get("drying_time"), profile.get("notes", ""),
             profile.get("tracking", 0), profile.get("active", 1),
         ))
-        profile_id = cur.lastrowid
+        # filament_key is the stable natural identity of a profile. Multiple source
+        # records may describe the same material/manufacturer/line; merge them into
+        # the same profile instead of violating the UNIQUE constraint.
+        cur.execute("SELECT id FROM filament_profiles WHERE filament_key = ?", (filament_key,))
+        row = cur.fetchone()
+        if row:
+            profile_id = row[0]
+        else:
+            raise RuntimeError(f"Filament profile was not created: {filament_key}")
 
         for variant in profile.get("variants", []):
             rgb = variant.get("rgb")
