@@ -37,6 +37,8 @@ def _migrate_identity(conn):
     if not cols: return
     if "filament_key" not in cols: conn.execute("ALTER TABLE offers ADD COLUMN filament_key TEXT")
     if "variant_id" not in cols: conn.execute("ALTER TABLE offers ADD COLUMN variant_id INTEGER")
+    if "quantity" not in cols: conn.execute("ALTER TABLE offers ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1")
+    if "unit_weight_g" not in cols: conn.execute("ALTER TABLE offers ADD COLUMN unit_weight_g REAL NOT NULL DEFAULT 1000")
     # Backfill legacy offers while the old filament_id is still available. The build preserves IDs,
     # so this migration is deterministic and does not lose the existing price history.
     if "filament_id" in cols:
@@ -47,6 +49,8 @@ def _migrate_identity(conn):
             if x: conn.execute("UPDATE offers SET filament_key=? WHERE id=?",(x[0],row[0]))
         cat.close()
     conn.execute("UPDATE offers SET active=0 WHERE filament_key IS NULL OR filament_key='' ")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_offers_filament_key ON offers(filament_key)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_offers_variant ON offers(variant_id)")
     conn.commit()
 
 def _sync_sources(conn):
@@ -71,9 +75,9 @@ def _sync_seed(conn):
         color=x.get("color_name") or x.get("color")
         variant_id=_ensure_variant(conn,profile["id"],color)
         if oid:
-            oid=oid[0]; conn.execute("UPDATE offers SET filament_key=?,variant_id=?,filament_id=?,external_id=?,seller=?,title=?,last_seen_at=? WHERE id=?",(key,variant_id,profile["id"],x.get("external_id"),x.get("seller"),x["title"],collected,oid))
+            oid=oid[0]; conn.execute("UPDATE offers SET filament_key=?,variant_id=?,filament_id=?,quantity=?,unit_weight_g=?,external_id=?,seller=?,title=?,last_seen_at=? WHERE id=?",(key,variant_id,profile["id"],int(x.get("quantity",1) or 1),float(x.get("unit_weight_g",1000) or 1000),x.get("external_id"),x.get("seller"),x["title"],collected,oid))
         else:
-            oid=conn.execute("INSERT INTO offers(filament_key,variant_id,filament_id,store_id,url,external_id,seller,title,last_seen_at) VALUES(?,?,?,?,?,?,?,?,?) RETURNING id",(key,variant_id,profile["id"],sid,x["url"],x.get("external_id"),x.get("seller"),x["title"],collected)).fetchone()[0]
+            oid=conn.execute("INSERT INTO offers(filament_key,variant_id,filament_id,quantity,unit_weight_g,store_id,url,external_id,seller,title,last_seen_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) RETURNING id",(key,variant_id,profile["id"],int(x.get("quantity",1) or 1),float(x.get("unit_weight_g",1000) or 1000),sid,x["url"],x.get("external_id"),x.get("seller"),x["title"],collected)).fetchone()[0]
         exists=conn.execute("SELECT 1 FROM price_snapshots WHERE offer_id=? AND collected_at=? AND price=?",(oid,collected,x["price"])).fetchone()
         if not exists:
             if run is None: run=conn.execute("INSERT INTO collection_runs(started_at,finished_at,source,status) VALUES(?,?,?,?) RETURNING id",(collected,collected,"verified-baseline-2026-08-29","completed")).fetchone()[0]
@@ -87,7 +91,8 @@ def _recreate_view(conn):
         SELECT o.id AS offer_id, o.filament_key, o.variant_id, o.filament_id,
                s.name AS store, o.title, o.url, o.seller,
                ps.price, ps.original_price, ps.shipping, ps.total_price, ps.currency,
-               ps.available, ps.collected_at, ps.source, ps.notes
+               ps.available, ps.collected_at, ps.source, ps.notes,
+               o.quantity, o.unit_weight_g
         FROM offers o
         JOIN stores s ON s.id=o.store_id
         JOIN price_snapshots ps ON ps.id=(SELECT ps2.id FROM price_snapshots ps2 WHERE ps2.offer_id=o.id ORDER BY ps2.collected_at DESC, ps2.id DESC LIMIT 1)
@@ -102,7 +107,11 @@ def dashboard():
     catalog=_catalog_rows(); c=get_connection(); offers=[dict(x) for x in c.execute("SELECT * FROM current_offers ORDER BY store,title").fetchall()]; c.close()
     # Resolve color names from the canonical catalog database, never from offer ordering.
     cat=database.get_db_connection(); variant_rows=cat.execute("SELECT id,filament_id,color_name FROM filament_variants").fetchall(); cat.close(); colors={r["id"]:r["color_name"] for r in variant_rows}
-    for o in offers: o["variant_color"]=colors.get(o.get("variant_id"))
+    for o in offers:
+        o["variant_color"]=colors.get(o.get("variant_id"))
+        weight=float(o.get("unit_weight_g") or 1000) * max(int(o.get("quantity") or 1),1)
+        o["total_weight_g"]=weight
+        o["price_per_kg"]=((o["total_price"] if o.get("total_price") is not None else o["price"])/weight*1000) if weight else None
     hist={}; c=get_connection(); rows=c.execute("SELECT offer_id,price FROM price_snapshots").fetchall(); c.close()
     for r in rows: hist.setdefault(r[0],[]).append(r[1])
     cur={}

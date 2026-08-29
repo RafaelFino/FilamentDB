@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS offers (
     filament_key TEXT NOT NULL,
     variant_id INTEGER,
     filament_id INTEGER,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    unit_weight_g REAL NOT NULL DEFAULT 1000,
     store_id INTEGER NOT NULL,
     url TEXT NOT NULL,
     external_id TEXT,
@@ -51,8 +53,6 @@ CREATE TABLE IF NOT EXISTS collection_runs (
     notes TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_offers_filament_key ON offers(filament_key);
-CREATE INDEX IF NOT EXISTS idx_offers_variant ON offers(variant_id);
 CREATE INDEX IF NOT EXISTS idx_snapshots_offer_time ON price_snapshots(offer_id, collected_at);
 CREATE INDEX IF NOT EXISTS idx_snapshots_time ON price_snapshots(collected_at);
 CREATE INDEX IF NOT EXISTS idx_runs_source_time ON collection_runs(source, started_at);
