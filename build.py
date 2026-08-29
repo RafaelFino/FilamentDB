@@ -16,6 +16,7 @@ Uso:
 """
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -45,6 +46,15 @@ EXPORT_FILAMENTS_DIR = ROOT_DIR / "Creality-Print" / "filaments"
 EXPORT_PROCESS_DIR = ROOT_DIR / "Creality-Print" / "process"
 EXPORT_ORCA_FILAMENTS_DIR = ROOT_DIR / "OrcaSlicer" / "filament"
 EXPORT_ORCA_PROCESS_DIR = ROOT_DIR / "OrcaSlicer" / "process"
+
+PRESERVED_PROFILE_IDS = {}
+
+def catalog_source_hash():
+    h = hashlib.sha256()
+    for path in sorted(DATA_DIR.glob("*.yaml")):
+        h.update(path.name.encode("utf-8"))
+        h.update(path.read_bytes())
+    return h.hexdigest()
 
 
 # =============================================================================
@@ -81,12 +91,28 @@ def create_schema():
     """Cria (ou recria) o banco de dados com todas as tabelas."""
     info("Criando schema do banco de dados...")
 
+    global PRESERVED_PROFILE_IDS
+    PRESERVED_PROFILE_IDS = {}
     if Path(DB_PATH).exists():
+        try:
+            old = sqlite3.connect(DB_PATH)
+            PRESERVED_PROFILE_IDS = {name: pid for pid, name in old.execute("SELECT id, profile_name FROM filament_profiles").fetchall()}
+            old.close()
+            info(f"IDs preservados: {len(PRESERVED_PROFILE_IDS)} perfis")
+        except sqlite3.Error:
+            PRESERVED_PROFILE_IDS = {}
         Path(DB_PATH).unlink()
 
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute("PRAGMA foreign_keys = ON;")
+
+    cur.execute("""
+    CREATE TABLE build_metadata (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    );
+    """)
 
     cur.execute("""
     CREATE TABLE manufacturers (
@@ -428,9 +454,11 @@ def seed_filaments():
     def insert_profile(manufacturer_id, material_id, profile, material_name, manufacturer_name):
         inherits = profile.get("inherits", get_inherits_for_material(material_name))
         confidence = derive_confidence(material_name, manufacturer_name, profile, material_defs)
-        cur.execute("""
-            INSERT INTO filament_profiles(
-                manufacturer_id, material_id, commercial_name, profile_name,
+        existing_id = PRESERVED_PROFILE_IDS.get(profile["profile_name"])
+        columns = "id, " if existing_id is not None else ""
+        id_value = (existing_id,) if existing_id is not None else ()
+        cur.execute(f"""
+            INSERT INTO filament_profiles({columns}manufacturer_id, material_id, commercial_name, profile_name,
                 printer_model, nozzle_size, inherits, base_id, creality_print_version,
                 nozzle_temp_initial, nozzle_temp_min, nozzle_temp_max,
                 bed_temp_initial, bed_temp, flow_ratio, max_volumetric_speed,
@@ -439,8 +467,8 @@ def seed_filaments():
                 line_color_options, color, surface_finish,
                 recommendation, diameter, density, drying_temperature, drying_time,
                 notes, tracking, active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
+            VALUES ({"?, " if existing_id is not None else ""}?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, id_value + (
             manufacturer_id, material_id,
             profile["commercial_name"], profile["profile_name"],
             profile.get("printer_model", "Creality K2 Combo"),
@@ -538,6 +566,8 @@ def seed_filaments():
                 insert_profile(manufacturer_id, material_id, profile, material_name, manufacturer_name)
                 count += 1
 
+    conn.execute("INSERT OR REPLACE INTO build_metadata(key,value) VALUES(?,?)", ("catalog_source_hash", catalog_source_hash()))
+    conn.execute("INSERT OR REPLACE INTO build_metadata(key,value) VALUES(?,?)", ("catalog_built_at", time.strftime("%Y-%m-%dT%H:%M:%S%z")))
     conn.commit()
     conn.close()
     info(f"Filamentos importados: {count} perfis")

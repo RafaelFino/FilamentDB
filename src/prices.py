@@ -30,18 +30,17 @@ def _sync_seed(conn):
     try:
         run = None
         for x in seed:
-            fid = x.get("filament_id")
-            if fid is None:
-                row = cat.execute(
-                    "SELECT fp.id FROM filament_profiles fp JOIN manufacturers mf ON mf.id=fp.manufacturer_id WHERE mf.name=? AND fp.profile_name=? AND fp.tracking=1 AND fp.active=1",
-                    (x["manufacturer"], x["profile_name"]),
-                ).fetchone()
-                if not row:
-                    continue
-                fid = row[0]
-            row = cat.execute("SELECT fp.id FROM filament_profiles fp JOIN manufacturers mf ON mf.id=fp.manufacturer_id WHERE fp.id=? AND mf.name=? AND fp.profile_name=? AND fp.tracking=1 AND fp.active=1", (fid, x["manufacturer"], x["profile_name"])).fetchone()
+            # O vínculo canônico é fabricante + profile_name; o ID inteiro é
+            # preservado pelo build quando possível, mas nunca confiamos nele
+            # para resolver uma oferta. Isso evita que uma mudança na ordem dos
+            # YAMLs associe Elegoo a Voolt3D, por exemplo.
+            row = cat.execute(
+                "SELECT fp.id FROM filament_profiles fp JOIN manufacturers mf ON mf.id=fp.manufacturer_id WHERE mf.name=? AND fp.profile_name=? AND fp.tracking=1 AND fp.active=1",
+                (x["manufacturer"], x["profile_name"]),
+            ).fetchone()
             if not row:
                 continue
+            fid = row[0]
             sid = conn.execute(
                 "INSERT INTO stores(name,domain,marketplace) VALUES(?,?,?) ON CONFLICT(name) DO UPDATE SET domain=excluded.domain RETURNING id",
                 (x["store"], x["domain"], x["marketplace"]),

@@ -106,5 +106,23 @@
     "available": 1,
     "source": "web-search-2026-08-29",
     "notes": "Preço Pix observado; frete grátis com cupom; 7 variações disponíveis."
+  },
+  {
+    "manufacturer": "F3D",
+    "profile_name": "F3D PLA Premium",
+    "store": "F3D",
+    "domain": "filamentos3dbrasil.com.br",
+    "marketplace": 0,
+    "title": "Filamento PLA Premium Preto - F3D",
+    "url": "https://www.filamentos3dbrasil.com.br/produtos/filamento-pla-premium-preto/",
+    "external_id": null,
+    "seller": "F3D",
+    "price": 89.91,
+    "original_price": 99.9,
+    "shipping": null,
+    "available": 1,
+    "source": "web-verified-2026-08-29",
+    "notes": "Preço à vista via Pix; página oficial F3D. Produto Premium 1 kg.",
+    "filament_id": null
   }
 ]

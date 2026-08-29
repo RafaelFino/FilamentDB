@@ -87,14 +87,31 @@ fi
 # defasado passaria e o serviço subiria com "no such table: filament_profiles".
 db_valid() {
     [[ -f "$DB_PATH" ]] || return 1
-    python3 -c "import sqlite3,sys; c=sqlite3.connect('$DB_PATH'); \
-        c.execute('SELECT 1 FROM filament_profiles LIMIT 1'); sys.exit(0)" 2>/dev/null
+    python3 - "$DB_PATH" "$SCRIPT_DIR" <<'PY'
+import hashlib, sqlite3, sys
+from pathlib import Path
+db_path = Path(sys.argv[1])
+root = Path(sys.argv[2])
+h = hashlib.sha256()
+for path in sorted((root / "filament-data").glob("*.yaml")):
+    h.update(path.name.encode("utf-8"))
+    h.update(path.read_bytes())
+expected = h.hexdigest()
+try:
+    conn = sqlite3.connect(db_path)
+    conn.execute("SELECT 1 FROM filament_profiles LIMIT 1")
+    actual = conn.execute("SELECT value FROM build_metadata WHERE key='catalog_source_hash'").fetchone()[0]
+    conn.close()
+    raise SystemExit(0 if actual == expected else 1)
+except Exception:
+    raise SystemExit(1)
+PY
 }
 
 if db_valid; then
-    info "Banco existente e válido: ${DB_PATH}"
+    info "Banco existente, válido e atualizado: ${DB_PATH}"
 else
-    info "Banco ausente ou inválido. Executando build..."
+    info "Banco ausente, inválido ou desatualizado. Executando build (IDs existentes serão preservados)..."
     DB_PATH="$DB_PATH" python3 build.py
 fi
 
