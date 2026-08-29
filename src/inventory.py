@@ -684,13 +684,38 @@ def _material_groups(items):
         groups.setdefault(it["material"], []).append(it)
     out = []
     for material, its in sorted(groups.items()):
+        # Uma única entrada visual por fabricante + cor + especificação do rolo.
+        # As entradas físicas continuam preservadas no banco; a UI as expande
+        # apenas quando o usuário precisa gerenciá-las individualmente.
+        subgroups = {}
+        for it in its:
+            key = (
+                (it.get("manufacturer") or "").strip().casefold(),
+                (it.get("color_name") or "").strip().casefold(),
+                (it.get("hex_color") or "").strip().casefold(),
+                (it.get("finish") or "").strip().casefold(),
+                int(it.get("weight_g") or 1000),
+                it.get("variant_id"),
+            )
+            subgroups.setdefault(key, []).append(it)
+
+        cards = []
+        for entries in subgroups.values():
+            representative = dict(sorted(entries, key=lambda x: x["id"])[0])
+            representative["spools"] = sum(int(x.get("spools") or 0) for x in entries)
+            representative["entry_count"] = len(entries)
+            representative["entry_ids"] = [x["id"] for x in entries]
+            representative["entries"] = [dict(x) for x in sorted(entries, key=_sort_key_color)]
+            cards.append(representative)
+
+        cards.sort(key=_sort_key_color)
         out.append({
             "material": material,
             "total_spools": sum(i["spools"] for i in its),
             "colors_available": len({
                 (i["color_name"], i["hex_color"]) for i in its if i["status"] != STATUS_EMPTY
             }),
-            "items": sorted(its, key=_sort_key_color),
+            "items": cards,
         })
     return out
 

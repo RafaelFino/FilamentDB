@@ -83,6 +83,20 @@ def _sync_seed(conn):
             if run is None: run=conn.execute("INSERT INTO collection_runs(started_at,finished_at,source,status) VALUES(?,?,?,?) RETURNING id",(collected,collected,"verified-baseline-2026-08-29","completed")).fetchone()[0]
             conn.execute("INSERT INTO price_snapshots(offer_id,collected_at,price,original_price,shipping,total_price,currency,available,source,notes) VALUES(?,?,?,?,?,?,?,?,?,?)",(oid,collected,x["price"],x.get("original_price"),x.get("shipping"),(x["price"]+(x.get("shipping") or 0)) if x.get("shipping") is not None else None,"BRL",x.get("available"),x.get("source"),x.get("notes")))
             conn.execute("UPDATE collection_runs SET items_found=items_found+1 WHERE id=?",(run,))
+    # Sanidade de identidade: uma loja oficial com o mesmo nome do fabricante
+    # jamais pode representar outro fabricante. Marketplaces continuam livres
+    # para vender qualquer marca.
+    catalog_by_key = {r["filament_key"]: normalize_key_part(r["manufacturer_name"]) for r in _catalog_rows()}
+    cat_conn = database.get_db_connection()
+    manufacturer_keys = {normalize_key_part(r["name"]) for r in cat_conn.execute("SELECT name FROM manufacturers").fetchall()}
+    cat_conn.close()
+    for row in conn.execute("SELECT o.id,o.filament_key,s.name FROM offers o JOIN stores s ON s.id=o.store_id WHERE o.active=1").fetchall():
+        store_key = normalize_key_part(row[2])
+        manufacturer_key = catalog_by_key.get(row[1])
+        # Só aplica a regra quando a loja é oficialmente nomeada como um fabricante.
+        if store_key in manufacturer_keys and manufacturer_key and store_key != manufacturer_key:
+            conn.execute("UPDATE offers SET active=0 WHERE id=?", (row[0],))
+    conn.commit()
     conn.commit()
 
 def _recreate_view(conn):
