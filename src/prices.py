@@ -64,6 +64,7 @@ def _migrate_identity(conn):
         if cols_idx == ["store_id","url"]:
             legacy_unique=True; break
     if legacy_unique:
+        conn.execute("DROP VIEW IF EXISTS current_offers")
         conn.execute("PRAGMA foreign_keys=OFF")
         conn.execute("CREATE TABLE offers_new (id INTEGER PRIMARY KEY AUTOINCREMENT,offer_key TEXT NOT NULL UNIQUE,filament_key TEXT NOT NULL,variant_id INTEGER,filament_id INTEGER,quantity INTEGER NOT NULL DEFAULT 1,unit_weight_g REAL NOT NULL DEFAULT 1000,price_basis TEXT NOT NULL DEFAULT 'total',store_id INTEGER NOT NULL,url TEXT NOT NULL,external_id TEXT,seller TEXT,title TEXT,active INTEGER NOT NULL DEFAULT 1,first_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(store_id) REFERENCES stores(id))")
         conn.execute("INSERT INTO offers_new(id,offer_key,filament_key,variant_id,filament_id,quantity,unit_weight_g,price_basis,store_id,url,external_id,seller,title,active,first_seen_at,last_seen_at) SELECT id,offer_key,filament_key,variant_id,filament_id,quantity,unit_weight_g,price_basis,store_id,url,external_id,seller,title,active,first_seen_at,last_seen_at FROM offers")
