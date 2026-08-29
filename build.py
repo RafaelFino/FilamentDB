@@ -34,9 +34,9 @@ from src import config  # noqa: E402
 
 config.load()
 
-# Banco padrão: raiz da solução. Se DB_PATH apontar para outro local,
-# o diretório pai também é criado automaticamente.
-DB_PATH = Path(os.environ.get("DB_PATH", str(ROOT_DIR / "filament.db"))).expanduser()
+# Banco principal: caminho resolvido pela configuração central.
+# DB_PATH vazio/ausente cai no default de config.py (data/filament.db).
+DB_PATH = Path(config.get("DB_PATH")).expanduser()
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 DATA_DIR = ROOT_DIR / "filament-data"
 MATERIAL_DATA_PATH = ROOT_DIR / "material-data" / "materials.yaml"
