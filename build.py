@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-build.py — Pipeline unificado do FilamentDB.
+build.py â Pipeline unificado do FilamentDB.
 
 Executa todas as etapas:
   1. Cria schema do banco SQLite
   2. Popula filamentos a partir dos YAMLs em data/
-  3. Gera perfis de processo via herança (process-base/)
+  3. Gera perfis de processo via heranÃ§a (process-base/)
   4. Exporta perfis de filamento para Creality-Print/filaments/
   5. Exporta perfis de processo para Creality-Print/process/
 
 Uso:
   python build.py              # pipeline completa
   python build.py --only-db    # apenas banco (sem export)
-  python build.py --only-export # apenas export (banco já existe)
+  python build.py --only-export # apenas export (banco jÃ¡ existe)
 """
 
 import argparse
@@ -27,14 +27,17 @@ from pathlib import Path
 import yaml
 
 ROOT_DIR = Path(__file__).resolve().parent
-# Garante que o pacote src seja importável e carrega config.env no os.environ
-# antes de resolver qualquer path (fonte única de verdade compartilhada com o app).
+# Garante que o pacote src seja importÃ¡vel e carrega config.env no os.environ
+# antes de resolver qualquer path (fonte Ãºnica de verdade compartilhada com o app).
 sys.path.insert(0, str(ROOT_DIR))
 from src import config  # noqa: E402
 
 config.load()
 
-DB_PATH = os.environ.get("FILAMENT_DB_PATH", str(ROOT_DIR / "filament.db"))
+# Banco padrão: raiz da solução. Se FILAMENT_DB_PATH apontar para outro local,
+# o diretório pai também é criado automaticamente.
+DB_PATH = Path(os.environ.get("FILAMENT_DB_PATH", str(ROOT_DIR / "filament.db"))).expanduser()
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 DATA_DIR = ROOT_DIR / "filament-data"
 MATERIAL_DATA_PATH = ROOT_DIR / "material-data" / "materials.yaml"
 PROCESS_BASE_DIR = ROOT_DIR / "process-base"
@@ -286,27 +289,27 @@ def create_schema():
 # =============================================================================
 
 def load_material_defs():
-    """Carrega as propriedades canônicas dos materiais (material-data/materials.yaml).
+    """Carrega as propriedades canÃ´nicas dos materiais (material-data/materials.yaml).
 
-    Este arquivo é a fonte de verdade das propriedades mecânicas. Se faltar, o build
-    FALHA em vez de cair em defaults silenciosos — do contrário um deploy no server
+    Este arquivo Ã© a fonte de verdade das propriedades mecÃ¢nicas. Se faltar, o build
+    FALHA em vez de cair em defaults silenciosos â do contrÃ¡rio um deploy no server
     (git pull sem o arquivo versionado) geraria um banco com todos os materiais em
     50/50 sem nenhum aviso, corrompendo a base sem quebrar visivelmente.
     """
     if not MATERIAL_DATA_PATH.exists():
-        error(f"material-data não encontrado em {MATERIAL_DATA_PATH}. "
-              f"Este arquivo é obrigatório e deve estar versionado no git. "
+        error(f"material-data nÃ£o encontrado em {MATERIAL_DATA_PATH}. "
+              f"Este arquivo Ã© obrigatÃ³rio e deve estar versionado no git. "
               f"Verifique se 'material-data/materials.yaml' foi commitado.")
     with open(MATERIAL_DATA_PATH, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
     materials = data.get("materials", {})
     if not materials:
-        error(f"material-data em {MATERIAL_DATA_PATH} está vazio ou malformado "
-              f"(sem chave 'materials'). Build abortado para não corromper a base.")
+        error(f"material-data em {MATERIAL_DATA_PATH} estÃ¡ vazio ou malformado "
+              f"(sem chave 'materials'). Build abortado para nÃ£o corromper a base.")
     return materials
 
 
-# Marcas de uso corrente do Fino (recebem bônus de confiança: perfis mais testados).
+# Marcas de uso corrente do Fino (recebem bÃ´nus de confianÃ§a: perfis mais testados).
 CURRENT_USE_BRANDS = {"Voolt3D", "Sunlu", "Creality"}
 
 
@@ -327,13 +330,13 @@ def skill_level_from_difficulty(difficulty):
 
 
 def derive_confidence(material_name, manufacturer_name, profile, material_defs):
-    """Deriva o confidence (0-100) de fatores objetivos e rastreáveis.
+    """Deriva o confidence (0-100) de fatores objetivos e rastreÃ¡veis.
 
-    confidence = base_material (maturidade/facilidade do polímero)
-               + bônus de marca de uso corrente (perfis mais rodados na K2)
-               + bônus/penalidade por riqueza de dados técnicos (datasheet)
+    confidence = base_material (maturidade/facilidade do polÃ­mero)
+               + bÃ´nus de marca de uso corrente (perfis mais rodados na K2)
+               + bÃ´nus/penalidade por riqueza de dados tÃ©cnicos (datasheet)
 
-    Substitui a nota manual subjetiva por uma função explicável. Clamp 40-95.
+    Substitui a nota manual subjetiva por uma funÃ§Ã£o explicÃ¡vel. Clamp 40-95.
     """
     mdef = material_defs.get(material_name, {})
     base = mdef.get("confidence_base", 65)
@@ -341,7 +344,7 @@ def derive_confidence(material_name, manufacturer_name, profile, material_defs):
     # +7 se marca de uso corrente (perfis efetivamente testados na impressora)
     brand_bonus = 7 if manufacturer_name in CURRENT_USE_BRANDS else 0
 
-    # Riqueza de dados técnicos: presença de specs indica fonte confiável.
+    # Riqueza de dados tÃ©cnicos: presenÃ§a de specs indica fonte confiÃ¡vel.
     tech_keys = ("density", "glass_transition_temp", "diameter_tolerance",
                  "tensile_strength_mpa", "heat_deflection_temp",
                  "flexural_strength_mpa", "drying_temperature")
@@ -379,8 +382,8 @@ def seed_filaments():
         row = cur.fetchone()
         if row:
             return row[0]
-        # Propriedades canônicas do polímero (material-data/materials.yaml).
-        # Fallback para 50/neutro se o material não estiver definido.
+        # Propriedades canÃ´nicas do polÃ­mero (material-data/materials.yaml).
+        # Fallback para 50/neutro se o material nÃ£o estiver definido.
         m = material_defs.get(name, {})
         cur.execute("""
             INSERT INTO materials(name, description, average_cost, difficulty, strength,
@@ -392,7 +395,7 @@ def seed_filaments():
             name,
             m.get("description", ""),
             m.get("average_cost", 50),
-            # difficulty: inverso da facilidade (confidence_base). Fácil -> difficulty baixa.
+            # difficulty: inverso da facilidade (confidence_base). FÃ¡cil -> difficulty baixa.
             max(0, min(100, 100 - m.get("confidence_base", 50))),
             m.get("strength", 50),
             m.get("flexibility", 50),
@@ -603,8 +606,8 @@ FLOAT_COLUMNS = {
 def generate_process_profile(profile_type, layer_height, material_name):
     """Gera um perfil de processo combinando base + layer_height + profile_type + material.
 
-    As velocidades são definidas com base nas capacidades da impressora (K2) e do
-    profile_type. O limite volumétrico real é aplicado pelo Creality Print em runtime,
+    As velocidades sÃ£o definidas com base nas capacidades da impressora (K2) e do
+    profile_type. O limite volumÃ©trico real Ã© aplicado pelo Creality Print em runtime,
     baseado no filament_max_volumetric_speed do perfil de filamento selecionado.
     """
     base = load_json(PROCESS_BASE_DIR / "base.json")
@@ -616,7 +619,7 @@ def generate_process_profile(profile_type, layer_height, material_name):
     profile = {**base, **layer_data, **type_data}
 
     # Layer height overrides for adhesion-critical fields (brim, initial_layer_print_height)
-    # take precedence over profile_type — thinner layers need more adhesion help regardless
+    # take precedence over profile_type â thinner layers need more adhesion help regardless
     # of profile_type settings.
     ADHESION_OVERRIDE_FIELDS = {"brim_width", "brim_object_gap", "initial_layer_print_height"}
     for field in ADHESION_OVERRIDE_FIELDS:
@@ -662,7 +665,7 @@ def generate_process_profile(profile_type, layer_height, material_name):
     for field in ACCEL_FIELDS:
         if field in material_data:
             raw_accel = float(material_data[field]) * mult["accel"] * material_accel_mult
-            # Cap acceleration at machine maximum (20000 mm/s²)
+            # Cap acceleration at machine maximum (20000 mm/sÂ²)
             profile[field] = str(min(raw_accel, 20000.0))
 
     nozzle = "0.4"
@@ -691,8 +694,8 @@ def coerce_value(column, raw):
 
 
 def seed_processes():
-    """Gera perfis de processo via herança e insere no banco."""
-    info("Gerando perfis de processo via herança...")
+    """Gera perfis de processo via heranÃ§a e insere no banco."""
+    info("Gerando perfis de processo via heranÃ§a...")
 
     combinations = load_json(PROCESS_BASE_DIR / "combinations.json")
 
@@ -700,9 +703,9 @@ def seed_processes():
     cur = conn.cursor()
 
     # Garantir que os materiais de processo existam. Materiais como PLA-CF/PETG-CF
-    # só aparecem em perfis de processo (não têm filamento próprio), então podem
-    # não ter sido criados no seed_filaments. Usamos as MESMAS propriedades
-    # canônicas (material-data/materials.yaml) para não recair em defaults 50/50.
+    # sÃ³ aparecem em perfis de processo (nÃ£o tÃªm filamento prÃ³prio), entÃ£o podem
+    # nÃ£o ter sido criados no seed_filaments. Usamos as MESMAS propriedades
+    # canÃ´nicas (material-data/materials.yaml) para nÃ£o recair em defaults 50/50.
     material_defs = load_material_defs()
     process_materials = ["PLA", "PETG", "TPU", "ABS", "PLA-CF", "PETG-CF"]
     for name in process_materials:
@@ -819,8 +822,8 @@ def seed_processes():
 
 NOZZLE_BASE = "Hyper PLA @Creality K2 0.4 nozzle"
 
-# Fabricantes habilitados para exportação Creality Print
-# Pode ser sobrescrito via variável de ambiente EXPORT_MANUFACTURERS_OVERRIDE
+# Fabricantes habilitados para exportaÃ§Ã£o Creality Print
+# Pode ser sobrescrito via variÃ¡vel de ambiente EXPORT_MANUFACTURERS_OVERRIDE
 _mfr_override = os.environ.get("EXPORT_MANUFACTURERS_OVERRIDE", "")
 if _mfr_override == "__ALL__":
     EXPORT_MANUFACTURERS = None  # None = exporta todos
@@ -834,7 +837,7 @@ def export_filaments():
     """Exporta perfis de filamento do banco para Creality-Print/filaments/."""
     info("Exportando filamentos para Creality-Print/filaments/...")
 
-    # Limpa diretório para evitar arquivos órfãos de builds anteriores
+    # Limpa diretÃ³rio para evitar arquivos Ã³rfÃ£os de builds anteriores
     if EXPORT_FILAMENTS_DIR.exists():
         for f in EXPORT_FILAMENTS_DIR.iterdir():
             f.unlink()
@@ -912,7 +915,7 @@ def export_processes():
     """Exporta perfis de processo do banco para Creality-Print/process/."""
     info("Exportando processos para Creality-Print/process/...")
 
-    # Limpa diretório para evitar arquivos órfãos de builds anteriores
+    # Limpa diretÃ³rio para evitar arquivos Ã³rfÃ£os de builds anteriores
     if EXPORT_PROCESS_DIR.exists():
         for f in EXPORT_PROCESS_DIR.iterdir():
             f.unlink()
@@ -1147,7 +1150,7 @@ def export_orca_processes():
     """Exporta perfis de processo para OrcaSlicer/process/.
 
     Os perfis herdam do built-in do Orca e sobrescrevem apenas os campos
-    que personalizamos (velocidades, acelerações, estrutura).
+    que personalizamos (velocidades, aceleraÃ§Ãµes, estrutura).
     """
     info("Exportando processos para OrcaSlicer/process/...")
 
@@ -1287,14 +1290,14 @@ def export_orca_processes():
 # =============================================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="FilamentDB — Build Pipeline")
+    parser = argparse.ArgumentParser(description="FilamentDB â Build Pipeline")
     parser.add_argument("--only-db", action="store_true", help="Apenas cria banco (sem export)")
     parser.add_argument("--only-export", action="store_true", help="Apenas exporta (banco ja existe)")
     args = parser.parse_args()
 
     print()
     print("=" * 60)
-    print("  FilamentDB — Build Pipeline")
+    print("  FilamentDB â Build Pipeline")
     print("=" * 60)
     print()
 
