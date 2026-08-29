@@ -1,49 +1,70 @@
-# Contrato do agente de preços
+# PRICE-COLLECTOR.md — contrato do agente de coleta
 
-Este documento é o contrato operacional para qualquer agente que faça a coleta diária do FilamentDB.
+Este documento define o comportamento do agente que, futuramente, fará a coleta diária. O agente **não escreve `price-history.db`**. Ele lê o catálogo, pesquisa as fontes e publica um snapshot JSON no Git.
 
-## 1. Descobrir o catálogo
+## Entrada
 
-Leia o `filament.db` e selecione somente perfis com `tracking = 1`. Nunca invente `filament_key`. A chave canônica já existe no catálogo. Para cada perfil, considere as cores/variantes disponíveis quando forem relevantes para a busca.
+1. Ler `filament.db`.
+2. Selecionar somente `filament_profiles.tracking = 1`.
+3. Usar exatamente o `filament_key` existente.
+4. Consultar variantes/cores relevantes.
+5. Consultar as fontes habilitadas em `data/price-sources.json`.
 
-## 2. Escopo
+## Escopo atual
 
-Priorizar PLA e PETG de alta qualidade: linhas Premium, Matte, Velvet ou equivalentes claramente posicionadas como premium. Fabricantes prioritários: Voolt3D, 3D Lab, F3D, Sunlu, eSUN, Elegoo e Creality. Fontes: lojas oficiais conhecidas e Mercado Livre, Amazon, Shopee e AliExpress.
+Priorizar PLA e PETG de alta qualidade, incluindo Premium, Matte/Velvet e linhas High Speed/High Fluidity equivalentes. Fabricantes prioritários: Voolt3D, 3D Lab, F3D, SUNLU, eSUN, Elegoo e Creality.
 
-## 3. Pesquisar todas as ofertas
+Para SUNLU, `Meta`, `Matte`, `High Speed` e `High Speed Matte` são linhas distintas e nunca devem ser normalizadas entre si.
 
-A meta é **massa de dados**, não uma única recomendação. Para cada combinação pesquisada, registre todas as ofertas relevantes e confiáveis encontradas. Inclua preços normais, promocionais, cupons quando observáveis, frete quando observável e diferentes quantidades/kits.
+## Regra principal: todas as ofertas
 
-Não descarte uma oferta porque ela não é a mais barata. A aplicação calculará ranking, mediana, melhor histórico e oportunidade.
+A coleta não procura apenas o menor preço. Toda oferta relevante, verificável e diretamente vinculada ao produto deve entrar no snapshot. Isso inclui preço normal, promoção, cupom quando observável, kits, múltiplos rolos e faixas de atacado.
 
-## 4. Kits e quantidade
+## Identidade e segurança
 
-Preserve a forma comercial: quantidade de rolos e peso unitário. Exemplo: `2 x 1 kg por R$ 189,90`. Não transforme isso em uma oferta de 1 kg. A aplicação normaliza R$/kg para comparação.
+Antes de gravar uma oferta, validar:
 
-## 5. Identidade
+- `filament_key` existe no catálogo;
+- fabricante da oferta corresponde ao fabricante do catálogo;
+- material e linha são compatíveis;
+- cor é conhecida ou explicitamente marcada como não confirmada;
+- URL aponta para a oferta/produto, e não para uma página genérica de busca;
+- preço e moeda são claros.
 
-Antes de gravar uma oferta, valide:
+Nunca associar uma oferta Elegoo a Voolt3D, 3D Lab ou outro fabricante apenas por similaridade textual.
 
-1. `filament_key` pertence ao catálogo;
-2. fabricante do título/produto é compatível com a chave;
-3. cor pertence ou pode ser associada à variante;
-4. loja e URL correspondem ao produto;
-5. preço e moeda estão claros.
+## Quantidade e preço
 
-Nunca associe uma oferta Elegoo a uma chave Voolt3D, nem o contrário.
+Registrar sempre `quantity` e `unit_weight_g`. Registrar explicitamente `price_basis`: `unit` se o preço é por rolo/unidade e `total` se é o preço do pacote inteiro. Registrar também `total_price`.
 
-## 6. Link
+Exemplos:
 
-Use o link direto da oferta. Não registre URL de página de busca ou redirecionador quando não for possível identificar a oferta final.
+- `1 × 1kg por R$ 109`: `quantity=1`, `price_basis=total`, `total_price=109`.
+- `3 × 1kg por R$ 299`: `quantity=3`, `price_basis=total`, `total_price=299`.
+- `10+ rolos a R$ 88,10 por rolo`: `quantity=10`, `price_basis=unit`, `total_price=881`.
 
-## 7. O que não foi encontrado
+## Resultado negativo
 
-Para cada fonte/escopo pesquisado, registre resultado `found` ou `not_found`. Se a pesquisa encontrou páginas mas não um link direto confiável, use `not_found` e explique isso em `notes`. Assim a UI mostra tanto o que foi encontrado quanto o que não foi.
+A coleta também deve registrar o que não encontrou. Para cada fonte relevante, usar `collection` com `found`, `not_found`, `partial` ou `error` e explicar a razão em `notes`.
 
-## 8. Snapshot
+`not_found` não significa que a busca não foi feita. Significa que a pesquisa foi realizada e não resultou em uma oferta direta confiável.
 
-Gere exatamente um arquivo por dia: `data/price-data/YYYY-MM-DD.json`. O arquivo deve conter todas as ofertas daquela coleta e a seção `collection` com o log de fontes. Não sobrescreva snapshots anteriores.
+## Saída
 
-## 9. Publicação
+Gerar exatamente um arquivo diário:
 
-Valide JSON e chaves antes de publicar. Faça commit/push apenas do snapshot e eventuais artefatos de relatório/documentação gerados pela coleta. O servidor não executa pesquisa: ele apenas baixa o Git e projeta os snapshots no SQLite.
+`data/price-data/YYYY-MM-DD.json`
+
+O JSON deve conter `schema_version`, `snapshot_date`, `collected_at`, `collector`, `offers` e `collection`. Validar JSON, chaves, duplicidades e URLs antes do commit.
+
+O agente deve fazer commit/push apenas depois de validar o snapshot. O servidor fará o restante no deploy.
+
+## O agente não deve
+
+- editar `price-history.db`;
+- apagar snapshots anteriores;
+- inventar preços ou links;
+- substituir todas as ofertas pela vencedora;
+- criar novos `filament_key`;
+- confundir Meta com Matte;
+- confundir fabricante da oferta com fabricante da loja/marketplace.

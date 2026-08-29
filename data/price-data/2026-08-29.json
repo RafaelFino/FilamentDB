@@ -81,7 +81,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 89.9
     },
     {
       "material": "PETG",
@@ -101,7 +103,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 97.89
     },
     {
       "material": "PLA",
@@ -121,7 +125,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 84.9
     },
     {
       "material": "PETG",
@@ -141,7 +147,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 99.9
     },
     {
       "material": "PLA",
@@ -161,7 +169,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 99.65
     },
     {
       "material": "PLA",
@@ -181,7 +191,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço Pix observado em 29/08/2026."
+      "notes": "Coleta completa; preço Pix observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 89.91
     },
     {
       "material": "PETG",
@@ -201,7 +213,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço Pix observado em 29/08/2026."
+      "notes": "Coleta completa; preço Pix observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 80.99
     },
     {
       "material": "PLA",
@@ -221,7 +235,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 109.5
     },
     {
       "material": "PLA",
@@ -241,7 +257,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 99.99
     },
     {
       "material": "PLA",
@@ -261,7 +279,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 139.9
     },
     {
       "material": "PLA",
@@ -281,7 +301,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 125.4
     },
     {
       "material": "PLA",
@@ -301,7 +323,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 141.87
     },
     {
       "material": "PETG",
@@ -321,7 +345,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 190.8
     },
     {
       "material": "PLA",
@@ -341,7 +367,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 117.7
     },
     {
       "material": "PLA",
@@ -361,7 +389,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 254.7
     },
     {
       "material": "PLA",
@@ -381,7 +411,9 @@
       "unit_weight_g": 1000,
       "available": 0,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; oferta encontrada, atualmente sem estoque."
+      "notes": "Coleta completa; oferta encontrada, atualmente sem estoque.",
+      "price_basis": "total",
+      "total_price": 308.18
     },
     {
       "material": "PLA",
@@ -401,7 +433,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 254.7
     },
     {
       "material": "PLA",
@@ -421,7 +455,9 @@
       "unit_weight_g": 1000,
       "available": 0,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço histórico encontrado, atualmente sem estoque."
+      "notes": "Coleta completa; preço histórico encontrado, atualmente sem estoque.",
+      "price_basis": "total",
+      "total_price": 497.14
     },
     {
       "material": "PLA",
@@ -441,7 +477,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 89.91
     },
     {
       "material": "PETG",
@@ -461,7 +499,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 80.99
     },
     {
       "material": "PLA",
@@ -481,7 +521,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Preço por rolo no tier de atacado 10+; coleta em 29/08/2026."
+      "notes": "Preço por rolo no tier de atacado 10+; coleta em 29/08/2026.",
+      "price_basis": "unit",
+      "total_price": 881.0
     },
     {
       "material": "PLA",
@@ -501,7 +543,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Preço por rolo no tier de atacado 20+; coleta em 29/08/2026."
+      "notes": "Preço por rolo no tier de atacado 20+; coleta em 29/08/2026.",
+      "price_basis": "unit",
+      "total_price": 1744.0
     },
     {
       "material": "PLA",
@@ -521,7 +565,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Preço por rolo no tier de atacado 50+; coleta em 29/08/2026."
+      "notes": "Preço por rolo no tier de atacado 50+; coleta em 29/08/2026.",
+      "price_basis": "unit",
+      "total_price": 4315.0
     },
     {
       "material": "PLA",
@@ -541,7 +587,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Preço por rolo no tier de atacado 100+; coleta em 29/08/2026."
+      "notes": "Preço por rolo no tier de atacado 100+; coleta em 29/08/2026.",
+      "price_basis": "unit",
+      "total_price": 8361.0
     },
     {
       "material": "PETG",
@@ -561,7 +609,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 109.0
     },
     {
       "material": "PETG",
@@ -581,7 +631,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 93.84
     },
     {
       "material": "PETG",
@@ -601,7 +653,9 @@
       "unit_weight_g": 1000,
       "available": 1,
       "source": "full-snapshot-2026-08-29",
-      "notes": "Coleta completa; preço observado em 29/08/2026."
+      "notes": "Coleta completa; preço observado em 29/08/2026.",
+      "price_basis": "total",
+      "total_price": 99.9
     }
   ]
 }

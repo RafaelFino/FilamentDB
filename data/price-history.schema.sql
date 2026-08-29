@@ -1,77 +1,13 @@
 PRAGMA foreign_keys = ON;
-
-CREATE TABLE IF NOT EXISTS stores (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    domain TEXT,
-    marketplace INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS offers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    filament_key TEXT NOT NULL,
-    variant_id INTEGER,
-    filament_id INTEGER,
-    quantity INTEGER NOT NULL DEFAULT 1,
-    unit_weight_g REAL NOT NULL DEFAULT 1000,
-    store_id INTEGER NOT NULL,
-    url TEXT NOT NULL,
-    external_id TEXT,
-    seller TEXT,
-    title TEXT,
-    active INTEGER NOT NULL DEFAULT 1,
-    first_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(store_id, url),
-    FOREIGN KEY(store_id) REFERENCES stores(id)
-);
-
-CREATE TABLE IF NOT EXISTS price_snapshots (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    offer_id INTEGER NOT NULL,
-    collected_at TEXT NOT NULL,
-    price REAL NOT NULL,
-    original_price REAL,
-    shipping REAL,
-    total_price REAL,
-    currency TEXT NOT NULL DEFAULT 'BRL',
-    available INTEGER,
-    coupon TEXT,
-    source TEXT,
-    notes TEXT,
-    FOREIGN KEY(offer_id) REFERENCES offers(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS collection_runs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    started_at TEXT NOT NULL,
-    finished_at TEXT,
-    source TEXT,
-    status TEXT NOT NULL DEFAULT 'started',
-    items_found INTEGER NOT NULL DEFAULT 0,
-    notes TEXT,
-    snapshot_file TEXT,
-    snapshot_hash TEXT,
-    UNIQUE(snapshot_file)
-);
-
-CREATE TABLE IF NOT EXISTS collection_results (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    run_id INTEGER NOT NULL,
-    filament_key TEXT,
-    color TEXT,
-    store TEXT NOT NULL,
-    status TEXT NOT NULL,
-    offers_found INTEGER NOT NULL DEFAULT 0,
-    notes TEXT,
-    FOREIGN KEY(run_id) REFERENCES collection_runs(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_snapshots_offer_time ON price_snapshots(offer_id, collected_at);
+CREATE TABLE IF NOT EXISTS stores (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,domain TEXT,marketplace INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS offers (id INTEGER PRIMARY KEY AUTOINCREMENT,offer_key TEXT NOT NULL UNIQUE,filament_key TEXT NOT NULL,variant_id INTEGER,filament_id INTEGER,quantity INTEGER NOT NULL DEFAULT 1,unit_weight_g REAL NOT NULL DEFAULT 1000,price_basis TEXT NOT NULL DEFAULT 'total',store_id INTEGER NOT NULL,url TEXT NOT NULL,external_id TEXT,seller TEXT,title TEXT,active INTEGER NOT NULL DEFAULT 1,first_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(store_id) REFERENCES stores(id));
+CREATE TABLE IF NOT EXISTS price_snapshots (id INTEGER PRIMARY KEY AUTOINCREMENT,offer_id INTEGER NOT NULL,collected_at TEXT NOT NULL,price REAL NOT NULL,original_price REAL,shipping REAL,total_price REAL,currency TEXT NOT NULL DEFAULT 'BRL',available INTEGER,coupon TEXT,source TEXT,notes TEXT,FOREIGN KEY(offer_id) REFERENCES offers(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS collection_runs (id INTEGER PRIMARY KEY AUTOINCREMENT,started_at TEXT NOT NULL,finished_at TEXT,source TEXT,status TEXT NOT NULL DEFAULT 'started',items_found INTEGER NOT NULL DEFAULT 0,notes TEXT,snapshot_file TEXT,snapshot_hash TEXT,UNIQUE(snapshot_file));
+CREATE TABLE IF NOT EXISTS collection_results (id INTEGER PRIMARY KEY AUTOINCREMENT,run_id INTEGER NOT NULL,filament_key TEXT,color TEXT,store TEXT NOT NULL,status TEXT NOT NULL,offers_found INTEGER NOT NULL DEFAULT 0,notes TEXT,FOREIGN KEY(run_id) REFERENCES collection_runs(id) ON DELETE CASCADE);
+CREATE INDEX IF NOT EXISTS idx_snapshots_offer_time ON price_snapshots(offer_id,collected_at);
 CREATE INDEX IF NOT EXISTS idx_snapshots_time ON price_snapshots(collected_at);
-CREATE INDEX IF NOT EXISTS idx_runs_source_time ON collection_runs(source, started_at);
-
-
+CREATE INDEX IF NOT EXISTS idx_runs_source_time ON collection_runs(source,started_at);
 CREATE INDEX IF NOT EXISTS idx_collection_results_run ON collection_results(run_id);
 CREATE INDEX IF NOT EXISTS idx_collection_results_filament ON collection_results(filament_key);
+CREATE INDEX IF NOT EXISTS idx_offers_filament ON offers(filament_key);
+CREATE INDEX IF NOT EXISTS idx_offers_variant ON offers(variant_id);
