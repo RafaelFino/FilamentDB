@@ -1,6 +1,573 @@
 # FilamentDB
 
-Banco de dados de perfis de filamentos e configurações de processo para impressoras 3D, focado na **Creality K2** com **Creality Print 7.0** e **Orca Slicer**.
+Sistema de gestão de perfis de impressão 3D e controle de estoque de filamentos, focado na **Creality K2** (CoreXY, Direct Drive, nozzle 0.4mm) com **Creality Print 7.0** e **Orca Slicer**.
+
+O FilamentDB tem dois lados complementares:
+
+1. **Geração de perfis** — um pipeline (`build.py`) que transforma dados declarativos (YAML/JSON) em perfis de filamento e processo prontos para importar nos slicers, com separação estrita entre "o que a máquina consegue" e "o que o material aguenta".
+2. **Aplicação web** — um servidor Flask que serve um dashboard, uma API de catálogo (só leitura), um simulador de combinações processo × filamento e um **controle de estoque** de rolos (única parte com escrita), protegido por autorização atrás do Pangolin.
+
+## Índice
+
+- [Visão geral da arquitetura](#visão-geral-da-arquitetura)
+- [Modelo de dados](#modelo-de-dados)
+  - [`filament.db` — catálogo (regenerável)](#filamentdb--catálogo-regenerável)
+  - [`inventory.db` — estoque (mutável)](#inventorydb--estoque-mutável)
+- [Controle de estoque](#controle-de-estoque)
+- [Autenticação, autorização e o Pangolin na frente](#autenticação-autorização-e-o-pangolin-na-frente)
+- [API HTTP](#api-http)
+- [Diagramas de sequência](#diagramas-de-sequência)
+- [Configuração (`config.env`)](#configuração-configenv)
+- [Deploy com `update-server.sh`](#deploy-com-update-serversh)
+- [Health checks](#health-checks)
+- [Desenvolvimento local](#desenvolvimento-local)
+- [App mobile](#app-mobile-android)
+- [Formação dos perfis (decisões técnicas)](#formação-dos-perfis-decisões-técnicas) — a parte "core" do projeto
+
+---
+
+## Visão geral da arquitetura
+
+O projeto é **100% Python/Flask**, sem containers. O deploy em produção é `git pull` + rebuild do banco + `systemctl restart`, orquestrado por `update-server.sh` (cron). Na frente do Flask fica o **Pangolin** (reverse proxy identity-aware), que termina TLS e injeta a identidade do usuário via header.
+
+```mermaid
+flowchart TD
+    subgraph Fontes[Fontes de verdade — versionadas no git]
+        FD[filament-data/*.yaml<br/>perfis por marca + MVS]
+        MD[material-data/materials.yaml<br/>propriedades dos polímeros]
+        PB[process-base/<br/>herança de processo]
+    end
+
+    subgraph Pipeline[build.py — pipeline de build]
+        FD --> BUILD[build.py]
+        MD --> BUILD
+        PB --> BUILD
+        BUILD --> CAT[(filament.db<br/>catálogo — DROP/CREATE a cada build)]
+        BUILD --> CPEXP[Creality-Print/]
+        BUILD --> ORCAEXP[OrcaSlicer/]
+    end
+
+    subgraph App[Aplicação Flask — src/]
+        APP[app.py<br/>entrypoint] --> WEB[web.py<br/>rotas + API]
+        WEB --> DBM[database.py<br/>leitura do catálogo]
+        WEB --> SVC[services.py<br/>simulação, ranking, ZIPs]
+        WEB --> INV[inventory.py<br/>CRUD estoque]
+        WEB --> AUTH[auth.py<br/>gate de escrita]
+        DBM --> CAT
+        INV --> STK[(inventory.db<br/>estoque — mutável, fora do build)]
+    end
+
+    subgraph Borda[Borda / rede]
+        PANGOLIN[Pangolin<br/>identity-aware proxy] -->|Remote-Email + X-Proxy-Secret| APP
+        USER[Usuário] --> PANGOLIN
+    end
+
+    subgraph Slicers[Publicação local — máquina do Fino]
+        CPEXP --> PUB[publish.sh] --> FDB[~/filament-db/]
+        ORCAEXP --> PUB
+        FDB --> RUN1[~/run-creality-print.sh]
+        FDB --> RUN2[~/run-orca-slicer.sh]
+    end
+```
+
+Componentes de código (`src/`):
+
+| Módulo | Responsabilidade |
+|--------|------------------|
+| `app.py` | Entrypoint Flask. Carrega `config.env`, garante `inventory.db` no startup (`init_db()`), registra rotas. |
+| `config.py` | Carregador leve de `config.env` (KEY=VALUE). Fonte única de verdade de paths/porta/auth. Precedência: ambiente > `config.env` > defaults. |
+| `web.py` | Todas as rotas HTTP (páginas, API de catálogo, simulação, downloads e estoque). |
+| `database.py` | Acesso somente-leitura ao `filament.db` (catálogo). Monta as árvores do dashboard. |
+| `services.py` | Lógica de negócio: simulador de velocidades efetivas, ranking de combinações, geração de ZIPs Creality/Orca. |
+| `inventory.py` | Controle de estoque: schema, CRUD, capacidade de localizações, export/import versionado. |
+| `auth.py` | Gate de escrita (RBAC de dois níveis) baseado no header do Pangolin. |
+| `buildinfo.py` | Lê o `build-info.env` (data/commit da última atualização) escrito pelo `update-server.sh`. |
+
+**Dois bancos, propósitos opostos** — a decisão central da persistência:
+
+- `filament.db` é **descartável**: `build.py` faz `DROP + CREATE` a cada execução. Não é versionado; é regenerado no deploy. Contém apenas dado derivado dos YAMLs.
+- `inventory.db` é **precioso**: é o único dado mutável do usuário (rolos físicos). Nunca é tocado pelo build. É materializado on-demand com `CREATE TABLE IF NOT EXISTS` e migrado por `ALTER TABLE` no startup.
+
+Separar os dois evita a classe inteira de bugs "o rebuild apagou meu estoque".
+
+---
+
+## Modelo de dados
+
+### `filament.db` — catálogo (regenerável)
+
+Gerado por `build.py` a partir de `filament-data/*.yaml` (filamentos), `material-data/materials.yaml` (propriedades dos polímeros) e `process-base/` (herança de processo). `PRAGMA foreign_keys = ON`.
+
+```mermaid
+erDiagram
+    manufacturers ||--o{ filament_profiles : "fabrica"
+    materials     ||--o{ filament_profiles : "é feito de"
+    materials     ||--o{ process_profiles  : "tem processo para"
+    filament_profiles ||--o{ filament_variants : "tem cores/SKUs"
+
+    manufacturers {
+        int id PK
+        text name UK
+        text country
+        text website
+        text notes
+    }
+    materials {
+        int id PK
+        text name UK
+        int difficulty
+        int strength
+        int flexibility
+        int temperature_resistance
+        int uv_resistance
+        int food_safe
+        int abrasive
+        int requires_enclosure
+        int recommended_nozzle_temp
+        int recommended_bed_temp
+    }
+    filament_profiles {
+        int id PK
+        int manufacturer_id FK
+        int material_id FK
+        text commercial_name
+        text profile_name UK
+        text inherits
+        int nozzle_temp_initial
+        int nozzle_temp_min
+        int nozzle_temp_max
+        int bed_temp
+        real flow_ratio
+        real max_volumetric_speed
+        int confidence
+        text line
+        real density
+        int active
+    }
+    filament_variants {
+        int id PK
+        int filament_id FK
+        text sku
+        text color_name
+        text hex_color
+        int rgb_r
+        int rgb_g
+        int rgb_b
+        text finish
+        int weight_g
+        text status
+    }
+    process_profiles {
+        int id PK
+        int material_id FK
+        text profile_name UK
+        text profile_type
+        real layer_height
+        real inner_wall_speed
+        real outer_wall_speed
+        real sparse_infill_speed
+        int default_acceleration
+        int wall_loops
+        text sparse_infill_density
+        text sparse_infill_pattern
+        int enable_support
+        real support_top_z_distance
+        int enable_prime_tower
+        real flush_multiplier
+        text inherits
+        int active
+    }
+```
+
+Notas sobre as tabelas:
+
+- **`manufacturers`** — fabricantes de filamento. `name` é único. Todos entram no banco; só um subconjunto (Voolt3D, Sunlu, Creality) é *exportado* para os slicers.
+- **`materials`** — propriedades canônicas do polímero (não da marca). Vêm de `material-data/materials.yaml`. `difficulty` é derivado como `100 - confidence_base`. Cobre PLA, PETG, ABS, ASA, TPU e os CF (PLA-CF, PETG-CF), inclusive os que só existem em processo.
+- **`filament_profiles`** — o perfil de filamento em si. `profile_name` é único no formato `"Material - Fabricante - Linha"` (ex.: `PLA - Voolt3D - Velvet`). O campo crítico é `max_volumetric_speed` (MVS): é ele que o slicer usa para capar velocidade em runtime. `confidence` (0-100) é **derivado** de fatores objetivos (maturidade do polímero + bônus de marca de uso corrente + riqueza de datasheet), não de nota subjetiva. `inherits` aponta para o perfil built-in do Creality Print.
+- **`filament_variants`** — cada cor/SKU de um perfil (paleta). Tem cor (`hex_color` + RGB), acabamento (`finish`), peso e status.
+- **`process_profiles`** — os perfis de processo gerados por herança. `profile_name` único no formato `"0.20mm Standard @Creality K2 0.4 nozzle - PLA"`. Guarda o conjunto completo de velocidades, acelerações, estrutura (walls/infill), suporte, seam, prime tower e flush. Ver [formação dos perfis](#formação-dos-perfis-decisões-técnicas).
+
+Índices: `idx_filament_material`, `idx_filament_manufacturer`, `idx_variant_filament`, `idx_process_material`, `idx_process_type`.
+
+### `inventory.db` — estoque (mutável)
+
+Banco separado, com uma única tabela. Criado on-demand por `inventory.init_db()` (idempotente, migra por `ALTER TABLE`).
+
+```mermaid
+erDiagram
+    inventory_items {
+        int id PK "autoincrement, local ao arquivo"
+        text uid UK "uuid4 estável — chave natural de export/import"
+        text material "NOT NULL"
+        text manufacturer "NOT NULL"
+        text color_name "NOT NULL"
+        text hex_color
+        text finish
+        int weight_g "default 1000"
+        int spools "NOT NULL default 1 — 1 rolo = 1 slot físico"
+        text status "in_stock|cfs|spool|drybox|open|empty"
+        int variant_id "FK lógico opcional -> filament_variants.id"
+        text sku
+        text notes
+        text created_at "NOT NULL"
+        text updated_at "NOT NULL"
+    }
+```
+
+Pontos de design:
+
+- **`id` vs `uid`** — `id` é autoincrement e local ao arquivo `.db`. `uid` (uuid4) é o identificador **estável** do rolo físico: sobrevive a export/import e à recriação do banco. É a chave natural do upsert na importação, com índice `UNIQUE`. Itens de bancos antigos recebem `uid` via backfill idempotente no `init_db()`.
+- **`variant_id`** é referência lógica opcional ao catálogo (`filament_variants`). Não há FK forte porque os bancos são fisicamente separados — um item de estoque pode ser totalmente manual.
+- Índices: `idx_inv_material`, `idx_inv_status` e o `UNIQUE idx_inv_uid`.
+
+**Export/import versionado** (`INVENTORY_SCHEMA_VERSION = 1`): o estoque é exportável como envelope JSON desacoplado do schema físico:
+
+```json
+{ "schema_version": 1, "exported_at": "<iso8601>", "count": 3, "items": [ /* campos de _EXPORT_FIELDS */ ] }
+```
+
+O import faz **upsert idempotente por `uid`**: reimportar o mesmo envelope não duplica. `replace=true` ativa modo espelho (remove itens ausentes do payload). `_migrate_item()` é o ponto único de evolução para futuras versões de schema. O import **não** aplica validação de capacidade (está restaurando um estado que já era válido).
+
+---
+
+## Controle de estoque
+
+O estoque modela onde cada rolo está fisicamente, refletindo o hardware da K2. É a única parte do sistema com escrita.
+
+**Status / localização** (`inventory.py`):
+
+| Status | Significado | Limite |
+|--------|-------------|--------|
+| `in_stock` | Guardado, lacrado | — |
+| `cfs` | Carregado no CFS (Creality Filament System) | **4 slots** |
+| `spool` | Drybox acoplado ao spool holder (5ª entrada) | **1** |
+| `drybox` | Drybox guardado/seco (armazenamento) | — |
+| `open` | Aberto, fora de CFS/drybox — **ALERTA** (exposto à umidade) | — |
+| `empty` | Usado (vazio) | — |
+
+**Capacidade física** — a K2 tem 4 baias no CFS + 1 posição no spool holder = 5 entradas ativas. Cada rolo (`spools`) ocupa **1 slot físico** independente da cor (o CFS troca de rolo automaticamente quando um acaba). `add_item`/`update_item` validam a capacidade e levantam `LocationFullError` (HTTP 409) ao exceder. A soma usa `SUM(spools)`, não contagem de itens.
+
+**Operações**:
+- `add_item` / `update_item` / `delete_item` — CRUD com validação de capacidade.
+- `use_item(amount)` — decrementa rolos; ao zerar, marca `empty` automaticamente (botão "usei").
+- `grouped_by_location()` — organiza na ordem do fluxo de uso: `printer` (CFS → spool) → `drybox` → `open` → `sealed` → `empty`.
+- `grouped_by_material()` — paleta de cores por material (na K2 não se mistura material numa peça, então a paleta é sempre consultada dentro de um material).
+
+Itens `empty` são excluídos das estatísticas agregadas (já foram consumidos).
+
+---
+
+## Autenticação, autorização e o Pangolin na frente
+
+O FilamentDB **não implementa login**. A identidade é responsabilidade do **Pangolin**, um reverse proxy identity-aware posicionado na frente do Flask. O Pangolin autentica o usuário (SSO/OIDC) e injeta a identidade em um header (`Remote-Email` por padrão; também envia `Remote-User`, `Remote-Name`, `Remote-Role`). O Flask apenas *confia* nesse header — dentro dos limites descritos abaixo.
+
+### Modelo RBAC de dois níveis
+
+`auth.py` implementa um gate binário: **`writer`** (pode escrever) vs **`viewer`** (só lê). A **leitura é sempre aberta** — todo o catálogo e a visualização do estoque são públicos para quem chegou ao Flask. Só a **escrita** de estoque é protegida (todos os endpoints de mutação usam o decorator `@auth.require_writer`).
+
+Controlado pela feature flag `FILAMENTDB_AUTH_ENABLED`:
+- **Desligada (default)**: sistema aberto, usuário reportado como `guest`, escrita liberada.
+- **Ligada**: escrita exige que o e-mail do header case com a allowlist `FILAMENTDB_WRITERS` (CSV).
+
+### Precedência de decisão em escrita (flag ON)
+
+```mermaid
+flowchart TD
+    REQ[Request de escrita] --> DEV{FILAMENTDB_DEV_OPEN=1?}
+    DEV -->|sim| OK[Permite - só dev]
+    DEV -->|não| SEC{PROXY_SECRET configurado?}
+    SEC -->|sim, header não bate| DENY403[403 untrusted_origin]
+    SEC -->|sim, header bate| ALLOW{usuário do header ∈ FILAMENTDB_WRITERS?}
+    SEC -->|não configurado| ALLOW
+    ALLOW -->|sim| OK2[Permite]
+    ALLOW -->|não| DENY[403 not_a_writer]
+```
+
+O gate é **fail-closed**: se o segredo do proxy está configurado e não bate, nega antes mesmo de checar a allowlist.
+
+### Aviso de segurança (importante)
+
+Headers HTTP são **forjáveis**. Esse gate só é seguro se:
+
+1. O Flask **não** for alcançável fora do proxy (bind interno / rede isolada), **e**
+2. Houver um segredo compartilhado proxy↔Flask (`FILAMENTDB_PROXY_SECRET`), enviado no header `X-Proxy-Secret`.
+
+Se `FILAMENTDB_PROXY_SECRET` está vazio, o Flask **não consegue verificar a origem** e a autorização é apenas cosmética (qualquer um que alcance o Flask e conheça um e-mail da allowlist pode escrever). Isso está documentado em `next-steps.md` e no próprio `auth.py`.
+
+`GET /api/me` expõe `{ "user", "can_write", "auth_enabled" }` para a UI decidir se mostra os botões de escrita.
+
+---
+
+## API HTTP
+
+Todas as rotas de leitura são abertas. As rotas marcadas com 🔒 exigem `writer` (quando a auth está ligada).
+
+**Catálogo (leitura)**
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/manufacturers` | Lista fabricantes |
+| GET | `/materials` | Lista materiais |
+| GET | `/api/filaments` | Lista filamentos (resumo) |
+| GET | `/filament-profiles`, `/filament-profiles/<id>` | Perfis de filamento |
+| GET | `/api/process-profiles`, `/api/process-profiles/<id>` | Perfis de processo |
+| GET | `/api/tree`, `/api/process-tree` | Árvores para o dashboard |
+
+**Simulação e ranking**
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/api/simulate?process_id=&filament_id=` | Velocidades efetivas de uma combinação (aplica o cap MVS) |
+| GET | `/api/simulation-options` | Processos e filamentos disponíveis |
+| GET | `/api/ranking` | Ranking de todas as combinações (score de velocidade/acabamento/confiança) |
+
+**Downloads (ZIP)**
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/download/creality-print/<fabricante>/<material>` | ZIP de filamentos (Creality Print) |
+| GET | `/download/process/<material>` | ZIP de processos (Creality Print) |
+| GET | `/download/orca/filament/<fabricante>/<material>` | ZIP de filamentos (Orca) |
+| GET | `/download/orca/process/<material>` | ZIP de processos (Orca) |
+
+**Estoque**
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/api/inventory` | Estoque por localização física |
+| GET | `/api/inventory/by-material` | Estoque por material (paletas) |
+| GET | `/api/inventory/items`, `/api/inventory/<id>` | Lista plana / item |
+| GET | `/api/inventory/export` | Dump lógico versionado (backup) |
+| POST 🔒 | `/api/inventory` | Cria item (409 se localização cheia) |
+| PATCH 🔒 | `/api/inventory/<id>` | Atualiza item |
+| POST 🔒 | `/api/inventory/<id>/use` | Marca uso (decrementa rolos) |
+| DELETE 🔒 | `/api/inventory/<id>` | Remove item |
+| POST 🔒 | `/api/inventory/import?replace=` | Importa envelope (upsert por uid) |
+
+**Identidade / infra**
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/api/me` | Identidade + permissão do request |
+| GET | `/api/build-info` | Data/commit da última atualização |
+| GET | `/health`, `/health/ready` | Liveness / readiness |
+
+---
+
+## Diagramas de sequência
+
+### Simulação de uma combinação processo × filamento
+
+O simulador reproduz o que o slicer faz em runtime: aplica o cap volumétrico do filamento sobre as velocidades do processo.
+
+```mermaid
+sequenceDiagram
+    participant UI as Dashboard
+    participant W as web.py
+    participant S as services.py
+    participant DB as filament.db
+
+    UI->>W: GET /api/simulate?process_id=&filament_id=
+    W->>S: simulate_combination(pid, fid)
+    S->>DB: SELECT process_profiles WHERE id=pid
+    S->>DB: SELECT filament_profiles WHERE id=fid
+    DB-->>S: process + filament
+    Note over S: max_speed = MVS / (layer_height × 0.45)
+    loop cada campo de velocidade de extrusão
+        Note over S: effective = min(target, max_speed)<br/>capped = target > max_speed
+    end
+    S-->>W: {process, filament, simulation: {speeds, mvs, cap}}
+    W-->>UI: JSON
+```
+
+### Escrita no estoque com auth ligada
+
+```mermaid
+sequenceDiagram
+    participant U as Usuário
+    participant P as Pangolin
+    participant F as Flask (web.py)
+    participant A as auth.require_writer
+    participant I as inventory.py
+    participant DB as inventory.db
+
+    U->>P: POST /api/inventory (autenticado via SSO)
+    P->>F: POST + Remote-Email + X-Proxy-Secret
+    F->>A: @require_writer
+    alt PROXY_SECRET não bate
+        A-->>U: 403 untrusted_origin
+    else e-mail ∉ FILAMENTDB_WRITERS
+        A-->>U: 403 not_a_writer
+    else autorizado
+        A->>I: add_item(data)
+        alt localização cheia
+            I-->>U: 409 LocationFullError
+        else ok
+            I->>DB: INSERT inventory_items
+            DB-->>I: id
+            I-->>U: 201 {item}
+        end
+    end
+```
+
+### Deploy noturno (`update-server.sh` via cron)
+
+```mermaid
+sequenceDiagram
+    participant Cron
+    participant Sh as update-server.sh
+    participant Git
+    participant Build as build.py
+    participant Sys as systemd
+    participant API as Flask API
+
+    Cron->>Sh: executa (como root)
+    Sh->>Sh: source config.env (paths, auth)
+    Sh->>Sh: backup inventory.db + filament.db (sqlite3 .backup, rotação)
+    Sh->>Git: limpa artefatos + git pull --ff-only
+    Sh->>Build: python3 build.py
+    alt build falha (ex: material-data ausente)
+        Build-->>Sh: exit != 0
+        Sh->>Sh: NÃO reinicia — mantém estado anterior
+    else build ok
+        Sh->>Sh: valida filament.db (SELECT 1 FROM filament_profiles)
+        Sh->>Sys: systemctl restart filamentdb.service
+        Sys-->>Sh: is-active?
+        Sh->>API: GET /api/inventory/export (dump JSON best-effort)
+        Sh->>Sh: grava build-info.env (updated_at, commit)
+    end
+```
+
+---
+
+## Configuração (`config.env`)
+
+`config.py` é a fonte única de verdade, compartilhada por app Flask, `build.py`, scripts shell (`source config.env`) e systemd (`EnvironmentFile`). Precedência: **ambiente do processo > `config.env` > defaults do código**.
+
+`config.env` **não** é versionado (contém a allowlist e paths específicos da máquina). Copie de `config.env.example`:
+
+```bash
+cp config.env.example config.env
+```
+
+| Variável | Default | Função |
+|----------|---------|--------|
+| `FILAMENT_DB_PATH` | `<root>/filament.db` | Banco de catálogo (regenerável) |
+| `FILAMENT_INVENTORY_DB_PATH` | `<root>/inventory.db` | Banco de estoque (mutável) |
+| `FILAMENTDB_BACKUP_DIR` | `<root>/backups` | Backups (binário + dump JSON), com rotação |
+| `FILAMENTDB_BUILD_INFO_PATH` | `<root>/build-info.env` | Data/commit da última atualização |
+| `PORT` | `5000` | Porta HTTP |
+| `FILAMENTDB_AUTH_ENABLED` | `0` | Feature flag de autorização de escrita |
+| `FILAMENTDB_WRITERS` | *(vazio)* | Allowlist de e-mails que podem escrever (CSV) |
+| `FILAMENTDB_IDENTITY_HEADER` | `Remote-Email` | Header de identidade injetado pelo Pangolin |
+| `FILAMENTDB_PROXY_SECRET` | *(vazio)* | Segredo compartilhado proxy↔Flask (defesa contra header forjado) |
+| `FILAMENTDB_DEV_OPEN` | `0` | Libera escrita em dev mesmo com auth ligada — **nunca em produção** |
+
+---
+
+## Deploy com `update-server.sh`
+
+Deploy em produção não usa Docker. É um repositório em `/srv/FilamentDB` servido por `filamentdb.service` (systemd), atualizado por `scripts/update-server.sh` rodando via cron.
+
+```bash
+# cron (como root)
+sudo crontab -e
+0 4 * * * /srv/FilamentDB/scripts/update-server.sh >> /var/log/filamentdb-update.log 2>&1
+
+# execução manual
+sudo /srv/FilamentDB/scripts/update-server.sh
+```
+
+O script roda como root (precisa de `systemctl restart`) e executa, em ordem, com `set -euo pipefail`:
+
+1. **Carrega `config.env`** — garante que backup e serviço usem exatamente os mesmos paths.
+2. **Sanidade da auth** — se `FILAMENTDB_AUTH_ENABLED` está ligada mas `FILAMENTDB_WRITERS` está vazia, alerta (ninguém poderia escrever), sem bloquear.
+3. **Backup dos bancos** — `sqlite3 .backup` (cópia consistente mesmo com o serviço ativo; fallback `cp`). Inventário primeiro (dado insubstituível). Rotação mantém os últimos `MAX_DB_BACKUPS` (30).
+4. **Limpeza + `git pull --ff-only origin main`** — remove `filament.db` (regenerável) antes do pull para garantir fast-forward limpo.
+5. **`python3 build.py`** — regenera o catálogo. Se falhar (ex.: `material-data/materials.yaml` ausente), **aborta sem reiniciar**, deixando o serviço no estado anterior em vez de subir quebrado.
+6. **Validação do banco** — `SELECT 1 FROM filament_profiles` antes de reiniciar. Barreira final contra "no such table".
+7. **`systemctl restart filamentdb.service`** + verificação `is-active`.
+8. **Dump JSON do estoque** — `GET /api/inventory/export` via `curl` (best-effort, após o serviço subir), com rotação própria. Complementa o backup binário.
+9. **Grava `build-info.env`** — só no fim: se qualquer etapa abortou, o arquivo reflete a última atualização *bem-sucedida* anterior. A UI lê via `/api/build-info`.
+
+A robustez do script vem de fazer backup **antes** de qualquer alteração e de nunca reiniciar com banco inválido.
+
+---
+
+## Health checks
+
+Dois endpoints, seguindo a distinção liveness/readiness:
+
+| Endpoint | Tipo | O que checa | Status |
+|----------|------|-------------|--------|
+| `GET /health` | Liveness | Só se o processo Flask responde. Não toca em disco. | Sempre `200` enquanto o worker atende |
+| `GET /health/ready` | Readiness | Probe de leitura (`SELECT 1`) em `filament.db` e `inventory.db` | `200` se ambos ok, `503` se qualquer um falhar |
+
+```json
+{
+  "status": "ok",
+  "checks": {
+    "filament_db":  {"status": "ok", "path": "...filament.db",  "latency_ms": 0.26},
+    "inventory_db": {"status": "ok", "path": "...inventory.db", "latency_ms": 0.12}
+  }
+}
+```
+
+Um `.db` vazio abre sem erro mas falha no primeiro `SELECT` — por isso o probe roda uma query real, não só abre a conexão. O [Pangolin](https://docs.pangolin.net/manage/resources/public/healthchecks-failover) faz polling em `/health/ready` e tira o target de rotação pelo **status code** quando o banco cai. Config recomendada: path `/health/ready`, expected `200`, timeout `2s`, healthy/unhealthy interval `30s`/`5s`, thresholds `2`/`3` (evita flapping).
+
+---
+
+## Desenvolvimento local
+
+```bash
+# Sobe o servidor (cria venv, instala deps, rebuild do banco se preciso)
+./run.sh
+
+# Pipeline padrão de perfis: build + publish local
+./publish.sh
+
+# Apenas build (sem publish)
+python3 build.py
+python3 build.py --only-db       # só o banco
+python3 build.py --only-export   # só export (banco já existe)
+
+# Abrir os slicers (sync local + launch)
+~/run-creality-print.sh
+~/run-orca-slicer.sh
+```
+
+`run.sh` reconstrói o banco se ele estiver ausente **ou** inválido (não basta o arquivo existir). `publish.sh` faz backup automático em `~/filament-db/backups/` (zip com timestamp, últimos 10) antes de sobrescrever.
+
+**Requisitos**: Python 3.9+, Flask, PyYAML (`requirements.txt`).
+
+**Estrutura do projeto**:
+
+```
+FilamentDB/
+├── filament-data/           # YAMLs de filamentos (fonte de verdade)
+├── material-data/           # materials.yaml — propriedades dos polímeros (obrigatório)
+├── process-base/            # sistema de herança de processos
+│   ├── base.json            # config base (suporte, prime tower, flush)
+│   ├── combinations.json    # quais perfis gerar
+│   ├── layer_heights/       # override por layer height
+│   ├── materials/           # velocidades alvo por material
+│   └── profile_types/       # estrutura por profile type
+├── src/                     # aplicação Flask
+├── templates/ static/       # dashboard web
+├── Creality-Print/          # output exportado (.json + .info)
+├── OrcaSlicer/              # output exportado (.json)
+├── scripts/update-server.sh # deploy (git pull + build + restart)
+├── build.py                 # pipeline unificado
+├── publish.sh  run.sh       # publicação local / servidor de dev
+└── config.env.example
+```
+
+---
+
+## App mobile (Android)
+
+App Android (WebView) em desenvolvimento que dá acesso ao dashboard pelo celular — foco em estoque e simulações. Scaffold em `android/`, roteiro em [`mobile-roadmap.md`](mobile-roadmap.md). Pendências do servidor em [`next-steps.md`](next-steps.md).
+
+---
+
+# Formação dos perfis (decisões técnicas)
+
+Esta é a parte central do projeto: como os perfis são calculados e por quê.
 
 ## Filosofia: Separação de Responsabilidades
 
@@ -63,9 +630,9 @@ Se o processo pede 600mm/s mas o filamento aguenta 277mm/s, o slicer reduz autom
 graph LR
     F[Fast<br/>1.50x] --> E[Economy<br/>1.00x]
     E --> S[Standard<br/>1.00x]
-    S --> ST[Strong<br/>0.70x]
-    S --> D[Detail<br/>0.55x]
-    S --> SA[Safe<br/>0.40x]
+    S --> ST[Strong<br/>0.85x]
+    S --> D[Detail<br/>0.80x]
+    S --> SA[Safe<br/>0.70x]
 
     style F fill:#50e8a0,color:#000
     style E fill:#a0e850,color:#000
@@ -81,34 +648,10 @@ graph LR
 | **Economy** | Economia de filamento | 2 | 8% grid | nearest | 1.00 | 1.00 | — |
 | **Standard** | Equilíbrio geral | 4 | 15% gyroid | aligned | 1.00 | 1.00 | — |
 | **Strong** | Resistência mecânica | 6 | 50% gyroid | aligned | 0.85 | 0.80 | — |
-| **Detail** | Qualidade visual (0.08-0.16mm) | 5 | 20% gyroid | back | 0.80 | 0.75 | 0.45 |
+| **Detail** | Qualidade visual (0.08-0.16mm) | 5 | 20% gyroid | back | 0.80 | 0.75 | 0.30 |
 | **Safe** | Ultra-conservador | 4 | 18% gyroid | back | 0.70 | 0.60 | 0.50 |
 
-**Quality ×** se aplica apenas a `outer_wall_speed`, `top_surface_speed` e `initial_layer_speed` — campos que afetam diretamente a qualidade visual ou confiabilidade. Todos os outros campos (inner wall, infill, travel, support) usam o Speed × regular, permitindo imprimir rápido onde não importa.
-
-### Velocidades Resultantes — PLA (inner_wall / outer_wall / infill mm/s)
-
-| Profile Type | Layer Height | Inner Wall | Outer Wall | Infill | Top Surface | Travel | Aceleração |
-|--------------|-------------|-----------|-----------|--------|-------------|--------|-----------|
-| **Fast** | 0.20 / 0.28 | 600 | 525 | 600 | 450 | 800 | 20000 |
-| **Economy** | 0.20 | 450 | 350 | 500 | 300 | 700 | 18000 |
-| **Standard** | 0.20 / 0.28 | 450 | 350 | 500 | 300 | 700 | 18000 |
-| **Strong** | 0.20 | 382 | 297 | 425 | 255 | 595 | 14400 |
-| **Detail** | 0.08-0.16 | 360 | 157 | 400 | 135 | 560 | 13500 |
-| **Safe** | 0.20 | 315 | 175 | 350 | 150 | 490 | 10800 |
-
-### Velocidades Resultantes — PETG (inner_wall / outer_wall / infill mm/s)
-
-| Profile Type | Layer Height | Inner Wall | Outer Wall | Infill | Top Surface | Travel | Aceleração |
-|--------------|-------------|-----------|-----------|--------|-------------|--------|-----------|
-| **Fast** | 0.20 / 0.28 | 570 | 450 | 600 | 375 | 800 | 20000 |
-| **Economy** | 0.20 | 380 | 300 | 430 | 250 | 650 | 15000 |
-| **Standard** | 0.20 / 0.28 | 380 | 300 | 430 | 250 | 650 | 15000 |
-| **Strong** | 0.20 | 323 | 255 | 365 | 212 | 552 | 12000 |
-| **Detail** | 0.08-0.16 | 304 | 135 | 344 | 112 | 520 | 11250 |
-| **Safe** | 0.20 | 266 | 150 | 301 | 125 | 455 | 9000 |
-
-Os perfis Detail e Safe são **assimétricos**: inner wall e infill rodam na velocidade alta (0.80x e 0.70x), enquanto outer wall e top surface usam o quality_speed muito mais baixo (0.45x e 0.50x). Isso garante qualidade visual máxima sem desperdiçar tempo em movimentos que não afetam o resultado.
+**Quality ×** se aplica apenas a `outer_wall_speed`, `top_surface_speed`, `initial_layer_speed` e `gap_infill_speed` — campos que afetam diretamente a qualidade visual ou confiabilidade. Todos os outros campos (inner wall, infill, travel, support) usam o Speed × regular, permitindo imprimir rápido onde não importa. Esses multiplicadores estão em `build.py` → `PROFILE_MULTIPLIERS`.
 
 ### Materiais Especiais (apenas 0.20mm Standard)
 
@@ -148,6 +691,8 @@ As velocidades base representam o alvo **Standard** (multiplier 1.0x) para cada 
 | Nozzle | 0.4 mm | |
 | Área | 260 × 260 × 260 mm | |
 
+Os caps são aplicados em `build.py`: 600 mm/s para extrusão, 800 mm/s para travel, 20000 mm/s² para aceleração — depois de aplicar os multiplicadores.
+
 ## Defaults de Suporte e Multifilamento
 
 Todos os perfis incluem por padrão:
@@ -181,7 +726,7 @@ Esses valores funcionam bem tanto para PLA quanto PETG. PLA não precisa de tant
 
 ```json
 {
-    "detail":    ["0.08", "0.12", "0.16"] × [PLA, PETG],
+    "detail":    ["0.08", "0.12", "0.16", "0.20"] × [PLA, PETG],
     "standard":  ["0.20", "0.28"] × [PLA, PETG],
     "standard":  ["0.20"] × [TPU, ABS, PLA-CF, PETG-CF],
     "economy":   ["0.20"] × [PLA, PETG],
@@ -191,15 +736,16 @@ Esses valores funcionam bem tanto para PLA quanto PETG. PLA não precisa de tant
 }
 ```
 
-**Total: 24 perfis de processo**
+Definido em `process-base/combinations.json`.
 
 Racional:
-- **Detail** usa layer heights exclusivos (0.08-0.16) — território de qualidade visual
+- **Detail** cobre os layer heights de qualidade visual (0.08-0.20)
 - **Standard 0.20** é o padrão de uso diário; **0.28** é draft rápido com qualidade aceitável
 - **Economy** só em 0.20 — se quer rápido E barato, use Fast 0.28
 - **Fast 0.20** = velocidade com qualidade; **Fast 0.28** = o mais rápido possível
 - **Strong** só em 0.20 — resistência precisa de boa adesão entre layers
 - **Safe** só em 0.20 — perfil de teste, sem variações
+- **ABS, TPU, PLA-CF, PETG-CF** só em 0.20mm Standard
 
 ## MVS dos Filamentos Principais
 
@@ -212,7 +758,6 @@ Racional:
 | Creality Hyper PETG | 23 | 255 mm/s | 182 mm/s |
 | Voolt3D PLA Standard | 20 | 222 mm/s | 158 mm/s |
 | Sunlu PLA Meta | 18 | 199 mm/s | 142 mm/s |
-| Bambu PLA Basic | 15 | 166 mm/s | 119 mm/s |
 | Sunlu PLA+ | 15 | 166 mm/s | 119 mm/s |
 | Creality CR PLA | 12 | 133 mm/s | 95 mm/s |
 | Voolt3D PETG HF | 12 | 133 mm/s | 95 mm/s |
@@ -222,39 +767,7 @@ Racional:
 
 *Cap = MVS / (layer_height × 0.45)*
 
-## Arquitetura
-
-```mermaid
-flowchart TD
-    subgraph Fonte de Verdade
-        FD[filament-data/*.yaml]
-        PB[process-base/]
-    end
-
-    subgraph Pipeline
-        FD --> BUILD[build.py]
-        PB --> BUILD
-        BUILD --> DB[(filament.db)]
-        BUILD --> CP_OUT[Creality-Print/]
-        BUILD --> ORCA_OUT[OrcaSlicer/]
-    end
-
-    subgraph Publicação
-        CP_OUT --> PUB[publish.sh]
-        ORCA_OUT --> PUB
-        PUB --> FDB_CP[~/filament-db/creality-print/]
-        PUB --> FDB_ORCA[~/filament-db/orca/]
-    end
-
-    subgraph Slicers
-        FDB_CP --> RCP[run-creality-print.sh]
-        FDB_ORCA --> RORCA[run-orca-slicer.sh]
-        RCP --> CP[Creality Print 7.0]
-        RORCA --> ORCA[Orca Slicer]
-    end
-```
-
-## Como o Pipeline Funciona
+## Como o Pipeline de Perfis Funciona
 
 ```mermaid
 flowchart TD
@@ -268,51 +781,11 @@ flowchart TD
     CAP --> PROFILE[Perfil Final JSON]
 ```
 
-**Ordem de merge**: `base.json` → `layer_heights/` → `profile_types/` → velocidades do material com multiplicadores aplicados.
-
-## Sincronização com a Impressora (K2 / CFS)
-
-Os filamentos são sincronizados com a impressora K2 automaticamente pelo Creality Print ao enviar o G-code para impressão. O slicer carrega os perfis de filamento selecionados junto com o job.
-
-## Uso Rápido
-
-```bash
-# Pipeline padrão: build + publish local
-./publish.sh
-
-# Apenas build (sem publish)
-python3 build.py
-
-# Abrir Creality Print (sync local + launch)
-~/run-creality-print.sh
-
-# Abrir Orca Slicer (sync local + launch)
-~/run-orca-slicer.sh
-```
-
-Antes de sobrescrever perfis, o `publish.sh` faz backup automático em `~/filament-db/backups/` (zip com timestamp, mantém os últimos 10).
-
-Os filamentos são enviados para a impressora K2 automaticamente pelo Creality Print ao gerar o G-code — não há necessidade de sync manual via SSH.
-
-## Comandos
-
-| Comando | O que faz |
-|---------|-----------|
-| `./publish.sh` | Build + publish local |
-| `./publish.sh --no-build` | Apenas copia (sem rebuild) |
-| `./publish.sh --no-build --sync` | Copia + sync impressora |
-| `./publish.sh --list` | Lista fabricantes disponíveis |
-| `./publish.sh --add "Nome"` | Inclui fabricante extra |
-| `./publish.sh --all` | Exporta todos os fabricantes |
-| `python3 build.py` | Recria banco + exporta perfis (sem publish) |
-| `python3 build.py --only-db` | Apenas recria o banco (sem export) |
-| `python3 build.py --only-export` | Apenas exporta (banco já existe) |
-| `~/run-creality-print.sh` | Sync perfis locais + abre Creality Print |
-| `~/run-orca-slicer.sh` | Sync perfis locais + abre Orca Slicer |
+**Ordem de merge**: `base.json` → `layer_heights/` → `profile_types/` → velocidades do material com multiplicadores aplicados. Campos de adesão (brim, altura da primeira camada) do `layer_heights/` têm precedência quando melhoram a adesão (brim mais largo, primeira camada mais grossa).
 
 ## Como Adicionar um Filamento
 
-1. Edite ou crie um arquivo YAML em `filament-data/` (ex: `filament-data/nova_marca.yaml`)
+1. Edite ou crie um YAML em `filament-data/` (ex: `filament-data/nova_marca.yaml`)
 2. Defina `max_volumetric_speed` para cada perfil (obrigatório — é o que limita velocidade no slicer)
 3. Execute `python3 build.py && ./publish.sh --no-build`
 4. Os perfis estarão em `~/filament-db/` prontos para ambos os slicers
@@ -326,31 +799,6 @@ Os filamentos são enviados para a impressora K2 automaticamente pelo Creality P
 - `process-base/combinations.json` — define quais combinações (tipo × altura × material) gerar
 - `build.py` → `PROFILE_MULTIPLIERS` — multiplicadores de velocidade/aceleração por profile type
 
-## Estrutura do Projeto
-
-```
-FilamentDB/
-├── filament-data/           # YAMLs de filamentos (fonte de verdade)
-├── process-base/            # Sistema de herança de processos
-│   ├── base.json            # Config base (suporte, prime tower, flush)
-│   ├── combinations.json    # Quais perfis gerar
-│   ├── layer_heights/       # Override por layer height
-│   ├── materials/           # Velocidades alvo por material
-│   └── profile_types/       # Estrutura por profile type
-├── Creality-Print/          # Output exportado (formato Creality Print)
-│   ├── filaments/           # .json + .info
-│   └── process/             # .json + .info
-├── OrcaSlicer/              # Output exportado (formato Orca Slicer)
-│   ├── filament/            # .json
-│   └── process/             # .json
-├── src/                     # Aplicação Flask (web dashboard)
-├── templates/               # HTML do dashboard
-├── static/                  # JS/CSS
-├── build.py                 # Pipeline unificado
-├── publish.sh               # Publica para ~/filament-db/
-└── requirements.txt
-```
-
 ## Fabricantes Exportados
 
 Apenas estes fabricantes são exportados para os slicers:
@@ -359,59 +807,20 @@ Apenas estes fabricantes são exportados para os slicers:
 - Sunlu
 - Creality
 
-Os demais ficam no banco (`filament-data/`) para referência. Para incluir fabricantes extras temporariamente: `./publish.sh --add "Elegoo"`
+Os demais ficam no banco (`filament-data/`) para referência. Para incluir fabricantes extras temporariamente: `./publish.sh --add "Elegoo"` ou `./publish.sh --all`.
 
-## App Mobile (Android)
+## Comandos
 
-Há um app Android (WebView) em desenvolvimento que dá acesso ao dashboard pelo
-celular — foco em controle de estoque e simulações. O scaffold está em
-`android/` e o roteiro completo (fases pendentes + decisões técnicas já tomadas)
-está em [`mobile-roadmap.md`](mobile-roadmap.md).
-
-Features pendentes do servidor (ex: autorização de escrita do estoque por
-usuário) estão em [`next-steps.md`](next-steps.md).
-
-## Health Checks
-
-O servidor expõe dois endpoints de saúde, seguindo a distinção liveness/readiness:
-
-| Endpoint | Tipo | O que checa | Status |
-|----------|------|-------------|--------|
-| `GET /health` | Liveness | Só se o processo Flask responde. Não toca em disco. | Sempre `200` enquanto o worker atende |
-| `GET /health/ready` | Readiness | Probe de leitura (`SELECT 1`) em cada banco: `filament.db` (catálogo) e `inventory.db` (estoque) | `200` se ambos ok, `503` se qualquer um falhar |
-
-O `/health/ready` retorna um detalhamento por dependência com latência:
-
-```json
-{
-  "status": "ok",
-  "checks": {
-    "filament_db":  {"status": "ok", "path": "...filament.db",  "latency_ms": 0.26},
-    "inventory_db": {"status": "ok", "path": "...inventory.db", "latency_ms": 0.12}
-  }
-}
-```
-
-Quando um banco está inacessível ou sem schema (ex: `filament.db` recém-recriado sem tabelas), o endpoint responde `503` e identifica a dependência com falha — abrir a conexão não basta, um `.db` vazio abre sem erro mas falha no primeiro `SELECT`.
-
-### Monitoramento externo (Pangolin)
-
-O [Pangolin](https://docs.pangolin.net/manage/resources/public/healthchecks-failover) faz polling HTTP periódico contra um target e o marca como *unhealthy* (removendo-o da rotação) com base no **status code**. Config recomendada no dashboard do Pangolin, por target:
-
-| Parâmetro | Valor |
-|-----------|-------|
-| scheme | `http` (TLS terminado no Traefik) |
-| path | `/health/ready` |
-| method | `GET` |
-| expected status | `200` |
-| timeout | `2s` |
-| healthy interval | `30s` |
-| unhealthy interval | `5s` |
-| healthy / unhealthy threshold | `2` / `3` (evita flapping) |
-
-Usar `/health/ready` (não `/health`) garante que o target sai de rotação se o banco cair — o serviço não é útil sem o catálogo. O `/health` puro só detecta processo morto.
-
-## Requisitos
-
-- Python 3.9+
-- Flask, PyYAML (ver `requirements.txt`)
+| Comando | O que faz |
+|---------|-----------|
+| `./run.sh` | Sobe o servidor de dev (venv + deps + build se preciso) |
+| `./publish.sh` | Build + publish local |
+| `./publish.sh --no-build` | Apenas copia (sem rebuild) |
+| `./publish.sh --list` | Lista fabricantes disponíveis |
+| `./publish.sh --add "Nome"` | Inclui fabricante extra |
+| `./publish.sh --all` | Exporta todos os fabricantes |
+| `python3 build.py` | Recria banco + exporta perfis (sem publish) |
+| `python3 build.py --only-db` | Apenas recria o banco (sem export) |
+| `python3 build.py --only-export` | Apenas exporta (banco já existe) |
+| `~/run-creality-print.sh` | Sync perfis locais + abre Creality Print |
+| `~/run-orca-slicer.sh` | Sync perfis locais + abre Orca Slicer |
