@@ -352,6 +352,10 @@
         .checkbox-cell { width:36px; text-align:center; }
         input[type="checkbox"] { accent-color:var(--blue); transform:scale(1.1); cursor:pointer; }
 
+
+        /* ── Prices view ───────────────────────────────────────────────────── */
+        .price-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}.price-kpi{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:13px}.price-kpi .k{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em}.price-kpi .n{font-size:1.45rem;font-weight:800;margin-top:3px}.price-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}.price-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden}.price-card-head{padding:12px 14px;border-bottom:1px solid var(--border)}.price-card-title{font-weight:800;font-size:.94rem}.price-card-sub{color:var(--muted);font-size:.76rem;margin-top:3px}.price-card-body{padding:12px 14px}.price-best{display:flex;align-items:end;justify-content:space-between;gap:10px}.price-value{font-size:1.55rem;font-weight:900;color:var(--green)}.price-unit{color:var(--muted);font-size:.72rem}.price-opportunity{color:var(--yellow);font-size:.74rem;font-weight:800}.price-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.price-meta .lbl{display:block;color:var(--muted);font-size:.66rem;text-transform:uppercase}.price-meta .val{font-weight:700;font-size:.8rem}.price-actions{margin-top:12px;display:flex;gap:7px}.price-detail{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}.price-history-row{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(38,50,67,.5);font-size:.76rem}.price-history-row:last-child{border-bottom:0}.price-note{color:var(--muted);font-size:.72rem;margin-top:12px}
+
         /* ── Empty / placeholder ────────────────────────────────────────────── */
         .empty {
             color:var(--muted);
@@ -954,6 +958,7 @@
                     <button type="button" class="nav-btn" data-view="process">⚙️ Processos</button>
                     <button type="button" class="nav-btn" data-view="simulation">🔬 Simulação</button>
                     <button type="button" class="nav-btn" data-view="ranking">🏆 Ranking</button>
+                    <button type="button" class="nav-btn" data-view="prices">💰 Preços</button>
                 </div>
 
                 <div class="menu-section" id="process-nav" style="display: none;">
@@ -1171,6 +1176,16 @@
             <div id="ranking-table-wrap" class="table-wrap">
                 <div class="empty">Carregando ranking...</div>
             </div>
+        </div>
+
+
+        <!-- Prices View -->
+        <div id="prices-view" class="view-content">
+            <div class="page-header"><h1>Preços</h1><span class="badge">Oportunidades e histórico</span></div>
+            <div class="price-kpis"><div class="price-kpi"><div class="k">Filamentos monitorados</div><div class="n" id="price-tracked">—</div></div><div class="price-kpi"><div class="k">Com ofertas</div><div class="n" id="price-priced">—</div></div><div class="price-kpi"><div class="k">Ofertas atuais</div><div class="n" id="price-offers">—</div></div><div class="price-kpi"><div class="k">Melhor oportunidade</div><div class="n" id="price-best">—</div></div></div>
+            <div class="price-filters"><select id="price-material" class="sim-select"><option value="">Material: Todos</option></select><select id="price-manufacturer" class="sim-select"><option value="">Fabricante: Todos</option></select><select id="price-sort" class="sim-select"><option value="opportunity">Melhores oportunidades</option><option value="price">Menor preço</option><option value="name">Nome</option></select></div>
+            <div id="price-grid" class="price-grid"><div class="empty">Carregando preços...</div></div>
+            <div class="price-note">Preços são snapshots coletados. O catálogo continua sendo a fonte de verdade; esta tela usa somente <code>filament_id</code> para relacionar ofertas e histórico.</div>
         </div>
 
         <!-- Inventory View -->

@@ -6,7 +6,7 @@ import time
 
 from flask import jsonify, request, render_template, send_file
 
-from src import auth, buildinfo, database, inventory, services
+from src import auth, buildinfo, database, inventory, prices, services
 
 
 def _probe(connect_fn, path, probe_sql):
@@ -170,6 +170,19 @@ def register_routes(app):
         ).fetchall()
         conn.close()
         return jsonify([dict(row) for row in rows])
+
+    # ─── Price intelligence API ──────────────────────────────────────────────
+
+    @app.get("/api/prices")
+    def prices_api():
+        return jsonify(prices.dashboard())
+
+    @app.get("/api/prices/<int:filament_id>/history")
+    def price_history_api(filament_id):
+        result = prices.history(filament_id)
+        if result is None:
+            return jsonify({"error": "tracked filament not found"}), 404
+        return jsonify(result)
 
     # ─── Simulation API ──────────────────────────────────────────────────────
 
