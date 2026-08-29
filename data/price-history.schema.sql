@@ -50,10 +50,28 @@ CREATE TABLE IF NOT EXISTS collection_runs (
     source TEXT,
     status TEXT NOT NULL DEFAULT 'started',
     items_found INTEGER NOT NULL DEFAULT 0,
-    notes TEXT
+    notes TEXT,
+    snapshot_file TEXT,
+    snapshot_hash TEXT,
+    UNIQUE(snapshot_file)
+);
+
+CREATE TABLE IF NOT EXISTS collection_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id INTEGER NOT NULL,
+    filament_key TEXT,
+    color TEXT,
+    store TEXT NOT NULL,
+    status TEXT NOT NULL,
+    offers_found INTEGER NOT NULL DEFAULT 0,
+    notes TEXT,
+    FOREIGN KEY(run_id) REFERENCES collection_runs(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_snapshots_offer_time ON price_snapshots(offer_id, collected_at);
 CREATE INDEX IF NOT EXISTS idx_snapshots_time ON price_snapshots(collected_at);
 CREATE INDEX IF NOT EXISTS idx_runs_source_time ON collection_runs(source, started_at);
 
+
+CREATE INDEX IF NOT EXISTS idx_collection_results_run ON collection_results(run_id);
+CREATE INDEX IF NOT EXISTS idx_collection_results_filament ON collection_results(filament_key);

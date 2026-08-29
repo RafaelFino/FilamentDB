@@ -1867,6 +1867,22 @@ function renderPriceOffer(offer) {
 }
 
 
+function renderCollectionLog(log) {
+    if (!Array.isArray(log) || !log.length) return '';
+    const runs = log.slice(0, 10).map(run => {
+        const results = Array.isArray(run.results) ? run.results : [];
+        const found = results.filter(r => r.status === 'found').length;
+        const missing = results.filter(r => r.status !== 'found').length;
+        const resultHtml = results.length ? results.map(r => {
+            const label = r.filament_key ? `${r.filament_key}${r.color ? ` · ${r.color}` : ''}` : 'Fonte geral';
+            const icon = r.status === 'found' ? '✓' : '—';
+            return `<div class="price-collection-result"><span>${icon}</span><span>${priceEsc(r.store)}</span><span>${priceEsc(label)}</span><span>${r.offers_found || 0} oferta(s)</span><span>${priceEsc(r.notes || '')}</span></div>`;
+        }).join('') : '<div class="price-muted">Nenhum detalhe registrado.</div>';
+        return `<details class="price-collection-run"><summary><strong>${priceEsc(run.snapshot_file || 'coleta')}</strong> · ${priceEsc(run.status)} · ${run.items_found || 0} ofertas · ${found} fontes com resultado · ${missing} sem resultado</summary><div class="price-collection-results">${resultHtml}</div></details>`;
+    }).join('');
+    return `<div class="price-report-group">Log das coletas</div><div class="price-collection-log">${runs}</div>`;
+}
+
 function renderPrices() {
     if (!priceData) return;
     let items = [...priceData.items];
@@ -1897,7 +1913,7 @@ function renderPrices() {
         return `${groupHtml}<div class="price-report-row"><div><div class="price-filament-name">${priceEsc(x.commercial_name || x.profile_name)}</div><div class="price-filament-meta">${priceEsc(x.filament_key || x.profile_name || '')} · ${priceEsc(x.profile_name || '')}${x.line ? ` · ${priceEsc(x.line)}` : ''}${x.line_finish ? ` · ${priceEsc(x.line_finish)}` : ''}</div></div><div class="price-number">${priceMoney(x.best_price)}<small>${x.best_price_per_kg != null ? priceMoney(x.best_price_per_kg) + '/kg' : ''}${x.best_is_volume ? ' · volume' : ''}</small></div><div class="price-number">${priceMoney(x.median_price)}<small>/kg histórico</small></div><div class="price-number">${priceMoney(x.best_historical_price_per_kg)}<small>melhor histórico/kg</small></div><div class="price-opportunity">${discount}${drop}</div><div class="price-offers">${offers}</div></div>`;
     }).join('');
 
-    priceGrid.innerHTML = `<div class="price-report"><div class="price-report-head"><div>Filamento</div><div>Melhor preço</div><div>Mediana</div><div>Melhor histórico/kg</div><div>Oportunidade</div><div>Ofertas encontradas</div></div>${rows}</div>`;
+    priceGrid.innerHTML = `<div class="price-report"><div class="price-report-head"><div>Filamento</div><div>Melhor preço</div><div>Mediana</div><div>Melhor histórico/kg</div><div>Oportunidade</div><div>Ofertas encontradas</div></div>${rows}</div>${renderCollectionLog(priceData.collection_log)}`;
 }
 async function loadPrices() {
     if (priceLoaded) return;

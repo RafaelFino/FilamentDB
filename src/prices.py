@@ -8,6 +8,7 @@ ROOT=Path(__file__).resolve().parent.parent
 PRICE_DB_PATH=config.database_path("price-history.db")
 SCHEMA_PATH=ROOT/"data"/"price-history.schema.sql"
 SEED_PATH=ROOT/"data"/"price-history.seed.json"
+PRICE_DATA_PATH=ROOT/"data"/"price-data"
 SOURCES_PATH=ROOT/"data"/"price-sources.json"
 
 def normalize_key_part(value):
@@ -58,45 +59,107 @@ def _sync_sources(conn):
     for s in json.loads(SOURCES_PATH.read_text(encoding="utf-8")):
         conn.execute("INSERT INTO stores(name,domain,marketplace) VALUES(?,?,?) ON CONFLICT(name) DO UPDATE SET domain=excluded.domain,marketplace=excluded.marketplace",(s["name"],s["domain"],int(s.get("marketplace",False))))
 
-def _sync_seed(conn):
-    if not SEED_PATH.exists(): return
-    seed=json.loads(SEED_PATH.read_text(encoding="utf-8")); cat=_catalog_map(); collected="2026-08-29T00:00:00-03:00"; run=None
-    for x in seed:
-        model=x.get("model") or x.get("line") or x.get("profile_name")
-        key="|".join(normalize_key_part(v) for v in (x["material"],x["manufacturer"],model)) if x.get("material") else None
-        # Backward compatibility: derive the key from the catalog by manufacturer/profile name.
-        if key not in cat:
-            matches=[r for r in cat.values() if r["manufacturer_name"].lower()==x["manufacturer"].lower() and (r["profile_name"]==x.get("profile_name") or r["commercial_name"]==x.get("profile_name"))]
-            if len(matches)==1: key=matches[0]["filament_key"]
-        if key not in cat: continue
-        profile=cat[key]
-        sid=conn.execute("INSERT INTO stores(name,domain,marketplace) VALUES(?,?,?) ON CONFLICT(name) DO UPDATE SET domain=excluded.domain RETURNING id",(x["store"],x["domain"],int(x.get("marketplace",False)))).fetchone()[0]
-        oid=conn.execute("SELECT id FROM offers WHERE store_id=? AND url=?",(sid,x["url"])).fetchone()
-        color=x.get("color_name") or x.get("color")
-        variant_id=_ensure_variant(conn,profile["id"],color)
-        if oid:
-            oid=oid[0]; conn.execute("UPDATE offers SET filament_key=?,variant_id=?,filament_id=?,quantity=?,unit_weight_g=?,external_id=?,seller=?,title=?,last_seen_at=? WHERE id=?",(key,variant_id,profile["id"],int(x.get("quantity",1) or 1),float(x.get("unit_weight_g",1000) or 1000),x.get("external_id"),x.get("seller"),x["title"],collected,oid))
-        else:
-            oid=conn.execute("INSERT INTO offers(filament_key,variant_id,filament_id,quantity,unit_weight_g,store_id,url,external_id,seller,title,last_seen_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) RETURNING id",(key,variant_id,profile["id"],int(x.get("quantity",1) or 1),float(x.get("unit_weight_g",1000) or 1000),sid,x["url"],x.get("external_id"),x.get("seller"),x["title"],collected)).fetchone()[0]
-        exists=conn.execute("SELECT 1 FROM price_snapshots WHERE offer_id=? AND collected_at=? AND price=?",(oid,collected,x["price"])).fetchone()
-        if not exists:
-            if run is None: run=conn.execute("INSERT INTO collection_runs(started_at,finished_at,source,status) VALUES(?,?,?,?) RETURNING id",(collected,collected,"verified-baseline-2026-08-29","completed")).fetchone()[0]
-            conn.execute("INSERT INTO price_snapshots(offer_id,collected_at,price,original_price,shipping,total_price,currency,available,source,notes) VALUES(?,?,?,?,?,?,?,?,?,?)",(oid,collected,x["price"],x.get("original_price"),x.get("shipping"),(x["price"]+(x.get("shipping") or 0)) if x.get("shipping") is not None else None,"BRL",x.get("available"),x.get("source"),x.get("notes")))
-            conn.execute("UPDATE collection_runs SET items_found=items_found+1 WHERE id=?",(run,))
-    # Sanidade de identidade: uma loja oficial com o mesmo nome do fabricante
-    # jamais pode representar outro fabricante. Marketplaces continuam livres
-    # para vender qualquer marca.
-    catalog_by_key = {r["filament_key"]: normalize_key_part(r["manufacturer_name"]) for r in _catalog_rows()}
-    cat_conn = database.get_db_connection()
-    manufacturer_keys = {normalize_key_part(r["name"]) for r in cat_conn.execute("SELECT name FROM manufacturers").fetchall()}
-    cat_conn.close()
-    for row in conn.execute("SELECT o.id,o.filament_key,s.name FROM offers o JOIN stores s ON s.id=o.store_id WHERE o.active=1").fetchall():
-        store_key = normalize_key_part(row[2])
-        manufacturer_key = catalog_by_key.get(row[1])
-        # Só aplica a regra quando a loja é oficialmente nomeada como um fabricante.
-        if store_key in manufacturer_keys and manufacturer_key and store_key != manufacturer_key:
-            conn.execute("UPDATE offers SET active=0 WHERE id=?", (row[0],))
+def _ensure_column(conn, table, column, definition):
+    cols={r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in cols:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+def _migrate_collection_schema(conn):
+    _ensure_column(conn,"collection_runs","snapshot_file","TEXT")
+    _ensure_column(conn,"collection_runs","snapshot_hash","TEXT")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_snapshot_file ON collection_runs(snapshot_file) WHERE snapshot_file IS NOT NULL")
+    conn.execute("""CREATE TABLE IF NOT EXISTS collection_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        run_id INTEGER NOT NULL,
+        filament_key TEXT,
+        color TEXT,
+        store TEXT NOT NULL,
+        status TEXT NOT NULL,
+        offers_found INTEGER NOT NULL DEFAULT 0,
+        notes TEXT,
+        FOREIGN KEY(run_id) REFERENCES collection_runs(id) ON DELETE CASCADE
+    )""")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_collection_results_run ON collection_results(run_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_collection_results_filament ON collection_results(filament_key)")
+
+def _snapshot_key(x):
+    key=x.get("filament_key")
+    if key: return "|".join(normalize_key_part(v) for v in key.split("|"))
+    material=x.get("material"); manufacturer=x.get("manufacturer"); model=x.get("model") or x.get("line") or x.get("profile_name")
+    if material and manufacturer and model:
+        return "|".join(normalize_key_part(v) for v in (material,manufacturer,model))
+    return None
+
+def _upsert_snapshot_offer(conn, x, cat, collected, source_default):
+    key=_snapshot_key(x)
+    if key not in cat:
+        return False
+    profile=cat[key]
+    store=x.get("store") or "Desconhecida"
+    domain=x.get("domain") or ""
+    sid=conn.execute("INSERT INTO stores(name,domain,marketplace) VALUES(?,?,?) ON CONFLICT(name) DO UPDATE SET domain=excluded.domain,marketplace=excluded.marketplace RETURNING id",(store,domain,int(x.get("marketplace",False)))).fetchone()[0]
+    color=x.get("color_name") or x.get("color")
+    variant_id=_ensure_variant(conn,profile["id"],color)
+    quantity=max(int(x.get("quantity",1) or 1),1)
+    unit_weight=float(x.get("unit_weight_g",1000) or 1000)
+    url=x.get("url")
+    if not url: return False
+    row=conn.execute("SELECT id FROM offers WHERE store_id=? AND url=?",(sid,url)).fetchone()
+    if row:
+        oid=row[0]
+        conn.execute("UPDATE offers SET filament_key=?,variant_id=?,filament_id=?,quantity=?,unit_weight_g=?,external_id=?,seller=?,title=?,active=1,last_seen_at=? WHERE id=?",(key,variant_id,profile["id"],quantity,unit_weight,x.get("external_id"),x.get("seller"),x.get("title"),collected,oid))
+    else:
+        oid=conn.execute("INSERT INTO offers(filament_key,variant_id,filament_id,quantity,unit_weight_g,store_id,url,external_id,seller,title,last_seen_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) RETURNING id",(key,variant_id,profile["id"],quantity,unit_weight,sid,url,x.get("external_id"),x.get("seller"),x.get("title"),collected)).fetchone()[0]
+    price=float(x["price"])
+    shipping=x.get("shipping")
+    total=x.get("total_price")
+    if total is None: total=price + float(shipping or 0)
+    exists=conn.execute("SELECT 1 FROM price_snapshots WHERE offer_id=? AND collected_at=?",(oid,collected)).fetchone()
+    if not exists:
+        conn.execute("INSERT INTO price_snapshots(offer_id,collected_at,price,original_price,shipping,total_price,currency,available,coupon,source,notes) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(oid,collected,price,x.get("original_price"),shipping,total,x.get("currency","BRL"),x.get("available"),x.get("coupon"),x.get("source") or source_default,x.get("notes")))
+    return True
+
+def _import_snapshot(conn, path):
+    payload=json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload,dict) or not isinstance(payload.get("offers",[]),list):
+        raise ValueError(f"Snapshot inválido: {path.name}")
+    snapshot_date=payload.get("snapshot_date") or path.stem
+    collected=payload.get("collected_at") or f"{snapshot_date}T00:00:00-03:00"
+    digest=__import__("hashlib").sha256(path.read_bytes()).hexdigest()
+    existing=conn.execute("SELECT id FROM collection_runs WHERE snapshot_file=? OR snapshot_hash=?",(path.name,digest)).fetchone()
+    if existing: return 0,0,True
+    run=conn.execute("INSERT INTO collection_runs(started_at,finished_at,source,status,items_found,notes,snapshot_file,snapshot_hash) VALUES(?,?,?,?,?,?,?,?) RETURNING id",(collected,collected,payload.get("collector") or "price-agent","completed",0,payload.get("notes"),path.name,digest)).fetchone()[0]
+    cat=_catalog_map(); imported=0
+    for x in payload["offers"]:
+        if _upsert_snapshot_offer(conn,x,cat,collected,payload.get("collector") or "price-agent"): imported+=1
+    for r in payload.get("collection",[]):
+        conn.execute("INSERT INTO collection_results(run_id,filament_key,color,store,status,offers_found,notes) VALUES(?,?,?,?,?,?,?)",(run,r.get("filament_key"),r.get("color") or r.get("color_name"),r.get("store") or "Desconhecida",r.get("status") or "not_found",int(r.get("offers_found",0) or 0),r.get("notes")))
+    conn.execute("UPDATE collection_runs SET items_found=? WHERE id=?",(imported,run))
     conn.commit()
+    return imported,len(payload.get("collection",[])),False
+
+def _sync_price_data(conn):
+    PRICE_DATA_PATH.mkdir(parents=True,exist_ok=True)
+    files=sorted(PRICE_DATA_PATH.glob("*.json"))
+    for path in files:
+        try:
+            imported,results,skipped=_import_snapshot(conn,path)
+            if skipped: continue
+        except Exception as exc:
+            conn.execute("INSERT INTO collection_runs(started_at,finished_at,source,status,notes,snapshot_file) VALUES(CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?,?,?,?)",("price-agent","error",str(exc),path.name))
+            conn.commit()
+
+def _sync_seed(conn):
+    # Legacy compatibility only. New collections must live in data/price-data/*.json.
+    if not SEED_PATH.exists(): return
+    legacy=PRICE_DATA_PATH/"_legacy-seed.json"
+    if not legacy.exists():
+        legacy.write_text(json.dumps({"schema_version":2,"snapshot_date":"2026-08-29","collected_at":"2026-08-29T00:00:00-03:00","collector":"legacy-seed","offers":json.loads(SEED_PATH.read_text(encoding="utf-8")),"collection":[]},ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+
+def _sync_sources(conn):
+    if not SOURCES_PATH.exists(): return
+    for s in json.loads(SOURCES_PATH.read_text(encoding="utf-8")):
+        conn.execute("INSERT INTO stores(name,domain,marketplace) VALUES(?,?,?) ON CONFLICT(name) DO UPDATE SET domain=excluded.domain,marketplace=excluded.marketplace",(s["name"],s["domain"],int(s.get("marketplace",False))))
     conn.commit()
 
 def _recreate_view(conn):
@@ -115,13 +178,17 @@ def _recreate_view(conn):
 def get_connection():
     PRICE_DB_PATH.parent.mkdir(parents=True,exist_ok=True)
     c=sqlite3.connect(PRICE_DB_PATH); c.row_factory=sqlite3.Row; c.execute("PRAGMA foreign_keys=ON")
-    c.executescript(SCHEMA_PATH.read_text(encoding="utf-8")); _migrate_identity(c); _recreate_view(c); _sync_sources(c); _sync_seed(c); return c
+    c.executescript(SCHEMA_PATH.read_text(encoding="utf-8")); _migrate_identity(c); _migrate_collection_schema(c); _recreate_view(c); _sync_sources(c); _sync_price_data(c); return c
 
 def dashboard():
     catalog = _catalog_rows()
     c = get_connection()
     offers = [dict(x) for x in c.execute("SELECT * FROM current_offers ORDER BY store,title").fetchall()]
     hist_rows = c.execute("SELECT offer_id,collected_at,price,shipping,total_price FROM price_snapshots ORDER BY collected_at, id").fetchall()
+    collection_log = []
+    for r in c.execute("SELECT id,started_at,finished_at,source,status,items_found,notes,snapshot_file FROM collection_runs ORDER BY started_at DESC, id DESC LIMIT 30").fetchall():
+        item=dict(r); item["results"]=[dict(x) for x in c.execute("SELECT filament_key,color,store,status,offers_found,notes FROM collection_results WHERE run_id=? ORDER BY store,filament_key",(r["id"],)).fetchall()]
+        collection_log.append(item)
     c.close()
 
     cat = database.get_db_connection()
