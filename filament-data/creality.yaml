@@ -45,6 +45,7 @@ lines:
   difficulty: 30
   target_use: functional_pla
   tier: premium
+  tracking: true
   category: high_speed
   finish: standard
   notes: PLA reforçado otimizado para velocidade

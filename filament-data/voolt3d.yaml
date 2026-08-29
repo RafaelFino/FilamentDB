@@ -23,6 +23,7 @@ lines:
   difficulty: 35
   target_use: visual_quality
   tier: premium
+  tracking: true
   category: aesthetic
   finish: velvet
   notes: Foco em acabamento visual e toque fosco. Reduz visibilidade de camadas, pode ser lixado. High Speed Premium.
@@ -59,6 +60,7 @@ lines:
   difficulty: 45
   target_use: high_speed_printing
   tier: premium
+  tracking: true
   category: high_speed
   finish: standard
   notes: Otimizado para alta velocidade. Max volumetric speed até 25 mm³/s.
@@ -72,6 +74,7 @@ lines:
   difficulty: 60
   target_use: mechanical_parts
   tier: premium
+  tracking: true
   category: mechanical
   finish: standard
   notes: Maior resistência mecânica e térmica

@@ -21,6 +21,7 @@ lines:
   difficulty: 45
   target_use: functional_pla
   tier: premium
+  tracking: true
   category: mechanical
   finish: standard
   notes: PLA reforçado, bom equilíbrio geral
@@ -62,6 +63,7 @@ lines:
   difficulty: 40
   target_use: advanced_pla
   tier: premium
+  tracking: true
   category: high_speed
   finish: standard
   notes: Melhor fluidez e acabamento superficial, formulação avançada
@@ -108,6 +110,7 @@ lines:
   difficulty: 50
   target_use: high_speed_functional
   tier: premium
+  tracking: true
   category: high_speed
   finish: matte
   notes: >

@@ -64,6 +64,7 @@ lines:
   difficulty: 45
   target_use: functional_pla
   tier: premium
+  tracking: true
   category: mechanical
   finish: standard
   notes: PLA mais resistente, melhor impacto e estabilidade. Specs oficiais 190-230°C, bed 35-65°C, density 1.26 g/cm³, Vicat 63°C
@@ -91,6 +92,7 @@ lines:
   difficulty: 48
   target_use: functional_pla
   tier: professional
+  tracking: true
   category: mechanical
   finish: standard
   notes: PLA de alta performance para uso profissional
@@ -132,6 +134,7 @@ lines:
   difficulty: 40
   target_use: visual_quality
   tier: standard
+  tracking: true
   category: aesthetic
   finish: matte
   notes: Acabamento fosco, foco em estética. Specs oficiais 190-220°C, bed 50-65°C, Vicat 64°C, spool 160g

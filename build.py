@@ -155,6 +155,7 @@ def create_schema():
         drying_temperature INTEGER,
         drying_time REAL,
         notes TEXT,
+        tracking INTEGER DEFAULT 0,
         active INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -434,8 +435,8 @@ def seed_filaments():
                 line_target_use, line_tier, line_category, line_finish, line_skill_level,
                 line_color_options, color, surface_finish,
                 recommendation, diameter, density, drying_temperature, drying_time,
-                notes, active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                notes, tracking, active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             manufacturer_id, material_id,
             profile["commercial_name"], profile["profile_name"],
@@ -458,7 +459,7 @@ def seed_filaments():
             profile.get("recommendation"), profile.get("diameter"),
             profile.get("density"), profile.get("drying_temperature"),
             profile.get("drying_time"), profile.get("notes", ""),
-            profile.get("active", 1),
+            profile.get("tracking", 0), profile.get("active", 1),
         ))
         profile_id = cur.lastrowid
 
@@ -507,6 +508,11 @@ def seed_filaments():
                 profile["line_tier"] = line_def.get("tier")
                 profile["line_category"] = line_def.get("category")
                 profile["line_finish"] = line_def.get("finish")
+                # Price intelligence tracking is explicitly opt-in at the line level.
+                # It is additionally restricted to the monitored PLA/PETG materials.
+                profile["tracking"] = int(
+                    bool(line_def.get("tracking", False)) and material_name in {"PLA", "PETG"}
+                )
                 profile["line_skill_level"] = skill_level_from_difficulty(
                     line_def.get("difficulty")
                 )

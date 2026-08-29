@@ -824,3 +824,9 @@ Os demais ficam no banco (`filament-data/`) para referência. Para incluir fabri
 | `python3 build.py --only-export` | Apenas exporta (banco já existe) |
 | `~/run-creality-print.sh` | Sync perfis locais + abre Creality Print |
 | `~/run-orca-slicer.sh` | Sync perfis locais + abre Orca Slicer |
+
+## Price Intelligence
+
+O catálogo canônico (`filament.db`) também pode marcar perfis elegíveis para monitoramento de preços através do campo `tracking`. O campo é definido explicitamente na linha do fabricante em `filament-data/*.yaml` e propagado para `filament_profiles` pelo `build.py`.
+
+O tracking é opt-in e, no escopo atual, só é propagado para **PLA** e **PETG** das linhas selecionadas como premium ou de acabamento **Velvet/Matte** das marcas prioritárias. O histórico de preços, ofertas e URLs de marketplaces deve permanecer em um banco separado, referenciando o catálogo exclusivamente pelo `filament_id`.
