@@ -28,17 +28,50 @@ def _seed_if_empty(conn):
 def get_connection():
  PRICE_DB_PATH.parent.mkdir(parents=True,exist_ok=True); c=sqlite3.connect(PRICE_DB_PATH); c.row_factory=sqlite3.Row; c.execute("PRAGMA foreign_keys=ON"); _seed_if_empty(c); return c
 def dashboard():
- catalog=_catalog_rows(); byid={x["id"]:x for x in catalog}; c=get_connection(); offers=[dict(x) for x in c.execute("SELECT * FROM current_offers").fetchall()]; hist=c.execute("SELECT offer_id,price FROM price_snapshots").fetchall(); c.close(); hp={}
- for x in hist: hp.setdefault(x[0],[]).append(x[1])
- cur={}
- for o in offers: cur.setdefault(o["filament_id"],[]).append(o)
- items=[]
- for fid,fil in byid.items():
-  osx=cur.get(fid,[]); allp=[p for o in osx for p in hp.get(o["offer_id"],[])]
-  if not osx: continue
-  best=min(osx,key=lambda o:o["total_price"] if o["total_price"] is not None else o["price"]); med=median(allp) if allp else best["price"]; disc=((med-best["price"])/med*100) if med else 0
-  items.append({**fil,"best_price":best["price"],"best_store":best["store"],"best_url":best["url"],"median_price":med,"min_price":min(allp) if allp else best["price"],"discount_pct":disc,"offer_count":len(osx)})
- items.sort(key=lambda x:(-x["discount_pct"],x["best_price"])); return {"summary":{"tracked_count":len(catalog),"priced_count":len(items),"offer_count":len(offers)},"items":items}
+    catalog = _catalog_rows()
+    c = get_connection()
+    offers = [dict(x) for x in c.execute("SELECT * FROM current_offers ORDER BY store, title").fetchall()]
+    hist = c.execute("SELECT offer_id, price FROM price_snapshots").fetchall()
+    c.close()
+
+    hp = {}
+    for x in hist:
+        hp.setdefault(x[0], []).append(x[1])
+
+    cur = {}
+    for offer in offers:
+        cur.setdefault(offer["filament_id"], []).append(offer)
+
+    items = []
+    for fil in catalog:
+        fid = fil["id"]
+        current = cur.get(fid, [])
+        all_prices = [p for offer in current for p in hp.get(offer["offer_id"], [])]
+        best = min(current, key=lambda o: o["total_price"] if o["total_price"] is not None else o["price"]) if current else None
+        median_price = median(all_prices) if all_prices else None
+        min_price = min(all_prices) if all_prices else None
+        discount = ((median_price - best["price"]) / median_price * 100) if best and median_price else 0
+        items.append({
+            **fil,
+            "best_price": best["price"] if best else None,
+            "best_store": best["store"] if best else None,
+            "best_url": best["url"] if best else None,
+            "median_price": median_price,
+            "min_price": min_price,
+            "discount_pct": discount,
+            "offer_count": len(current),
+            "offers": current,
+        })
+
+    return {
+        "summary": {
+            "tracked_count": len(catalog),
+            "priced_count": sum(1 for x in items if x["offer_count"]),
+            "offer_count": len(offers),
+        },
+        "items": items,
+    }
+
 def history(filament_id):
  if not any(x["id"]==filament_id for x in _catalog_rows()): return None
  c=get_connection(); rows=c.execute("SELECT ps.collected_at,ps.price,ps.original_price,ps.shipping,ps.total_price,ps.currency,ps.available,ps.source,o.id AS offer_id,o.title,o.url,o.seller,s.name AS store FROM price_snapshots ps JOIN offers o ON o.id=ps.offer_id JOIN stores s ON s.id=o.store_id WHERE o.filament_id=? ORDER BY ps.collected_at,ps.id",(filament_id,)).fetchall(); c.close(); return [dict(r) for r in rows]
