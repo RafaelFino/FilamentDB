@@ -949,7 +949,34 @@
             .nav-btn, .mfr-btn, .manufacturer-btn, .material-btn { padding:11px 12px; }
             .btn { padding:10px 14px; }
         }
-    </style>
+    
+        /* ── Price collection status ───────────────────────────────────── */
+        .price-collection-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:0 0 12px}.price-collection-status{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:10px 12px}.price-collection-status .k{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.price-collection-status .v{font-weight:800;margin-top:2px}.price-collection-status.ok .v{color:var(--green)}.price-collection-status.warn .v{color:var(--orange)}
+        @media (max-width:1000px){
+            .price-report{overflow:visible;border:none;background:transparent}
+            .price-report-head{display:none}
+            .price-report-row{grid-template-columns:1fr 1fr;gap:9px;padding:12px;margin:8px 0;background:var(--panel);border:1px solid var(--border);border-radius:10px}
+            .price-report-group{margin-top:12px;border:1px solid var(--border);border-radius:8px;padding:9px 11px}
+            .price-report-row > div:first-child,.price-report-row > .price-offers{grid-column:1 / -1}
+            .price-number,.price-opportunity{padding:8px;background:var(--panel-2);border:1px solid var(--border);border-radius:7px}
+            .price-offer{grid-template-columns:minmax(0,1fr) auto}
+            .price-collection-result{grid-template-columns:22px 100px minmax(0,1fr);gap:7px}
+            .price-collection-result span:nth-child(4),.price-collection-result span:nth-child(5){display:none}
+        }
+        @media (max-width:600px){
+            .price-kpis{grid-template-columns:1fr 1fr}
+            .price-filters{display:grid;grid-template-columns:1fr;gap:8px}
+            .price-filters .sim-select{width:100%;min-height:40px}
+            .price-collection-summary{grid-template-columns:1fr 1fr}
+            .price-report-row{grid-template-columns:1fr}
+            .price-report-row > div:first-child,.price-report-row > .price-offers{grid-column:auto}
+            .price-offer{grid-template-columns:1fr}
+            .price-offer-price{text-align:left}
+            .price-title{white-space:normal}
+            .price-collection-result{grid-template-columns:22px 1fr}
+            .price-collection-result span:nth-child(3){grid-column:2}
+        }
+</style>
 </head>
 <body>
 
@@ -1199,9 +1226,10 @@
         <div id="prices-view" class="view-content">
             <div class="page-header"><h1>Preços</h1><span class="badge">Oportunidades e histórico</span></div>
             <div class="price-kpis"><div class="price-kpi"><div class="k">Filamentos monitorados</div><div class="n" id="price-tracked">—</div></div><div class="price-kpi"><div class="k">Com ofertas</div><div class="n" id="price-priced">—</div></div><div class="price-kpi"><div class="k">Ofertas atuais</div><div class="n" id="price-offers">—</div></div><div class="price-kpi"><div class="k">Melhor oportunidade</div><div class="n" id="price-best">—</div></div></div>
+            <div id="price-collection-summary" class="price-collection-summary"></div>
             <div class="price-filters"><select id="price-material" class="sim-select"><option value="">Material: Todos</option></select><select id="price-manufacturer" class="sim-select"><option value="">Fabricante: Todos</option></select><select id="price-store" class="sim-select"><option value="">Loja: Todas</option></select><select id="price-sort" class="sim-select"><option value="material">Material → fabricante</option><option value="opportunity">Melhores oportunidades</option><option value="price">Menor preço</option><option value="name">Nome</option></select></div>
             <div id="price-grid" class="price-grid"><div class="empty">Carregando preços...</div></div>
-            <div class="price-note">Fontes monitoradas: Amazon.com · AliExpress · Shopee · Mercado Livre · Voolt3D · 3D Lab. Preços são snapshots coletados. O catálogo continua sendo a fonte de verdade; esta tela usa somente <code>filament_id</code> para relacionar ofertas e histórico.</div>
+            <div class="price-note">Fontes monitoradas: Amazon.com · AliExpress · Shopee · Mercado Livre · Voolt3D · 3D Lab. Preços são snapshots coletados. Todas as ofertas encontradas são preservadas; o catálogo continua sendo a fonte de verdade e o vínculo usa <code>filament_key</code>. Quantidade, peso e base do preço distinguem ofertas unitárias, kits e faixas de atacado.</div>
         </div>
 
         <!-- Inventory View -->

@@ -1900,6 +1900,20 @@ function renderPrices() {
     const best = items.find(x => x.best_price != null);
     document.getElementById('price-best').textContent = best ? priceMoney(best.best_price) : '—';
 
+    const collectionBox = document.getElementById('price-collection-summary');
+    if (collectionBox) {
+        const cs = priceData.collection_summary || {};
+        const statusClass = cs.status === 'completed' ? 'ok' : 'warn';
+        const statusText = cs.status === 'completed' ? 'Concluída' : (cs.status || 'Sem coleta');
+        const when = cs.collected_at ? new Date(cs.collected_at).toLocaleString('pt-BR') : '—';
+        collectionBox.innerHTML = `
+            <div class="price-collection-status ${statusClass}"><div class="k">Última coleta</div><div class="v">${priceEsc(cs.snapshot_file || '—')}</div></div>
+            <div class="price-collection-status ${statusClass}"><div class="k">Status</div><div class="v">${priceEsc(statusText)}</div></div>
+            <div class="price-collection-status"><div class="k">Ofertas encontradas</div><div class="v">${cs.offers_found ?? 0}</div></div>
+            <div class="price-collection-status"><div class="k">Fontes com resultado</div><div class="v">${cs.sources_with_results ?? 0} · ${cs.sources_without_results ?? 0} sem</div></div>
+            <div class="price-collection-status"><div class="k">Coletado em</div><div class="v">${priceEsc(when)}</div></div>`;
+    }
+
     if (!items.length) { priceGrid.innerHTML = '<div class="price-empty">Nenhum filamento encontrado para os filtros.</div>'; return; }
 
     let lastGroup = '';
