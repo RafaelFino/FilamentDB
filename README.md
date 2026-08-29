@@ -292,7 +292,7 @@ Headers HTTP são **forjáveis**. Esse gate só é seguro se:
 1. O Flask **não** for alcançável fora do proxy (bind interno / rede isolada), **e**
 2. Houver um segredo compartilhado proxy↔Flask (`FILAMENTDB_PROXY_SECRET`), enviado no header `X-Proxy-Secret`.
 
-Se `FILAMENTDB_PROXY_SECRET` está vazio, o Flask **não consegue verificar a origem** e a autorização é apenas cosmética (qualquer um que alcance o Flask e conheça um e-mail da allowlist pode escrever). Isso está documentado em `next-steps.md` e no próprio `auth.py`.
+Se `FILAMENTDB_PROXY_SECRET` está vazio, o Flask **não consegue verificar a origem** e a autorização é apenas cosmética (qualquer um que alcance o Flask e conheça um e-mail da allowlist pode escrever). Ver o aviso de segurança no cabeçalho de `src/auth.py`.
 
 `GET /api/me` expõe `{ "user", "can_write", "auth_enabled" }` para a UI decidir se mostra os botões de escrita.
 
@@ -561,7 +561,7 @@ FilamentDB/
 
 ## App mobile (Android)
 
-App Android (WebView) em desenvolvimento que dá acesso ao dashboard pelo celular — foco em estoque e simulações. Scaffold em `android/`, roteiro em [`mobile-roadmap.md`](mobile-roadmap.md). Pendências do servidor em [`next-steps.md`](next-steps.md).
+App Android (WebView) em desenvolvimento que dá acesso ao dashboard pelo celular — foco em estoque e simulações. Scaffold em `android/`, roteiro em [`mobile-roadmap.md`](mobile-roadmap.md).
 
 ---
 

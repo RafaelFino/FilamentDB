@@ -12,7 +12,7 @@ FEATURE FLAG: controlada por FILAMENTDB_AUTH_ENABLED.
 ⚠️ SEGURANÇA: headers HTTP são forjáveis. Este gate só é seguro se:
   1. o Flask não for alcançável fora do proxy (bind interno), e
   2. houver um segredo compartilhado proxy↔Flask (FILAMENTDB_PROXY_SECRET).
-Sem isso, a autorização é apenas cosmética. Ver next-steps.md.
+Sem isso, a autorização é apenas cosmética.
 
 Precedência de decisão em escrita (quando a flag está ON):
   1. Se PROXY_SECRET configurado e o header secreto não bate  → 403 (fail-closed)

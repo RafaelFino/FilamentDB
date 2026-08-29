@@ -5,9 +5,9 @@ Este é o documento canônico: reúne o **porquê** de cada escolha e o **o quê
 falta fazer, para que qualquer sessão futura (ou pessoa) retome sem reconstruir
 o contexto.
 
-> Features do **servidor** (ex: autorização de escrita do estoque) ficam em
-> [`next-steps.md`](next-steps.md), não aqui. A autorização vale tanto para o
-> web quanto para o mobile.
+> Este documento cobre só o app. A autorização de escrita do estoque é feita no
+> servidor (`src/auth.py`, gate atrás do Pangolin) e vale tanto para o web
+> quanto para o mobile.
 
 - **Escopo**: app Android que dá acesso ao FilamentDB pelo celular.
 - **Uso principal**: controle de **estoque** e ver **simulações**.
