@@ -108,8 +108,8 @@
     "marketplace": 0,
     "url": "https://www.filamentos3dbrasil.com.br/produtos/filamento-pla-premium-1kg-f3d-1oeon/",
     "title": "Filamento PLA Premium 1Kg F3D",
-    "price": 99.9,
-    "original_price": null,
+    "price": 89.91,
+    "original_price": 99.9,
     "color_name": "Preto",
     "seller": "F3D",
     "filament_key": "pla|f3d|premium line",
@@ -117,7 +117,7 @@
     "unit_weight_g": 1000,
     "available": 1,
     "source": "full-snapshot-2026-08-29",
-    "notes": "Coleta completa; preço observado em 29/08/2026."
+    "notes": "Coleta completa; preço Pix observado em 29/08/2026."
   },
   {
     "material": "PETG",
@@ -128,8 +128,8 @@
     "marketplace": 0,
     "url": "https://www.filamentos3dbrasil.com.br/produtos/filamento-petg-1kg-f3d-b3bkx/",
     "title": "Filamento PETG 1Kg F3D",
-    "price": 89.99,
-    "original_price": null,
+    "price": 80.99,
+    "original_price": 89.99,
     "color_name": "White",
     "seller": "F3D",
     "filament_key": "petg|f3d|industrial line",
@@ -137,7 +137,7 @@
     "unit_weight_g": 1000,
     "available": 1,
     "source": "full-snapshot-2026-08-29",
-    "notes": "Coleta completa; preço observado em 29/08/2026."
+    "notes": "Coleta completa; preço Pix observado em 29/08/2026."
   },
   {
     "material": "PLA",
