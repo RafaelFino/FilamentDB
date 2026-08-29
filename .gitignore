@@ -1,10 +1,8 @@
 # Python
 __pycache__/
-*.py[codz]
-*$py.class
+*.py[cod]
 *.so
 *.egg-info/
-*.egg
 dist/
 build/
 .eggs/
@@ -20,6 +18,9 @@ filament.db
 
 # Inventory database (user data, created/managed at runtime by the app)
 inventory.db
+
+# Price intelligence database (runtime historical data; schema is versioned in price-history/schema.sql)
+price-history.db
 
 # Database backups (created at runtime by update-server.sh)
 backups/
