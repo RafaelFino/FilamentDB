@@ -29,7 +29,7 @@ CONFIG_ENV_PATH = ROOT_DIR / "config.env"
 # nem no config.env. Todos relativos à raiz do projeto — o mesmo lugar que os
 # módulos já usavam, então o comportamento sem config.env permanece idêntico.
 _DEFAULTS = {
-    "FILAMENT_DB_PATH": str(ROOT_DIR / "filament.db"),
+    "DB_PATH": str(ROOT_DIR / "filament.db"),
     "FILAMENT_INVENTORY_DB_PATH": str(ROOT_DIR / "inventory.db"),
     "FILAMENTDB_BACKUP_DIR": str(ROOT_DIR / "backups"),
     "FILAMENTDB_BUILD_INFO_PATH": str(ROOT_DIR / "build-info.env"),

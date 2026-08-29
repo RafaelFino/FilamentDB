@@ -39,7 +39,7 @@ HOST="${HOST:-0.0.0.0}"
 FLASK_DEBUG="${FLASK_DEBUG:-0}"
 VENV_DIR="${VENV_DIR:-.venv}"
 # Default absoluto (não relativo): garante o mesmo arquivo independente do cwd.
-DB_PATH="${FILAMENT_DB_PATH:-${SCRIPT_DIR}/filament.db}"
+DB_PATH="${DB_PATH:-${SCRIPT_DIR}/filament.db}"
 
 # ---------------------------------------------------------------------------
 # 1. Python 3
@@ -90,7 +90,7 @@ if db_valid; then
     info "Banco existente e válido: ${DB_PATH}"
 else
     info "Banco ausente ou inválido. Executando build..."
-    FILAMENT_DB_PATH="$DB_PATH" python3 build.py
+    DB_PATH="$DB_PATH" python3 build.py
 fi
 
 # ---------------------------------------------------------------------------
@@ -101,7 +101,7 @@ info "  (Ctrl+C para parar)"
 echo ""
 
 export FLASK_DEBUG
-export FILAMENT_DB_PATH="$DB_PATH"
+export DB_PATH="$DB_PATH"
 export PORT="$PORT"
 
 exec python3 -m src.app

@@ -7,7 +7,7 @@ from src import config  # carrega config.env no os.environ antes de resolver pat
 
 config.load()
 
-DB_PATH = os.environ.get("FILAMENT_DB_PATH", str(Path(__file__).resolve().parent.parent / "filament.db"))
+DB_PATH = os.environ.get("DB_PATH", str(Path(__file__).resolve().parent.parent / "filament.db"))
 
 
 def get_db_connection():
