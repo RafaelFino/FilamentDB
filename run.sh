@@ -99,6 +99,10 @@ for path in sorted((root / "filament-data").glob("*.yaml")):
 expected = h.hexdigest()
 try:
     conn = sqlite3.connect(db_path)
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(filament_profiles)").fetchall()}
+    if "filament_key" not in cols:
+        conn.close()
+        raise SystemExit(1)
     conn.execute("SELECT 1 FROM filament_profiles LIMIT 1")
     actual = conn.execute("SELECT value FROM build_metadata WHERE key='catalog_source_hash'").fetchone()[0]
     conn.close()
