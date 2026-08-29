@@ -1835,15 +1835,75 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// âââ Prices view ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-let priceData=null;let priceLoaded=false;
-const priceGrid=document.getElementById('price-grid');const priceMaterial=document.getElementById('price-material');const priceManufacturer=document.getElementById('price-manufacturer');const priceSort=document.getElementById('price-sort');
-function priceMoney(v){return v==null?'â':Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}function priceEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function populatePriceFilters(){const mats=[...new Set(priceData.items.map(x=>x.material_name))].sort();const mfrs=[...new Set(priceData.items.map(x=>x.manufacturer_name))].sort();priceMaterial.innerHTML='<option value="">Material: Todos</option>'+mats.map(x=>`<option>${priceEsc(x)}</option>`).join('');priceManufacturer.innerHTML='<option value="">Fabricante: Todos</option>'+mfrs.map(x=>`<option>${priceEsc(x)}</option>`).join('');}
-function renderPrices(){if(!priceData)return;let items=[...priceData.items];if(priceMaterial.value)items=items.filter(x=>x.material_name===priceMaterial.value);if(priceManufacturer.value)items=items.filter(x=>x.manufacturer_name===priceManufacturer.value);if(priceSort.value==='price')items.sort((a,b)=>a.best_price-b.best_price);else if(priceSort.value==='name')items.sort((a,b)=>(a.commercial_name||'').localeCompare(b.commercial_name||''));else items.sort((a,b)=>b.discount_pct-a.discount_pct||a.best_price-b.best_price);document.getElementById('price-tracked').textContent=priceData.summary.tracked_count;document.getElementById('price-priced').textContent=priceData.summary.priced_count;document.getElementById('price-offers').textContent=priceData.summary.offer_count;document.getElementById('price-best').textContent=items[0]?priceMoney(items[0].best_price):'â';if(!items.length){priceGrid.innerHTML='<div class="empty">Nenhuma oferta encontrada para os filtros.</div>';return;}priceGrid.innerHTML=items.map(x=>`<article class="price-card"><div class="price-card-head"><div class="price-card-title">${priceEsc(x.commercial_name||x.profile_name)}</div><div class="price-card-sub">${priceEsc(x.material_name)} Â· ${priceEsc(x.manufacturer_name)}${x.line?' Â· '+priceEsc(x.line):''}</div></div><div class="price-card-body"><div class="price-best"><div><div class="price-value">${priceMoney(x.best_price)}</div><div class="price-unit">melhor preÃ§o observado</div></div><div class="price-opportunity">${x.discount_pct>0?'â '+x.discount_pct.toFixed(0)+'% vs. histÃ³rico':'preÃ§o de referÃªncia'}</div></div><div class="price-meta"><div><span class="lbl">Loja</span><span class="val">${priceEsc(x.best_store)}</span></div><div><span class="lbl">Mediana</span><span class="val">${priceMoney(x.median_price)}</span></div><div><span class="lbl">MÃ­nimo histÃ³rico</span><span class="val">${priceMoney(x.min_price)}</span></div><div><span class="lbl">Ofertas</span><span class="val">${x.offer_count}</span></div></div><div class="price-actions"><a class="btn btn-primary" href="${priceEsc(x.best_url)}" target="_blank" rel="noopener">Ver melhor oferta â</a><button class="btn btn-ghost price-history-btn" data-id="${x.id}">HistÃ³rico</button></div><div class="price-detail" id="price-detail-${x.id}" style="display:none"></div></div></article>`).join('');priceGrid.querySelectorAll('.price-history-btn').forEach(btn=>btn.addEventListener('click',()=>togglePriceHistory(Number(btn.dataset.id))));}
-async function togglePriceHistory(id){const el=document.getElementById(`price-detail-${id}`);if(!el)return;if(el.dataset.loaded){el.style.display=el.style.display==='none'?'block':'none';return;}el.innerHTML='<div class="muted-txt">Carregando histÃ³rico...</div>';el.style.display='block';try{const r=await fetch(`/api/prices/${id}/history`);const rows=await r.json();el.innerHTML=rows.length?rows.map(x=>`<div class="price-history-row"><span>${new Date(x.collected_at).toLocaleDateString('pt-BR')} Â· ${priceEsc(x.store)}</span><strong>${priceMoney(x.price)}</strong></div>`).join(''):'<div class="muted-txt">Sem histÃ³rico.</div>';el.dataset.loaded='1';}catch(e){el.innerHTML='<div class="muted-txt">Erro ao carregar histÃ³rico.</div>';}}
-async function loadPrices(){if(priceLoaded)return;try{const r=await fetch('/api/prices');if(!r.ok)throw new Error(`HTTP ${r.status}`);priceData=await r.json();priceLoaded=true;populatePriceFilters();renderPrices();}catch(e){priceGrid.innerHTML='<div class="empty">NÃ£o foi possÃ­vel carregar o histÃ³rico de preÃ§os.</div>';console.error('Failed to load prices',e);}}
-[priceMaterial,priceManufacturer,priceSort].forEach(el=>el?.addEventListener('change',renderPrices));
+// ─── Prices view ────────────────────────────────────────────────────────────
+let priceData = null;
+let priceLoaded = false;
+const priceGrid = document.getElementById('price-grid');
+const priceMaterial = document.getElementById('price-material');
+const priceManufacturer = document.getElementById('price-manufacturer');
+const priceSort = document.getElementById('price-sort');
+
+function priceMoney(value) {
+    return value == null ? '—' : Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+function priceEsc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+function populatePriceFilters() {
+    const mats = [...new Set(priceData.items.map(x => x.material_name).filter(Boolean))].sort((a,b) => a.localeCompare(b,'pt-BR'));
+    const mfrs = [...new Set(priceData.items.map(x => x.manufacturer_name).filter(Boolean))].sort((a,b) => a.localeCompare(b,'pt-BR'));
+    priceMaterial.innerHTML = '<option value="">Material: Todos</option>' + mats.map(x => `<option value="${priceEsc(x)}">${priceEsc(x)}</option>`).join('');
+    priceManufacturer.innerHTML = '<option value="">Fabricante: Todos</option>' + mfrs.map(x => `<option value="${priceEsc(x)}">${priceEsc(x)}</option>`).join('');
+}
+function renderPriceOffer(offer) {
+    const total = offer.total_price ?? offer.price;
+    const shipping = offer.shipping != null ? ` · frete ${priceMoney(offer.shipping)}` : '';
+    return `<div class="price-offer"><div><div class="price-store">${priceEsc(offer.store)}</div><div class="price-title" title="${priceEsc(offer.title)}">${priceEsc(offer.title || 'Oferta')}</div><a class="price-offer-link" href="${priceEsc(offer.url)}" target="_blank" rel="noopener">Abrir oferta ↗</a></div><div class="price-offer-price">${priceMoney(total)}${shipping}</div></div>`;
+}
+function renderPrices() {
+    if (!priceData) return;
+    let items = [...priceData.items];
+    if (priceMaterial.value) items = items.filter(x => x.material_name === priceMaterial.value);
+    if (priceManufacturer.value) items = items.filter(x => x.manufacturer_name === priceManufacturer.value);
+    if (priceSort.value === 'price') items.sort((a,b) => (a.best_price ?? Infinity) - (b.best_price ?? Infinity));
+    else if (priceSort.value === 'name') items.sort((a,b) => (a.commercial_name || a.profile_name || '').localeCompare(b.commercial_name || b.profile_name || '', 'pt-BR'));
+    else items.sort((a,b) => (b.discount_pct || 0) - (a.discount_pct || 0) || (a.best_price ?? Infinity) - (b.best_price ?? Infinity));
+
+    document.getElementById('price-tracked').textContent = priceData.summary.tracked_count;
+    document.getElementById('price-priced').textContent = priceData.summary.priced_count;
+    document.getElementById('price-offers').textContent = priceData.summary.offer_count;
+    const best = items.find(x => x.best_price != null);
+    document.getElementById('price-best').textContent = best ? priceMoney(best.best_price) : '—';
+
+    if (!items.length) { priceGrid.innerHTML = '<div class="price-empty">Nenhum filamento encontrado para os filtros.</div>'; return; }
+
+    let lastGroup = '';
+    const rows = items.map(x => {
+        const group = `${x.manufacturer_name} · ${x.material_name}`;
+        const groupHtml = group !== lastGroup ? `<div class="price-report-group">${priceEsc(group)}</div>` : '';
+        lastGroup = group;
+        const discount = x.discount_pct > 0 ? `↓ ${x.discount_pct.toFixed(0)}%` : '—';
+        const offers = x.offers?.length ? x.offers.map(renderPriceOffer).join('') : '<span class="price-muted">Nenhuma oferta encontrada</span>';
+        return `${groupHtml}<div class="price-report-row"><div><div class="price-filament-name">${priceEsc(x.commercial_name || x.profile_name)}</div><div class="price-filament-meta">ID ${x.id} · ${priceEsc(x.profile_name || '')}${x.line ? ` · ${priceEsc(x.line)}` : ''}${x.line_finish ? ` · ${priceEsc(x.line_finish)}` : ''}</div></div><div class="price-number">${priceMoney(x.best_price)}</div><div class="price-number">${priceMoney(x.median_price)}</div><div class="price-number">${priceMoney(x.min_price)}</div><div class="price-opportunity">${discount}</div><div class="price-offers">${offers}</div></div>`;
+    }).join('');
+
+    priceGrid.innerHTML = `<div class="price-report"><div class="price-report-head"><div>Filamento</div><div>Melhor preço</div><div>Mediana</div><div>Mínimo histórico</div><div>Oportunidade</div><div>Ofertas encontradas</div></div>${rows}</div>`;
+}
+async function loadPrices() {
+    if (priceLoaded) return;
+    try {
+        const response = await fetch('/api/prices');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        priceData = await response.json();
+        priceLoaded = true;
+        populatePriceFilters();
+        renderPrices();
+    } catch (error) {
+        priceGrid.innerHTML = '<div class="price-empty">Não foi possível carregar o histórico de preços.</div>';
+        console.error('Failed to load prices', error);
+    }
+}
+[priceMaterial, priceManufacturer, priceSort].forEach(el => el?.addEventListener('change', renderPrices));
 
 // ─── Inventory view — Controle de estoque ─────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
