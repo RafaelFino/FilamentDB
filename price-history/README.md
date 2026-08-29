@@ -2,42 +2,32 @@
 
 Banco separado para inteligência de preços do FilamentDB.
 
-## Princípio
+## Baseline inicial
 
-`filament.db` é a fonte canônica do catálogo. `price-history.db` guarda somente:
+A baseline de 29/08/2026 contém somente ofertas com **URL direta verificável**. As ofertas são ligadas ao catálogo exclusivamente por `filament_id`; os nomes dos perfis são usados apenas pelo script para resolver o ID atual do `filament.db` durante a carga inicial.
 
-- lojas e marketplaces;
-- ofertas e URLs diretas;
-- snapshots de preço;
-- disponibilidade, frete e cupons quando coletados;
-- execuções/coletas.
-
-A ligação é **exclusivamente por `filament_id`**, correspondente a `filament_profiles.id` no `filament.db`.
-
-SQLite não permite uma foreign key entre dois arquivos de banco separados; por isso o vínculo é lógico e `scripts/price_history.py` valida que o ID existe e que `tracking=1` antes de inserir uma oferta.
+Ofertas sem `filament_id` correspondente no catálogo não são inventadas nem inseridas. Isso é especialmente relevante para fontes como eSUN que ainda não possuem perfil no catálogo.
 
 ## Inicialização
-
-Depois de gerar o catálogo:
 
 ```bash
 python3 scripts/price_history.py
 ```
 
-Para criar somente o schema:
+Somente schema:
 
 ```bash
 python3 scripts/price_history.py --init-only
 ```
 
-O arquivo `price-history.db` é runtime data e não deve ser versionado no Git.
+O `price-history.db` é runtime data e permanece fora do Git. A carga inicial versionada fica no código do script para ser reproduzível.
 
 ## Modelo
 
 - `stores`: origem da oferta.
-- `offers`: uma oferta persistente por URL/loja, ligada ao `filament_id`.
-- `price_snapshots`: histórico imutável das observações de preço.
+- `offers`: oferta persistente por loja/URL, ligada ao `filament_id`.
+- `price_snapshots`: histórico imutável de observações.
 - `collection_runs`: auditoria das coletas.
-- `current_offers`: view com o snapshot mais recente de cada oferta ativa.
+- `current_offers`: view do snapshot mais recente.
 
 Não duplicamos marca, material, linha, acabamento, propriedades ou variantes do catálogo.
