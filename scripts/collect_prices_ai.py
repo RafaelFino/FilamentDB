@@ -188,7 +188,6 @@ def collect_batch(client, catalog, sources, today):
         input=build_prompt(catalog, sources, today),
         tool_choice="auto",
         tools=[{"type": "browser_search"}],
-        reasoning_effort="low",
         max_output_tokens=4000,
     )
     research_text = research.output_text
@@ -205,7 +204,6 @@ def collect_batch(client, catalog, sources, today):
         model=MODEL,
         input=format_prompt,
         text={"format": {"type": "json_schema", "name": "price_batch", "strict": True, "schema": schema()}},
-        reasoning_effort="low",
         max_output_tokens=6000,
     )
     if not response.output_text:
