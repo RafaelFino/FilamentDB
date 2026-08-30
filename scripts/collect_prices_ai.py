@@ -146,7 +146,7 @@ class OpenRouterProvider(Provider):
 
 
 def providers():
-    return [GroqProvider(), GeminiProvider(), OpenAIProvider(), OpenRouterProvider()]
+    return [GroqProvider(), OpenRouterProvider(), OpenAIProvider(), GeminiProvider()]
 
 
 def load_sources():
