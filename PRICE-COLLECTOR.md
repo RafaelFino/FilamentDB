@@ -1,6 +1,12 @@
 # PRICE-COLLECTOR.md — contrato do agente de coleta
 
-Este documento define o comportamento do agente que, futuramente, fará a coleta diária. O agente **não escreve `price-history.db`**. Ele lê o catálogo, pesquisa as fontes e publica um snapshot JSON no Git.
+Este documento define o comportamento do agente que faz a coleta diária. O agente não escreve `price-history.db`. Ele lê o catálogo, pesquisa as fontes e publica um snapshot JSON no Git.
+
+## Execução
+
+A implementação está em `scripts/collect_prices_ai.py` e é executada pelo workflow `.github/workflows/price-collector.yml`.
+
+O workflow usa a OpenAI Responses API com Web Search e Structured Outputs. O modelo padrão é `gpt-5.6-luna`; pode ser alterado por `OPENAI_PRICE_MODEL`.
 
 ## Entrada
 
@@ -9,12 +15,6 @@ Este documento define o comportamento do agente que, futuramente, fará a coleta
 3. Usar exatamente o `filament_key` existente.
 4. Consultar variantes/cores relevantes.
 5. Consultar as fontes habilitadas em `data/price-sources.json`.
-
-## Escopo atual
-
-Priorizar PLA e PETG de alta qualidade, incluindo Premium, Matte/Velvet e linhas High Speed/High Fluidity equivalentes. Fabricantes prioritários: Voolt3D, 3D Lab, F3D, SUNLU, eSUN, Elegoo e Creality.
-
-Para SUNLU, `Meta`, `Matte`, `High Speed` e `High Speed Matte` são linhas distintas e nunca devem ser normalizadas entre si.
 
 ## Regra principal: todas as ofertas
 
@@ -31,23 +31,17 @@ Antes de gravar uma oferta, validar:
 - URL aponta para a oferta/produto, e não para uma página genérica de busca;
 - preço e moeda são claros.
 
-Nunca associar uma oferta Elegoo a Voolt3D, 3D Lab ou outro fabricante apenas por similaridade textual.
+O código também rejeita ofertas com `filament_key` desconhecido, preço/peso/quantidade inválidos ou fabricante incompatível.
 
 ## Quantidade e preço
 
 Registrar sempre `quantity` e `unit_weight_g`. Registrar explicitamente `price_basis`: `unit` se o preço é por rolo/unidade e `total` se é o preço do pacote inteiro. Registrar também `total_price`.
 
-Exemplos:
-
-- `1 × 1kg por R$ 109`: `quantity=1`, `price_basis=total`, `total_price=109`.
-- `3 × 1kg por R$ 299`: `quantity=3`, `price_basis=total`, `total_price=299`.
-- `10+ rolos a R$ 88,10 por rolo`: `quantity=10`, `price_basis=unit`, `total_price=881`.
+Nunca converter um preço por uma constante arbitrária. O agente deve preservar o preço observado e o peso observado; o cálculo de R$/kg pertence à aplicação.
 
 ## Resultado negativo
 
-A coleta também deve registrar o que não encontrou. Para cada fonte relevante, usar `collection` com `found`, `not_found`, `partial` ou `error` e explicar a razão em `notes`.
-
-`not_found` não significa que a busca não foi feita. Significa que a pesquisa foi realizada e não resultou em uma oferta direta confiável.
+A coleta também registra o que não encontrou. Para cada fonte relevante, usar `collection` com `found`, `not_found`, `partial` ou `error` e explicar a razão em `notes`.
 
 ## Saída
 
@@ -55,9 +49,7 @@ Gerar exatamente um arquivo diário:
 
 `data/price-data/YYYY-MM-DD.json`
 
-O JSON deve conter `schema_version`, `snapshot_date`, `collected_at`, `collector`, `offers` e `collection`. Validar JSON, chaves, duplicidades e URLs antes do commit.
-
-O agente deve fazer commit/push apenas depois de validar o snapshot. O servidor fará o restante no deploy.
+Validar JSON, chaves, duplicidades, URLs, fabricante, preço, quantidade, peso e `total_price` antes do commit.
 
 ## O agente não deve
 
@@ -67,4 +59,5 @@ O agente deve fazer commit/push apenas depois de validar o snapshot. O servidor 
 - substituir todas as ofertas pela vencedora;
 - criar novos `filament_key`;
 - confundir Meta com Matte;
-- confundir fabricante da oferta com fabricante da loja/marketplace.
+- confundir fabricante da oferta com fabricante da loja/marketplace;
+- usar página de resultados de busca como URL da oferta.
