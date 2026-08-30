@@ -23,7 +23,7 @@ CATALOG_DB = ROOT / "filament.db"
 SOURCES_PATH = ROOT / "data" / "price-sources.json"
 SNAPSHOT_DIR = ROOT / "data" / "price-data"
 TZ = ZoneInfo("America/Sao_Paulo")
-MODEL = os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
+MODEL = os.getenv("GROQ_MODEL", "groq/compound-mini")
 BATCH_SIZE = int(os.getenv("PRICE_AGENT_BATCH_SIZE", "6"))
 
 
@@ -184,23 +184,20 @@ CATALOG
 
 def collect_batch(client, catalog, sources, today):
     allowed = sorted({s["domain"] for s in sources} | {"amazon.com.br"})
-    response = client.responses.create(
+    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=os.environ["GROQ_API_KEY"])
+    response = client.chat.completions.create(
         model=MODEL,
-        store=False,
-        tools=[{
-            "type": "web_search",
-            "filters": {"allowed_domains": allowed},
-            "search_context_size": "high",
-            "user_location": {"type": "approximate", "country": "BR", "city": "Sao Paulo", "region": "SP", "timezone": "America/Sao_Paulo"},
-        }],
-        tool_choice="required",
-        max_output_tokens=30000,
-        input=build_prompt(catalog, sources, today),
-        text={"format": {"type": "json_schema", "name": "price_batch", "strict": True, "schema": schema()}},
+        messages=[
+            {"role": "system", "content": "Return ONLY valid JSON matching the requested schema. Do not use markdown fences or explanatory text."},
+            {"role": "user", "content": build_prompt(catalog, sources, today) + "\n\nReturn JSON with exactly this structure and no extra keys:\n" + json.dumps(schema(), ensure_ascii=False)},
+        ],
+        response_format={"type": "json_object"},
+        max_tokens=8192,
     )
-    if not response.output_text:
-        raise RuntimeError("A API retornou resposta sem output_text")
-    return json.loads(response.output_text)
+    content = response.choices[0].message.content
+    if not content:
+        raise RuntimeError("A API Groq retornou resposta sem conteúdo")
+    return json.loads(content)
 
 
 def validate_and_merge(parts, catalog, sources):
@@ -249,7 +246,6 @@ def main():
     path = SNAPSHOT_DIR / f"{today}.json"
     if path.exists() and not os.getenv("ALLOW_SNAPSHOT_REPLACE"):
         raise RuntimeError(f"Snapshot já existe: {path}. Use ALLOW_SNAPSHOT_REPLACE=1 para correção deliberada.")
-    client = OpenAI()
     parts = []
     batches = list(chunked(catalog, BATCH_SIZE))
     print(f"[INFO] Catálogo monitorado: {len(catalog)} perfis; lotes: {len(batches)}; modelo: {MODEL}")
