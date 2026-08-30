@@ -46,7 +46,7 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GROQ_MODEL: ${{ vars.GROQ_PRICE_MODEL || 'openai/gpt-oss-20b' }}
-          PRICE_AGENT_BATCH_SIZE: ${{ vars.PRICE_AGENT_BATCH_SIZE || '4' }}
+          PRICE_AGENT_BATCH_SIZE: ${{ vars.PRICE_AGENT_BATCH_SIZE || '2' }}
           ALLOW_SNAPSHOT_REPLACE: ${{ inputs.replace && '1' || '' }}
         run: |
           if [ -n "${{ inputs.date }}" ]; then

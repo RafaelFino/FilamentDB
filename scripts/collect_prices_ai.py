@@ -24,7 +24,7 @@ SOURCES_PATH = ROOT / "data" / "price-sources.json"
 SNAPSHOT_DIR = ROOT / "data" / "price-data"
 TZ = ZoneInfo("America/Sao_Paulo")
 MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
-BATCH_SIZE = int(os.getenv("PRICE_AGENT_BATCH_SIZE", "4"))
+BATCH_SIZE = int(os.getenv("PRICE_AGENT_BATCH_SIZE", "2"))
 
 
 def load_sources():
@@ -183,32 +183,22 @@ CATALOG
 
 
 def collect_batch(client, catalog, sources, today):
-    research = client.responses.create(
+    prompt = build_prompt(catalog, sources, today) + "\n\nJSON CONTRACT: Return one JSON object with exactly two top-level keys: offers (array) and collection (array). Each offer must contain the exact fields required by the FilamentDB schema; each collection item must contain filament_key, color, store, status, offers_found, and notes. Return JSON only."
+    response = client.chat.completions.create(
         model=MODEL,
-        input=build_prompt(catalog, sources, today),
-        tool_choice="auto",
+        messages=[{"role": "user", "content": prompt}],
         tools=[{"type": "browser_search"}],
-        max_output_tokens=4000,
+        tool_choice="required",
+        response_format={"type": "json_object"},
+        reasoning_effort="low",
+        reasoning_format="hidden",
+        max_completion_tokens=4000,
+        temperature=0.2,
     )
-    research_text = research.output_text
-    if not research_text:
-        raise RuntimeError("A API Groq retornou pesquisa sem conteúdo")
-    format_prompt = (
-        "You are the final data formatter for FilamentDB.\n"
-        "Using ONLY the research below, return JSON matching the supplied schema exactly. "
-        "Do not invent facts. Preserve filament_key exactly. Include all relevant verified offers and explicit negative/partial results. "
-        "The API will enforce the JSON schema, so output only the requested fields.\n\n"
-        "RESEARCH:\n" + research_text
-    )
-    response = client.responses.create(
-        model=MODEL,
-        input=format_prompt,
-        text={"format": {"type": "json_schema", "name": "price_batch", "strict": True, "schema": schema()}},
-        max_output_tokens=6000,
-    )
-    if not response.output_text:
-        raise RuntimeError("A API Groq retornou resposta formatada sem conteúdo")
-    return json.loads(response.output_text)
+    content = response.choices[0].message.content
+    if not content:
+        raise RuntimeError("A API Groq retornou resposta sem conteúdo")
+    return json.loads(content)
 
 
 def validate_and_merge(parts, catalog, sources):
