@@ -71,7 +71,7 @@ class GroqProvider(Provider):
         return self.client is not None
     def collect(self, prompt):
         try:
-            response = self.client.chat.completions.create(model=GROQ_MODEL, messages=[{"role":"user","content":prompt}], tools=[{"type":"browser_search"}], tool_choice="required", response_format={"type":"json_object"}, reasoning_effort="low", max_completion_tokens=4000, temperature=0.2)
+            response = self.client.chat.completions.create(model=GROQ_MODEL, messages=[{"role":"user","content":prompt}], tools=[{"type":"browser_search"}], tool_choice="required", reasoning_effort="low", max_completion_tokens=4000, temperature=0.2)
             content = response.choices[0].message.content
             if not content: raise ProviderError("Groq retornou resposta sem conteúdo")
             return parse_json_response(content)
