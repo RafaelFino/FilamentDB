@@ -189,7 +189,8 @@ def collect_batch(client, catalog, sources, today):
         store=False,
         tools=[{
             "type": "web_search",
-            "filters": {"allowed_domains": allowed, "search_context_size": "high"},
+            "filters": {"allowed_domains": allowed},
+            "search_context_size": "high",
             "user_location": {"type": "approximate", "country": "BR", "city": "Sao Paulo", "region": "SP", "timezone": "America/Sao_Paulo"},
         }],
         tool_choice="required",
