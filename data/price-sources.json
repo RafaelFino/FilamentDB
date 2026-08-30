@@ -61,5 +61,12 @@
     "marketplace": true,
     "enabled": true,
     "scope": "marketplace"
+  },
+  {
+    "name": "Creality Brasil",
+    "domain": "crealitybrasil.com.br",
+    "marketplace": false,
+    "enabled": true,
+    "scope": "retailer"
   }
 ]
