@@ -188,7 +188,8 @@ def collect_batch(client, catalog, sources, today):
         input=build_prompt(catalog, sources, today),
         tool_choice="auto",
         tools=[{"type": "browser_search"}],
-        max_output_tokens=6000,
+        reasoning_effort="low",
+        max_output_tokens=4000,
     )
     research_text = research.output_text
     if not research_text:
@@ -196,14 +197,16 @@ def collect_batch(client, catalog, sources, today):
     format_prompt = (
         "You are the final data formatter for FilamentDB.\n"
         "Using ONLY the research below, return JSON matching the supplied schema exactly. "
-        "Do not invent facts. Preserve filament_key exactly. Include all relevant verified offers and explicit negative/partial results.\n\n"
-        "RESEARCH:\n" + research_text + "\n\nSCHEMA:\n" + json.dumps(schema(), ensure_ascii=False)
+        "Do not invent facts. Preserve filament_key exactly. Include all relevant verified offers and explicit negative/partial results. "
+        "The API will enforce the JSON schema, so output only the requested fields.\n\n"
+        "RESEARCH:\n" + research_text
     )
     response = client.responses.create(
         model=MODEL,
         input=format_prompt,
         text={"format": {"type": "json_schema", "name": "price_batch", "strict": True, "schema": schema()}},
-        max_output_tokens=8192,
+        reasoning_effort="low",
+        max_output_tokens=6000,
     )
     if not response.output_text:
         raise RuntimeError("A API Groq retornou resposta formatada sem conteúdo")
