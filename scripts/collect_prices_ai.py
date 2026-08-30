@@ -247,6 +247,7 @@ def main():
     if path.exists() and not os.getenv("ALLOW_SNAPSHOT_REPLACE"):
         raise RuntimeError(f"Snapshot já existe: {path}. Use ALLOW_SNAPSHOT_REPLACE=1 para correção deliberada.")
     parts = []
+    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=os.environ["GROQ_API_KEY"])
     batches = list(chunked(catalog, BATCH_SIZE))
     print(f"[INFO] Catálogo monitorado: {len(catalog)} perfis; lotes: {len(batches)}; modelo: {MODEL}")
     for idx, batch in enumerate(batches, 1):
