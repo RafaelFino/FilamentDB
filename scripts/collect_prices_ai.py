@@ -23,7 +23,7 @@ CATALOG_DB = ROOT / "filament.db"
 SOURCES_PATH = ROOT / "data" / "price-sources.json"
 SNAPSHOT_DIR = ROOT / "data" / "price-data"
 TZ = ZoneInfo("America/Sao_Paulo")
-MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 BATCH_SIZE = int(os.getenv("PRICE_AGENT_BATCH_SIZE", "4"))
 
 
