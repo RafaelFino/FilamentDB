@@ -1,1 +1,65 @@
-PLACEHOLDER
+[
+  {
+    "name": "3D Lab",
+    "domain": "3dlab.com.br",
+    "marketplace": false,
+    "enabled": true,
+    "scope": "manufacturer"
+  },
+  {
+    "name": "Voolt3D",
+    "domain": "voolt3d.com.br",
+    "marketplace": false,
+    "enabled": true,
+    "scope": "manufacturer"
+  },
+  {
+    "name": "F3D",
+    "domain": "filamentos3dbrasil.com.br",
+    "marketplace": false,
+    "enabled": true,
+    "scope": "manufacturer"
+  },
+  {
+    "name": "eSUN Brasil",
+    "domain": "esunbrasil.com.br",
+    "marketplace": false,
+    "enabled": true,
+    "scope": "manufacturer"
+  },
+  {
+    "name": "Mercado Livre",
+    "domain": "mercadolivre.com.br",
+    "marketplace": true,
+    "enabled": true,
+    "scope": "marketplace"
+  },
+  {
+    "name": "Amazon.com.br",
+    "domain": "amazon.com.br",
+    "marketplace": true,
+    "enabled": true,
+    "scope": "marketplace"
+  },
+  {
+    "name": "Amazon.com",
+    "domain": "amazon.com",
+    "marketplace": true,
+    "enabled": true,
+    "scope": "marketplace"
+  },
+  {
+    "name": "Shopee",
+    "domain": "shopee.com.br",
+    "marketplace": true,
+    "enabled": true,
+    "scope": "marketplace"
+  },
+  {
+    "name": "AliExpress",
+    "domain": "aliexpress.com",
+    "marketplace": true,
+    "enabled": true,
+    "scope": "marketplace"
+  }
+]
