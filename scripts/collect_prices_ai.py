@@ -23,8 +23,8 @@ CATALOG_DB = ROOT / "filament.db"
 SOURCES_PATH = ROOT / "data" / "price-sources.json"
 SNAPSHOT_DIR = ROOT / "data" / "price-data"
 TZ = ZoneInfo("America/Sao_Paulo")
-MODEL = os.getenv("GROQ_MODEL", "groq/compound-mini")
-BATCH_SIZE = int(os.getenv("PRICE_AGENT_BATCH_SIZE", "6"))
+MODEL = os.getenv("GROQ_MODEL", "groq/compound")
+BATCH_SIZE = int(os.getenv("PRICE_AGENT_BATCH_SIZE", "4"))
 
 
 def load_sources():
