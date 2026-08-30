@@ -127,8 +127,9 @@ def register_routes(app):
 
     @app.get("/")
     def index():
+        tree = database.build_tree()
         process_tree = database.build_process_tree()
-        return render_template("dashboard.html", process_tree=process_tree)
+        return render_template("dashboard.html", tree=tree, process_tree=process_tree)
 
     @app.get("/inventory")
     def inventory_page():
