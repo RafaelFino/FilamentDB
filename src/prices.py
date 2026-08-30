@@ -273,7 +273,9 @@ def dashboard():
     for fil in catalog:
         current = cur.get(fil["filament_key"], [])
         historical = hist.get(fil["filament_key"], [])
+        retail = [o for o in current if max(int(o.get("quantity") or 1), 1) == 1]
         best = min(current, key=lambda o: o["price_per_kg"] if o["price_per_kg"] is not None else float("inf")) if current else None
+        best_retail = min(retail, key=lambda o: o["price_per_kg"] if o["price_per_kg"] is not None else float("inf")) if retail else None
         best_hist = min(historical, key=lambda h: h["price_per_kg"]) if historical else None
         historical_prices = [h["price_per_kg"] for h in historical]
         med = median(historical_prices) if historical_prices else None
@@ -281,13 +283,17 @@ def dashboard():
         opportunity = ((med - best["price_per_kg"]) / med * 100) if best and best["price_per_kg"] is not None and med else 0
         drops = [o["price_change_pct"] for o in current if o.get("price_change_pct") is not None and o["price_change_pct"] < 0]
         max_drop = abs(min(drops)) if drops else 0
+        retail_ref = best_retail or best
+        retail_total = None
+        if retail_ref:
+            retail_total = retail_ref.get("total_price") if retail_ref.get("total_price") is not None else retail_ref.get("price")
         items.append({
             **fil,
-            "best_price": best["price"] if best else None,
+            "best_price": float(retail_total) if retail_total is not None else None,
             "best_price_per_kg": best["price_per_kg"] if best else None,
-            "best_store": best["store"] if best else None,
-            "best_url": best["url"] if best else None,
-            "best_is_volume": best["is_volume_offer"] if best else False,
+            "best_store": (best_retail or best)["store"] if (best_retail or best) else None,
+            "best_url": (best_retail or best)["url"] if (best_retail or best) else None,
+            "best_is_volume": bool(best and best_retail and best["offer_id"] != best_retail["offer_id"]),
             "median_price": med,
             "min_price": mn,
             "best_historical_price_per_kg": best_hist["price_per_kg"] if best_hist else None,

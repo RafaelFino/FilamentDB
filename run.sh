@@ -120,6 +120,16 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 4.5 Snapshots de preços (fonte: data/price-data/*.json → price-history.db)
+# ---------------------------------------------------------------------------
+# JSONs versionados são a fonte de verdade; o SQLite é projeção para a UI.
+# O importer é idempotente: compara hash de cada arquivo e só reimporta se mudou.
+info "Sincronizando snapshots de preços..."
+if ! python3 scripts/import_price_data.py 2>&1 | sed 's/^/  /'; then
+    error "import_price_data.py falhou. Verifique data/price-data/*.json"
+fi
+
+# ---------------------------------------------------------------------------
 # 5. Servidor
 # ---------------------------------------------------------------------------
 info "Iniciando FilamentDB em http://${HOST}:${PORT}"

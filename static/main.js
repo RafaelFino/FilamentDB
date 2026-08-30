@@ -1857,13 +1857,17 @@ function populatePriceFilters() {
     priceManufacturer.innerHTML = '<option value="">Fabricante: Todos</option>' + mfrs.map(x => `<option value="${priceEsc(x)}">${priceEsc(x)}</option>`).join('');
 }
 function renderPriceOffer(offer) {
+    const qty = Math.max(Number(offer.quantity || 1), 1);
     const total = offer.total_price ?? offer.price;
     const shipping = offer.shipping != null ? ` · frete ${priceMoney(offer.shipping)}` : '';
     const color = offer.variant_color ? `<div class="price-color">Cor: ${priceEsc(offer.variant_color)}</div>` : '';
-    const volume = offer.is_volume_offer ? `<span class="price-volume">${offer.quantity || 1}× ${Number(offer.unit_weight_g || 1000).toLocaleString('pt-BR')}g</span>` : '';
+    const volume = offer.is_volume_offer ? `<span class="price-volume">${qty}× ${Number(offer.unit_weight_g || 1000).toLocaleString('pt-BR')}g</span>` : '';
     const unit = offer.price_per_kg != null ? `<div class="price-unit">${priceMoney(offer.price_per_kg)}/kg</div>` : '';
     const change = offer.price_change_pct != null ? `<div class="price-change ${offer.price_change_pct < 0 ? 'down' : 'up'}">${offer.price_change_pct < 0 ? '↓' : '↑'} ${Math.abs(offer.price_change_pct).toFixed(1)}% desde a coleta anterior</div>` : '';
-    return `<div class="price-offer"><div><div class="price-store">${priceEsc(offer.store)} ${volume}</div>${color}<div class="price-title" title="${priceEsc(offer.title)}">${priceEsc(offer.title || 'Oferta')}</div><a class="price-offer-link" href="${priceEsc(offer.url)}" target="_blank" rel="noopener">Abrir oferta ↗</a>${change}</div><div class="price-offer-price">${priceMoney(total)}${shipping}${unit}</div></div>`;
+    const isWholesale = qty > 1 || offer.price_basis === 'unit';
+    const priceMain = isWholesale && offer.price != null ? `${priceMoney(offer.price)}/rolo` : priceMoney(total);
+    const priceSub = isWholesale ? `<div class="price-unit">${priceMoney(total)} total${shipping}</div>` : shipping;
+    return `<div class="price-offer"><div><div class="price-store">${priceEsc(offer.store)} ${volume}</div>${color}<div class="price-title" title="${priceEsc(offer.title)}">${priceEsc(offer.title || 'Oferta')}</div><a class="price-offer-link" href="${priceEsc(offer.url)}" target="_blank" rel="noopener">Abrir oferta ↗</a>${change}</div><div class="price-offer-price">${priceMain}${isWholesale ? '' : priceSub}${unit}${isWholesale ? priceSub : ''}</div></div>`;
 }
 
 
@@ -1897,8 +1901,6 @@ function renderPrices() {
     document.getElementById('price-tracked').textContent = priceData.summary.tracked_count;
     document.getElementById('price-priced').textContent = priceData.summary.priced_count;
     document.getElementById('price-offers').textContent = priceData.summary.offer_count;
-    const best = items.find(x => x.best_price != null);
-    document.getElementById('price-best').textContent = best ? priceMoney(best.best_price) : '—';
 
     const collectionBox = document.getElementById('price-collection-summary');
     if (collectionBox) {
@@ -1924,7 +1926,8 @@ function renderPrices() {
         const discount = x.opportunity_pct > 0 ? `↓ ${x.opportunity_pct.toFixed(0)}%` : '—';
         const drop = x.max_drop_pct > 0 ? ` · queda ${x.max_drop_pct.toFixed(0)}%` : '';
         const offers = x.offers?.length ? x.offers.map(renderPriceOffer).join('') : '<span class="price-muted">Nenhuma oferta encontrada</span>';
-        return `${groupHtml}<div class="price-report-row"><div><div class="price-filament-name">${priceEsc(x.commercial_name || x.profile_name)}</div><div class="price-filament-meta">${priceEsc(x.filament_key || x.profile_name || '')} · ${priceEsc(x.profile_name || '')}${x.line ? ` · ${priceEsc(x.line)}` : ''}${x.line_finish ? ` · ${priceEsc(x.line_finish)}` : ''}</div></div><div class="price-number">${priceMoney(x.best_price)}<small>${x.best_price_per_kg != null ? priceMoney(x.best_price_per_kg) + '/kg' : ''}${x.best_is_volume ? ' · volume' : ''}</small></div><div class="price-number">${priceMoney(x.median_price)}<small>/kg histórico</small></div><div class="price-number">${priceMoney(x.best_historical_price_per_kg)}<small>melhor histórico/kg</small></div><div class="price-opportunity">${discount}${drop}</div><div class="price-offers">${offers}</div></div>`;
+        const volNote = x.best_is_volume ? ' · melhor/kg em atacado' : '';
+        return `${groupHtml}<div class="price-report-row"><div><div class="price-filament-name">${priceEsc(x.commercial_name || x.profile_name)}</div><div class="price-filament-meta">${priceEsc(x.filament_key || x.profile_name || '')} · ${priceEsc(x.profile_name || '')}${x.line ? ` · ${priceEsc(x.line)}` : ''}${x.line_finish ? ` · ${priceEsc(x.line_finish)}` : ''}</div></div><div class="price-number">${priceMoney(x.best_price)}<small>1 rolo${x.best_price_per_kg != null ? ` · ${priceMoney(x.best_price_per_kg)}/kg${volNote}` : ''}</small></div><div class="price-number">${priceMoney(x.median_price)}<small>/kg histórico</small></div><div class="price-number">${priceMoney(x.best_historical_price_per_kg)}<small>melhor histórico/kg</small></div><div class="price-opportunity">${discount}${drop}</div><div class="price-offers">${offers}</div></div>`;
     }).join('');
 
     priceGrid.innerHTML = `<div class="price-report"><div class="price-report-head"><div>Filamento</div><div>Melhor preço</div><div>Mediana</div><div>Melhor histórico/kg</div><div>Oportunidade</div><div>Ofertas encontradas</div></div>${rows}</div>${renderCollectionLog(priceData.collection_log)}`;
