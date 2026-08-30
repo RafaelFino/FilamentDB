@@ -23,8 +23,87 @@ CATALOG_DB = ROOT / "filament.db"
 SOURCES_PATH = ROOT / "data" / "price-sources.json"
 SNAPSHOT_DIR = ROOT / "data" / "price-data"
 TZ = ZoneInfo("America/Sao_Paulo")
-MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 BATCH_SIZE = int(os.getenv("PRICE_AGENT_BATCH_SIZE", "2"))
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free")
+
+
+class ProviderError(RuntimeError):
+    pass
+
+
+class Provider:
+    name = "unknown"
+    def available(self):
+        return False
+    def collect(self, prompt):
+        raise NotImplementedError
+
+
+class GroqProvider(Provider):
+    name = "groq"
+    def __init__(self):
+        key = os.getenv("GROQ_API_KEY")
+        self.client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=key) if key else None
+    def available(self):
+        return self.client is not None
+    def collect(self, prompt):
+        try:
+            response = self.client.chat.completions.create(model=GROQ_MODEL, messages=[{"role":"user","content":prompt}], tools=[{"type":"browser_search"}], tool_choice="required", response_format={"type":"json_object"}, reasoning_effort="low", reasoning_format="hidden", max_completion_tokens=4000, temperature=0.2)
+            content = response.choices[0].message.content
+            if not content: raise ProviderError("Groq retornou resposta sem conteúdo")
+            return json.loads(content)
+        except Exception as exc:
+            raise ProviderError(f"Groq: {exc}") from exc
+
+
+class GeminiProvider(Provider):
+    name = "gemini"
+    def __init__(self):
+        key = os.getenv("GEMINI_API_KEY")
+        self.client = None
+        if key:
+            try:
+                from google import genai
+                from google.genai import types
+                self.client = genai.Client(api_key=key)
+                self.types = types
+            except Exception as exc:
+                print(f"[WARN] Gemini SDK indisponível: {exc}")
+    def available(self):
+        return self.client is not None
+    def collect(self, prompt):
+        try:
+            config = self.types.GenerateContentConfig(tools=[self.types.Tool(google_search=self.types.GoogleSearch())], response_mime_type="application/json")
+            response = self.client.models.generate_content(model=GEMINI_MODEL, contents=prompt, config=config)
+            content = response.text
+            if not content: raise ProviderError("Gemini retornou resposta sem conteúdo")
+            return json.loads(content)
+        except Exception as exc:
+            raise ProviderError(f"Gemini: {exc}") from exc
+
+
+class OpenRouterProvider(Provider):
+    name = "openrouter"
+    def __init__(self):
+        key = os.getenv("OPENROUTER_API_KEY")
+        self.enabled = os.getenv("OPENROUTER_ENABLE_WEB_SEARCH", "0") == "1"
+        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=key) if key and self.enabled else None
+    def available(self):
+        return self.client is not None
+    def collect(self, prompt):
+        try:
+            response = self.client.chat.completions.create(model=OPENROUTER_MODEL, messages=[{"role":"user","content":prompt}], plugins=[{"id":"web","max_results":5}], response_format={"type":"json_object"}, max_tokens=4000, temperature=0.2)
+            content = response.choices[0].message.content
+            if not content: raise ProviderError("OpenRouter retornou resposta sem conteúdo")
+            return json.loads(content)
+        except Exception as exc:
+            raise ProviderError(f"OpenRouter: {exc}") from exc
+
+
+def providers():
+    return [GroqProvider(), GeminiProvider(), OpenRouterProvider()]
 
 
 def load_sources():
@@ -34,7 +113,7 @@ def load_sources():
 
 def load_catalog():
     if not CATALOG_DB.exists():
-        raise RuntimeError(f"Catálogo ausente: {CATALOG_DB}")
+        raise RuntimeError(f"CatÃ¡logo ausente: {CATALOG_DB}")
     conn = sqlite3.connect(CATALOG_DB)
     conn.row_factory = sqlite3.Row
     rows = conn.execute("""
@@ -182,23 +261,9 @@ CATALOG
 """
 
 
-def collect_batch(client, catalog, sources, today):
+def collect_batch(provider, catalog, sources, today):
     prompt = build_prompt(catalog, sources, today) + "\n\nJSON CONTRACT: Return one JSON object with exactly two top-level keys: offers (array) and collection (array). Each offer must contain the exact fields required by the FilamentDB schema; each collection item must contain filament_key, color, store, status, offers_found, and notes. Return JSON only."
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        tools=[{"type": "browser_search"}],
-        tool_choice="required",
-        response_format={"type": "json_object"},
-        reasoning_effort="low",
-        reasoning_format="hidden",
-        max_completion_tokens=4000,
-        temperature=0.2,
-    )
-    content = response.choices[0].message.content
-    if not content:
-        raise RuntimeError("A API Groq retornou resposta sem conteúdo")
-    return json.loads(content)
+    return provider.collect(prompt)
 
 
 def validate_and_merge(parts, catalog, sources):
@@ -242,18 +307,32 @@ def main():
     sources = load_sources()
     catalog = load_catalog()
     if not catalog:
-        raise RuntimeError("Nenhum perfil PLA/PETG ativo foi encontrado no catálogo")
+        raise RuntimeError("Nenhum perfil PLA/PETG ativo foi encontrado no catÃ¡logo")
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
     path = SNAPSHOT_DIR / f"{today}.json"
     if path.exists() and not os.getenv("ALLOW_SNAPSHOT_REPLACE"):
-        raise RuntimeError(f"Snapshot já existe: {path}. Use ALLOW_SNAPSHOT_REPLACE=1 para correção deliberada.")
+        raise RuntimeError(f"Snapshot jÃ¡ existe: {path}. Use ALLOW_SNAPSHOT_REPLACE=1 para correÃ§Ã£o deliberada.")
     parts = []
-    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=os.environ["GROQ_API_KEY"])
+    provider_list = [p for p in providers() if p.available()]
+    if not provider_list:
+        raise RuntimeError("Nenhum provedor de IA com chave/configuração disponível")
     batches = list(chunked(catalog, BATCH_SIZE))
-    print(f"[INFO] Catálogo monitorado: {len(catalog)} perfis; lotes: {len(batches)}; modelo: {MODEL}")
+    print(f"[INFO] Catálogo monitorado: {len(catalog)} perfis; lotes: {len(batches)}; provedores: {', '.join(p.name for p in provider_list)}")
     for idx, batch in enumerate(batches, 1):
         print(f"[INFO] Pesquisando lote {idx}/{len(batches)}: {batch[0]['filament_key']} ... {batch[-1]['filament_key']}", flush=True)
-        parts.append(collect_batch(client, batch, sources, today))
+        last_error = None
+        start_idx = (idx - 1) % len(provider_list)
+        ordered = provider_list[start_idx:] + provider_list[:start_idx]
+        for provider in ordered:
+            try:
+                print(f"[INFO]   -> provedor {provider.name}", flush=True)
+                parts.append(collect_batch(provider, batch, sources, today))
+                break
+            except ProviderError as exc:
+                last_error = exc
+                print(f"[WARN]   -> {exc}", flush=True)
+        else:
+            raise RuntimeError(f"Todos os provedores falharam no lote {idx}: {last_error}")
     offers, collection = validate_and_merge(parts, catalog, sources)
     payload = {
         "schema_version": 2,
@@ -264,11 +343,11 @@ def main():
         "scope": {"tracked_profiles": len(catalog), "sources": [s["name"] for s in sources]},
         "collection": collection,
         "offers": offers,
-        "notes": "Coleta automatizada por pesquisa web com IA; somente ofertas diretamente verificáveis foram preservadas.",
+        "notes": "Coleta automatizada por pesquisa web com IA; somente ofertas diretamente verificÃ¡veis foram preservadas.",
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"[INFO] Snapshot escrito: {path}")
-    print(f"[INFO] Ofertas válidas: {len(offers)}; resultados de coleta: {len(collection)}")
+    print(f"[INFO] Ofertas vÃ¡lidas: {len(offers)}; resultados de coleta: {len(collection)}")
 
 
 if __name__ == "__main__":
