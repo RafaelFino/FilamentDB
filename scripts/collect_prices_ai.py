@@ -23,7 +23,7 @@ CATALOG_DB = ROOT / "filament.db"
 SOURCES_PATH = ROOT / "data" / "price-sources.json"
 SNAPSHOT_DIR = ROOT / "data" / "price-data"
 TZ = ZoneInfo("America/Sao_Paulo")
-BATCH_SIZE = int(os.getenv("PRICE_AGENT_BATCH_SIZE", "2"))
+BATCH_SIZE = int(os.getenv("PRICE_AGENT_BATCH_SIZE", "1"))
 GROQ_MODEL = os.getenv("GROQ_MODEL", "groq/compound-mini")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free")
@@ -137,7 +137,7 @@ class OpenRouterProvider(Provider):
         return self.client is not None
     def collect(self, prompt):
         try:
-            response = self.client.chat.completions.create(model=(OPENROUTER_MODEL + ":online" if not OPENROUTER_MODEL.endswith(":online") else OPENROUTER_MODEL), messages=[{"role":"user","content":prompt}], plugins=[{"id":"web","max_results":5}], response_format={"type":"json_object"}, max_tokens=4000, temperature=0.2)
+            response = self.client.chat.completions.create(model=(OPENROUTER_MODEL + ":online" if not OPENROUTER_MODEL.endswith(":online") else OPENROUTER_MODEL), messages=[{"role":"user","content":prompt}], tools=[{"type":"openrouter:web_search"}], response_format={"type":"json_object"}, max_tokens=4000, temperature=0.2)
             content = response.choices[0].message.content
             if not content: raise ProviderError("OpenRouter retornou resposta sem conteúdo")
             return parse_json_response(content)
