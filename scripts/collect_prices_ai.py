@@ -184,7 +184,7 @@ CATALOG
 
 def collect_batch(client, catalog, sources, today):
     research = client.responses.create(
-        model="openai/gpt-oss-120b",
+        model=MODEL,
         input=build_prompt(catalog, sources, today),
         tool_choice="auto",
         tools=[{"type": "browser_search"}],
@@ -200,7 +200,7 @@ def collect_batch(client, catalog, sources, today):
         "RESEARCH:\n" + research_text + "\n\nSCHEMA:\n" + json.dumps(schema(), ensure_ascii=False)
     )
     response = client.responses.create(
-        model="openai/gpt-oss-120b",
+        model=MODEL,
         input=format_prompt,
         text={"format": {"type": "json_schema", "name": "price_batch", "strict": True, "schema": schema()}},
         max_output_tokens=8192,
