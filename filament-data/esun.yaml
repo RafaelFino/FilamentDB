@@ -6,6 +6,7 @@ manufacturer:
     Fabricante internacional de filamentos para impressão 3D. Para o mercado brasileiro,
     há distribuição autorizada pela Esun Brasil e presença em marketplaces como Mercado Livre.
     Dados de produto e parâmetros conferidos em páginas oficiais da eSUN e em revendedor brasileiro.
+
 lines:
 - name: PLA-Basic Line
   description: PLA de entrada com boa facilidade de impressão e ótimo custo-benefício
@@ -16,10 +17,7 @@ lines:
   tracking: true
   category: general
   finish: standard
-  notes: >
-    Linha básica atual da eSUN, indicada para protótipos, modelos decorativos e uso geral.
-    Fonte: https://www.esun3d.com/pt/pla-basic-product ; disponibilidade BR:
-    https://esunbrasil.com.br/product-category/pla-basic/
+  notes: Linha básica atual da eSUN.
   color_options:
   - Black
   - White
@@ -42,11 +40,7 @@ lines:
   tracking: true
   category: mechanical
   finish: standard
-  notes: >
-    PLA+ oficial da eSUN, 1.75mm/1kg, com temperatura de nozzle de 210-230°C,
-    mesa 45-60°C e velocidade abaixo de 300mm/s. Fonte:
-    https://www.esun3d.com/pt/pla-pro-product ; disponibilidade BR:
-    https://esunbrasil.com.br/product-tag/1kg/
+  notes: PLA+ oficial da eSUN.
   color_options:
   - Black
   - White
@@ -69,11 +63,7 @@ lines:
   tracking: true
   category: high_speed
   finish: standard
-  notes: >
-    eSUN PLA+ HS, com nozzle 210-230°C, mesa 45-60°C e velocidade indicada abaixo de
-    350mm/s. O revendedor brasileiro informa compatibilidade com Creality K1/K1 Max e
-    outras plataformas high-speed. Fonte: https://www.esun3d.com/es/eplahs-product ;
-    disponibilidade BR: https://esunbrasil.com.br/product-category/epla-hs/
+  notes: eSUN PLA+ HS para impressão de alta velocidade.
   color_options:
   - Black
   - White
@@ -96,11 +86,7 @@ lines:
   tracking: true
   category: aesthetic
   finish: matte
-  notes: >
-    ePLA-Matte com nozzle 190-230°C, mesa 40-60°C e velocidade abaixo de 200mm/s.
-    A página brasileira confirma rolos de 1kg em diversas cores. Fonte:
-    https://www.esun3d.com/pt/epla-matte-product ; disponibilidade BR:
-    https://esunbrasil.com.br/product-category/ematte/
+  notes: ePLA-Matte.
   color_options:
   - Milk White
   - Deep Black
@@ -123,11 +109,7 @@ lines:
   tracking: true
   category: mechanical
   finish: matte
-  notes: >
-    PLA-CF com fibra de carbono curta, nozzle 190-230°C, mesa 45-60°C, velocidade abaixo
-    de 200mm/s e recomendação de bico de aço endurecido. A eSUN informa módulo de flexão
-    de até 5431 MPa. Fonte: https://www.esun3d.com/pt/epla-cf-product ; disponibilidade BR:
-    https://esunbrasil.com.br/product-category/pla-cf/
+  notes: PLA-CF com fibra de carbono curta.
   color_options:
   - Black
   - Red
@@ -143,10 +125,7 @@ lines:
   tracking: true
   category: mechanical
   finish: standard
-  notes: >
-    PETG-Basic atual da eSUN, 1.75mm/1kg, com HDT informado de 73°C. Fonte:
-    https://www.esun3d.com/pt/epetg-lite-product ; disponibilidade BR:
-    https://esunbrasil.com.br/product-category/petg/
+  notes: PETG-Basic atual da eSUN.
   color_options:
   - Black
   - White
@@ -168,11 +147,7 @@ lines:
   tracking: true
   category: high_speed
   finish: standard
-  notes: >
-    eSUN PETG HS otimizado para impressão rápida e resfriamento acelerado. No revendedor
-    brasileiro: nozzle 220-260°C, mesa 75-90°C, 1kg/1.75mm. Fonte BR:
-    https://esunbrasil.com.br/produto/esun-petg-hs-green-1-75mm-1kg/ ; categoria BR:
-    https://esunbrasil.com.br/product-category/petg-hs/
+  notes: eSUN PETG HS.
   color_options:
   - Black
   - White
@@ -190,14 +165,12 @@ lines:
   difficulty: 70
   target_use: mechanical_heat_resistant
   tier: premium
-  tracking: true
+  tracking: false
   category: high_temp
   finish: standard
   notes: >
-    eSUN ABS+ 1.75mm/1kg, indicado para peças robustas e duráveis. A eSUN destaca menor
-    contração e odor que ABS convencional, com resistência à tração de até 33 MPa e HDT de
-    até 89°C. Fonte: https://www.esun3d.com/pt/abs-pro-product ; disponibilidade BR:
-    https://esunbrasil.com.br/product-tag/1kg/
+    Catalogado para referência, mas não participa do tracking de preços conforme a política do projeto:
+    ABS não é um material utilizado nas impressões do projeto.
   color_options:
   - Black
   - White
@@ -209,32 +182,18 @@ lines:
   - Yellow
   - Orange
   - Purple
+
 materials:
   PLA:
     profiles:
     - line: PLA-Basic Line
       commercial_name: PLA-Basic
       profile_name: eSUN PLA-Basic
-      nozzle:
-        initial: 215
-        min: 210
-        max: 230
-      bed:
-        initial: 60
-        temp: 60
+      nozzle: {initial: 215, min: 210, max: 230}
+      bed: {initial: 60, temp: 60}
       flow_ratio: 1.0
       max_volumetric_speed: 20
       density: 1.24
-      glass_transition_temp: 54
-      heat_deflection_temp: 53.65
-      tensile_strength_mpa: 64.27
-      flexural_strength_mpa: 106.8
-      elongation_at_break_pct: 4.61
-      mfi_g_10min: 6.48
-      diameter_tolerance: "1.75±0.05mm"
-      recommendation: >
-        PLA-Basic é o ponto de entrada da eSUN: barato, fácil de imprimir e adequado para
-        protótipos, modelos e peças de baixa exigência. Para produção rápida, prefira PLA+ HS.
       color: Grey
       surface_finish: Standard
       drying_temperature: 50
@@ -242,25 +201,11 @@ materials:
     - line: PLA+ Line
       commercial_name: PLA+
       profile_name: eSUN PLA+
-      nozzle:
-        initial: 220
-        min: 210
-        max: 230
-      bed:
-        initial: 55
-        temp: 55
+      nozzle: {initial: 220, min: 210, max: 230}
+      bed: {initial: 55, temp: 55}
       flow_ratio: 1.0
       max_volumetric_speed: 18
       density: 1.24
-      heat_deflection_temp: 53.78
-      tensile_strength_mpa: 70.37
-      flexural_strength_mpa: 100.3
-      elongation_at_break_pct: 4.14
-      mfi_g_10min: 3.7
-      diameter_tolerance: "1.75±0.05mm"
-      recommendation: >
-        PLA+ é a escolha funcional geral da eSUN: mais resistente que PLA comum sem perder a
-        facilidade de impressão. Bom candidato a perfil padrão de uso diário na K2.
       color: Black
       surface_finish: Standard
       drying_temperature: 50
@@ -268,25 +213,11 @@ materials:
     - line: PLA+ HS Line
       commercial_name: PLA+ HS
       profile_name: eSUN PLA+ HS
-      nozzle:
-        initial: 220
-        min: 210
-        max: 230
-      bed:
-        initial: 55
-        temp: 55
+      nozzle: {initial: 220, min: 210, max: 230}
+      bed: {initial: 55, temp: 55}
       flow_ratio: 1.0
       max_volumetric_speed: 24
       density: 1.24
-      tensile_strength_mpa: 64.0
-      flexural_strength_mpa: 83.0
-      flexural_modulus_mpa: 2900
-      elongation_at_break_pct: 4.01
-      diameter_tolerance: "1.75±0.05mm"
-      recommendation: >
-        PLA+ HS é a opção eSUN para aproveitar a capacidade de alta velocidade da K2. O limite
-        volumétrico é deliberadamente alto, mas o slicer deve continuar limitando pelo menor valor
-        entre processo e filamento.
       color: Pine Green
       surface_finish: Standard
       drying_temperature: 50
@@ -294,43 +225,20 @@ materials:
     - line: ePLA Matte Line
       commercial_name: ePLA Matte
       profile_name: eSUN ePLA Matte
-      nozzle:
-        initial: 210
-        min: 190
-        max: 230
-      bed:
-        initial: 50
-        temp: 50
+      nozzle: {initial: 210, min: 190, max: 230}
+      bed: {initial: 50, temp: 50}
       flow_ratio: 1.0
       max_volumetric_speed: 16
       density: 1.329
-      heat_deflection_temp: 51
-      tensile_strength_mpa: 25.976
-      flexural_strength_mpa: 42.6
-      flexural_modulus_mpa: 2249.05
-      elongation_at_break_pct: 7.23
-      mfi_g_10min: 5.8
-      recommendation: >
-        ePLA Matte é focado em acabamento visual fosco e facilidade de impressão. Excelente para
-        modelos decorativos e peças onde as linhas de camada devem ficar menos aparentes.
       color: Dark Grey
       surface_finish: Matte
     - line: PLA-CF Line
       commercial_name: PLA-CF
       profile_name: eSUN PLA-CF
-      nozzle:
-        initial: 215
-        min: 190
-        max: 230
-      bed:
-        initial: 55
-        temp: 55
+      nozzle: {initial: 215, min: 190, max: 230}
+      bed: {initial: 55, temp: 55}
       flow_ratio: 1.0
       max_volumetric_speed: 15
-      flexural_modulus_mpa: 5431
-      recommendation: >
-        PLA-CF para peças rígidas e estruturais. Use bico de aço endurecido: a fibra de carbono é
-        abrasiva. Velocidade menor que PLA/PLA+ para preservar qualidade e segurança do conjunto.
       color: Black
       surface_finish: Matte
       drying_temperature: 50
@@ -340,19 +248,11 @@ materials:
     - line: PETG-Basic Line
       commercial_name: PETG-Basic
       profile_name: eSUN PETG-Basic
-      nozzle:
-        initial: 245
-        min: 230
-        max: 250
-      bed:
-        initial: 75
-        temp: 75
+      nozzle: {initial: 245, min: 230, max: 250}
+      bed: {initial: 75, temp: 75}
       flow_ratio: 0.98
       max_volumetric_speed: 12
-      heat_deflection_temp: 73
-      recommendation: >
-        PETG-Basic é a opção funcional de entrada da eSUN: boa adesão, resistência a água e
-        impacto, estabilidade dimensional e acabamento brilhante. Como todo PETG, mantenha seco.
+      density: 1.27
       color: Black
       surface_finish: Standard
       drying_temperature: 55
@@ -360,18 +260,10 @@ materials:
     - line: PETG HS Line
       commercial_name: PETG HS
       profile_name: eSUN PETG HS
-      nozzle:
-        initial: 245
-        min: 220
-        max: 260
-      bed:
-        initial: 80
-        temp: 80
+      nozzle: {initial: 245, min: 220, max: 260}
+      bed: {initial: 80, temp: 80}
       flow_ratio: 0.98
       max_volumetric_speed: 18
-      recommendation: >
-        PETG HS para alta velocidade, com resfriamento rápido e boa resistência mecânica e química.
-        No perfil da K2, comece conservador e aumente velocidade apenas após validar cooling e MVS.
       color: Green
       surface_finish: Standard
       drying_temperature: 55
@@ -381,22 +273,13 @@ materials:
     - line: ABS+ Line
       commercial_name: ABS+
       profile_name: eSUN ABS+
-      nozzle:
-        initial: 250
-        min: 240
-        max: 270
-      bed:
-        initial: 100
-        temp: 100
+      nozzle: {initial: 250, min: 240, max: 270}
+      bed: {initial: 100, temp: 100}
       flow_ratio: 1.0
       max_volumetric_speed: 12
       density: 1.04
       heat_deflection_temp: 89
       tensile_strength_mpa: 33
-      recommendation: >
-        ABS+ para peças robustas e resistentes ao calor. Use a câmara fechada da K2, mantenha o
-        ambiente estável e ventile adequadamente. Menor contração e odor que ABS convencional,
-        mas continua sendo material de alta temperatura.
       color: Black
       surface_finish: Standard
       drying_temperature: 70
