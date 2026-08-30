@@ -25,7 +25,7 @@ SNAPSHOT_DIR = ROOT / "data" / "price-data"
 TZ = ZoneInfo("America/Sao_Paulo")
 BATCH_SIZE = int(os.getenv("PRICE_AGENT_BATCH_SIZE", "2"))
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free")
 
 
@@ -50,7 +50,7 @@ class GroqProvider(Provider):
         return self.client is not None
     def collect(self, prompt):
         try:
-            response = self.client.chat.completions.create(model=GROQ_MODEL, messages=[{"role":"user","content":prompt}], tools=[{"type":"browser_search"}], tool_choice="required", response_format={"type":"json_object"}, reasoning_effort="low", reasoning_format="hidden", max_completion_tokens=4000, temperature=0.2)
+            response = self.client.chat.completions.create(model=GROQ_MODEL, messages=[{"role":"user","content":prompt}], tools=[{"type":"browser_search"}], tool_choice="required", response_format={"type":"json_object"}, reasoning_effort="low", max_completion_tokens=4000, temperature=0.2)
             content = response.choices[0].message.content
             if not content: raise ProviderError("Groq retornou resposta sem conteúdo")
             return json.loads(content)

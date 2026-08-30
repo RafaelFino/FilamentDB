@@ -49,7 +49,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
           GROQ_MODEL: ${{ vars.GROQ_PRICE_MODEL || 'openai/gpt-oss-20b' }}
-          GEMINI_MODEL: ${{ vars.GEMINI_PRICE_MODEL || 'gemini-2.5-flash' }}
+          GEMINI_MODEL: ${{ vars.GEMINI_PRICE_MODEL || 'gemini-3.6-flash' }}
           OPENROUTER_MODEL: ${{ vars.OPENROUTER_PRICE_MODEL || 'openrouter/free' }}
           OPENROUTER_ENABLE_WEB_SEARCH: ${{ vars.OPENROUTER_ENABLE_WEB_SEARCH || '0' }}
           PRICE_AGENT_BATCH_SIZE: ${{ vars.PRICE_AGENT_BATCH_SIZE || '2' }}
