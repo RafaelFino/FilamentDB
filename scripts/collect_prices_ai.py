@@ -27,6 +27,7 @@ BATCH_SIZE = int(os.getenv("PRICE_AGENT_BATCH_SIZE", "1"))
 GROQ_MODEL = os.getenv("GROQ_MODEL", "groq/compound-mini")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free")
+Z_MODEL = os.getenv("Z_MODEL", "glm-5.3")
 
 
 class ProviderError(RuntimeError):
@@ -127,6 +128,40 @@ class OpenAIProvider(Provider):
             raise ProviderError(f"OpenAI: {exc}") from exc
 
 
+class ZAIProvider(Provider):
+    name = "z.ai"
+    def __init__(self):
+        key = os.getenv("Z_API_KEY")
+        self.client = OpenAI(base_url="https://api.z.ai/api/paas/v4", api_key=key) if key else None
+    def available(self):
+        return self.client is not None
+    def collect(self, prompt):
+        try:
+            response = self.client.chat.completions.create(
+                model=Z_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                tools=[{
+                    "type": "web_search",
+                    "web_search": {
+                        "enable": "True",
+                        "search_engine": "search-prime",
+                        "search_result": "True",
+                        "count": 10,
+                        "content_size": "high",
+                    },
+                }],
+                response_format={"type": "json_object"},
+                max_tokens=4000,
+                temperature=0.2,
+            )
+            content = response.choices[0].message.content
+            if not content:
+                raise ProviderError("Z.ai retornou resposta sem conteúdo")
+            return parse_json_response(content)
+        except Exception as exc:
+            raise ProviderError(f"Z.ai: {exc}") from exc
+
+
 class OpenRouterProvider(Provider):
     name = "openrouter"
     def __init__(self):
@@ -146,7 +181,7 @@ class OpenRouterProvider(Provider):
 
 
 def providers():
-    return [GroqProvider(), OpenRouterProvider(), OpenAIProvider(), GeminiProvider()]
+    return [ZAIProvider(), GroqProvider(), OpenRouterProvider(), OpenAIProvider(), GeminiProvider()]
 
 
 def load_sources():

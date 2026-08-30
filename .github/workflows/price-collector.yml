@@ -49,7 +49,9 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          Z_API_KEY: ${{ secrets.Z_API_KEY }}
           OPENAI_MODEL: ${{ vars.OPENAI_PRICE_MODEL || 'gpt-5.6-luna' }}
+          Z_MODEL: ${{ vars.Z_PRICE_MODEL || 'glm-5.3' }}
           GROQ_MODEL: ${{ vars.GROQ_PRICE_MODEL || 'groq/compound-mini' }}
           GEMINI_MODEL: ${{ vars.GEMINI_PRICE_MODEL || 'gemini-3.6-flash' }}
           OPENROUTER_MODEL: ${{ vars.OPENROUTER_PRICE_MODEL || 'openrouter/free' }}
