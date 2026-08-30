@@ -1,4 +1,4 @@
-"""web.py â Rotas da API e pÃ¡ginas web."""
+"""web.py — Rotas da API e páginas web."""
 
 import time
 
@@ -8,7 +8,7 @@ from src import auth, buildinfo, database, inventory, prices, services
 
 
 def _probe(connect_fn, path, probe_sql):
-    """Executa um probe de leitura contra um banco e mede latÃªncia.
+    """Executa um probe de leitura contra um banco e mede latência.
 
     Retorna um dict no formato esperado pelos endpoints de health:
       {"status": "ok"|"error", "path": <str>, "latency_ms": <float>[, "error": <str>]}
@@ -31,23 +31,10 @@ def _probe(connect_fn, path, probe_sql):
 def register_routes(app):
     @app.get("/health")
     def health():
-        """Liveness: o processo Flask estÃ¡ de pÃ© e respondendo.
-
-        Barato de propÃ³sito â nÃ£o toca em disco nem em banco. Sempre 200
-        enquanto o worker consegue atender a requisiÃ§Ã£o. Serve para o Pangolin
-        detectar processo travado/morto, nÃ£o dependÃªncias quebradas.
-        """
         return jsonify({"status": "ok"})
 
     @app.get("/health/ready")
     def health_ready():
-        """Readiness: o serviÃ§o consegue efetivamente atender requisiÃ§Ãµes.
-
-        Faz um probe de leitura em cada banco (catÃ¡logo + estoque). Retorna
-        200 se ambos respondem, 503 se qualquer um falhar. O Pangolin avalia o
-        health check pelo STATUS CODE, entÃ£o o 503 Ã© o que remove o target da
-        rotaÃ§Ã£o quando o banco estÃ¡ inacessÃ­vel ou sem schema.
-        """
         checks = {
             "filament_db": _probe(
                 database.get_db_connection,
@@ -140,12 +127,13 @@ def register_routes(app):
 
     @app.get("/")
     def index():
-        return render_template("dashboard.html")
+        process_tree = database.build_process_tree()
+        return render_template("dashboard.html", process_tree=process_tree)
 
     @app.get("/inventory")
     def inventory_page():
-        return render_template("dashboard.html")
+        return render_template("inventory.html")
 
     @app.get("/prices")
     def prices_page():
-        return render_template("dashboard.html")
+        return render_template("prices.html")
