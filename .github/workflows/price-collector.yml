@@ -5,6 +5,17 @@ on:
     # 03:30 America/Sao_Paulo (06:30 UTC). GitHub schedules are UTC.
     - cron: '30 6 * * *'
   workflow_dispatch:
+    inputs:
+      date:
+        description: 'Optional snapshot date (YYYY-MM-DD). Leave empty for São Paulo today.'
+        required: false
+        type: string
+        default: ''
+      replace:
+        description: 'Allow replacing an existing snapshot (use only for deliberate corrections).'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -36,7 +47,13 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ vars.OPENAI_PRICE_MODEL || 'gpt-5.6-luna' }}
           PRICE_AGENT_BATCH_SIZE: ${{ vars.PRICE_AGENT_BATCH_SIZE || '6' }}
-        run: python scripts/collect_prices_ai.py
+          ALLOW_SNAPSHOT_REPLACE: ${{ inputs.replace && '1' || '' }}
+        run: |
+          if [ -n "${{ inputs.date }}" ]; then
+            python scripts/collect_prices_ai.py --date "${{ inputs.date }}"
+          else
+            python scripts/collect_prices_ai.py
+          fi
 
       - name: Validate snapshot
         run: python scripts/validate_price_snapshot.py
