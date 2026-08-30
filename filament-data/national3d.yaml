@@ -11,6 +11,7 @@ lines:
   description: High-speed PLA optimized for fast printing up to 600mm/s
   positioning: performance
   difficulty: 40
+  tracking: true
   target_use: high_speed_printing
   tier: standard
   category: high_speed
@@ -38,6 +39,7 @@ lines:
   tier: standard
   category: mechanical
   finish: standard
+  tracking: true
   notes: >
     Specs oficiais: nozzle 225-240°C, bed 60-70°C, density 1.27 g/cm³,
     tolerância ±0.03mm, ~380m/kg. Sem MVS declarado.

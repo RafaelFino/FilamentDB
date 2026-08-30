@@ -9,6 +9,7 @@ lines:
   difficulty: 25
   target_use: production_speed
   tier: standard
+  tracking: true
   category: high_speed
   finish: standard
   notes: Linha principal moderna da Creality para alta velocidade
@@ -21,6 +22,7 @@ lines:
   difficulty: 50
   target_use: general_printing
   tier: standard
+  tracking: true
   category: general
   finish: standard
   notes: Linha tradicional com boa estabilidade e ampla compatibilidade
@@ -58,6 +60,7 @@ lines:
   difficulty: 55
   target_use: mechanical_parts
   tier: standard
+  tracking: true
   category: mechanical
   finish: standard
   notes: Boa resistência química e mecânica
@@ -70,6 +73,7 @@ lines:
   difficulty: 45
   target_use: high_speed_petg
   tier: standard
+  tracking: true
   category: high_speed
   finish: standard
   notes: PETG otimizado para fluxo alto
