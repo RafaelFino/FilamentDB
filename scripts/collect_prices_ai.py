@@ -38,19 +38,24 @@ def load_catalog():
     conn = sqlite3.connect(CATALOG_DB)
     conn.row_factory = sqlite3.Row
     rows = conn.execute("""
-        SELECT fp.filament_key, fp.commercial_name, fp.profile_name,
-               fp.line, fp.line_positioning, fp.line_tier, fp.line_category,
-               fp.line_finish, fp.line_target_use, fp.color, fp.surface_finish,
-               m.name AS material_name, mf.name AS manufacturer_name,
-               GROUP_CONCAT(DISTINCT fv.color_name) AS variant_colors,
-               GROUP_CONCAT(DISTINCT CAST(fv.weight_g AS TEXT)) AS variant_weights
+        SELECT
+            LOWER(TRIM(m.name)) || '|' || LOWER(TRIM(mf.name)) || '|' || LOWER(TRIM(fp.line)) AS filament_key,
+            fp.commercial_name, fp.profile_name,
+            fp.line, fp.line_positioning, fp.line_tier, fp.line_category,
+            fp.line_finish, fp.line_target_use, fp.color, fp.surface_finish,
+            m.name AS material_name, mf.name AS manufacturer_name,
+            GROUP_CONCAT(DISTINCT fv.color_name) AS variant_colors,
+            GROUP_CONCAT(DISTINCT CAST(fv.weight_g AS TEXT)) AS variant_weights
         FROM filament_profiles fp
         JOIN materials m ON m.id = fp.material_id
         JOIN manufacturers mf ON mf.id = fp.manufacturer_id
         LEFT JOIN filament_variants fv ON fv.filament_id = fp.id
-        WHERE fp.active = 1 AND fp.tracking = 1
-        GROUP BY fp.id
-        ORDER BY m.name, mf.name, fp.commercial_name
+        WHERE fp.active = 1
+          AND UPPER(TRIM(m.name)) IN ('PLA', 'PETG')
+          AND fp.line IS NOT NULL
+          AND TRIM(fp.line) <> ''
+        GROUP BY m.name, mf.name, fp.line
+        ORDER BY m.name, mf.name, fp.line
     """).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -238,7 +243,7 @@ def main():
     sources = load_sources()
     catalog = load_catalog()
     if not catalog:
-        raise RuntimeError("Nenhum filament_profile com tracking=1 foi encontrado")
+        raise RuntimeError("Nenhum perfil PLA/PETG ativo foi encontrado no catálogo")
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
     path = SNAPSHOT_DIR / f"{today}.json"
     if path.exists() and not os.getenv("ALLOW_SNAPSHOT_REPLACE"):
