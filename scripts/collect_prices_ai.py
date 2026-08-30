@@ -33,6 +33,27 @@ class ProviderError(RuntimeError):
     pass
 
 
+def parse_json_response(content):
+    if not content:
+        raise ProviderError("Provedor retornou resposta sem conteúdo")
+    text = content.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1] if "\n" in text else text
+        if text.endswith("```"):
+            text = text[:-3]
+    try:
+        return json.loads(text.strip())
+    except json.JSONDecodeError as exc:
+        start = text.find("{")
+        end = text.rfind("}")
+        if start >= 0 and end > start:
+            try:
+                return json.loads(text[start:end + 1])
+            except json.JSONDecodeError:
+                pass
+        raise ProviderError(f"Resposta não contém JSON válido: {exc}") from exc
+
+
 class Provider:
     name = "unknown"
     def available(self):
@@ -53,7 +74,7 @@ class GroqProvider(Provider):
             response = self.client.chat.completions.create(model=GROQ_MODEL, messages=[{"role":"user","content":prompt}], tools=[{"type":"browser_search"}], tool_choice="required", response_format={"type":"json_object"}, reasoning_effort="low", max_completion_tokens=4000, temperature=0.2)
             content = response.choices[0].message.content
             if not content: raise ProviderError("Groq retornou resposta sem conteúdo")
-            return json.loads(content)
+            return parse_json_response(content)
         except Exception as exc:
             raise ProviderError(f"Groq: {exc}") from exc
 
@@ -79,7 +100,7 @@ class GeminiProvider(Provider):
             response = self.client.models.generate_content(model=GEMINI_MODEL, contents=prompt, config=config)
             content = response.text
             if not content: raise ProviderError("Gemini retornou resposta sem conteúdo")
-            return json.loads(content)
+            return parse_json_response(content)
         except Exception as exc:
             raise ProviderError(f"Gemini: {exc}") from exc
 
@@ -97,7 +118,7 @@ class OpenRouterProvider(Provider):
             response = self.client.chat.completions.create(model=OPENROUTER_MODEL, messages=[{"role":"user","content":prompt}], plugins=[{"id":"web","max_results":5}], response_format={"type":"json_object"}, max_tokens=4000, temperature=0.2)
             content = response.choices[0].message.content
             if not content: raise ProviderError("OpenRouter retornou resposta sem conteúdo")
-            return json.loads(content)
+            return parse_json_response(content)
         except Exception as exc:
             raise ProviderError(f"OpenRouter: {exc}") from exc
 
