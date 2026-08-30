@@ -1,40 +1,51 @@
 #!/bin/bash
 # update-server.sh — Atualiza o FilamentDB no servidor.
+#
 # Faz git pull, rebuild do banco e reinicia o serviço.
-# Pensado para rodar manualmente ou via cron/systemd timer.
+# Pensado para rodar via cron diariamente.
 
-set -u
+set -euo pipefail
 
-# ── Configuração ──
 REPO_DIR="/srv/FilamentDB"
-SERVICE_NAME="filamentdb"
+SERVICE="filamentdb.service"
+LOG_PREFIX="[$(date '+%Y-%m-%d %H:%M:%S')]"
 
-log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
-err() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $*" >&2; }
+log()  { echo "$LOG_PREFIX $*"; }
+err()  { echo "$LOG_PREFIX ERROR: $*" >&2; }
 
-cd "$REPO_DIR" || { err "Não foi possível entrar em ${REPO_DIR}."; exit 1; }
+if [ "$(id -u)" -ne 0 ]; then
+    err "Este script precisa rodar como root. Use: sudo $0"
+    exit 1
+fi
 
-# Carrega configuração local, se existir.
+cd "$REPO_DIR"
+
 if [ -f "${REPO_DIR}/config.env" ]; then
+    set -a
     # shellcheck disable=SC1091
     . "${REPO_DIR}/config.env"
+    set +a
     log "Config carregada de ${REPO_DIR}/config.env"
 else
     log "AVISO: ${REPO_DIR}/config.env não existe — usando defaults do código."
 fi
 
-# ── Pré-condições ──
-if [ ! -d .git ]; then
-    err "${REPO_DIR} não parece ser um repositório Git."
-    exit 1
-fi
+case "${FILAMENTDB_AUTH_ENABLED:-0}" in
+    1|true|yes|on|TRUE|YES|ON)
+        if [ -z "${FILAMENTDB_WRITERS:-}" ]; then
+            err "AUTH ligada mas FILAMENTDB_WRITERS vazia — NINGUÉM poderá escrever."
+            err "  Preencha FILAMENTDB_WRITERS em ${REPO_DIR}/config.env."
+        else
+            log "Auth ligada; allowlist de writers presente."
+        fi
+        ;;
+esac
 
-# ── Paths canônicos dos bancos ──
-# O backend resolve DB_PATH para data/filament.db por padrão; respeitamos o
-# mesmo override FILAMENT_DB_PATH quando configurado.
-FILAMENT_DB="${FILAMENT_DB_PATH:-${REPO_DIR}/data/filament.db}"
-INVENTORY_DB="${FILAMENT_INVENTORY_DB_PATH:-${REPO_DIR}/inventory.db}"
-PRICE_HISTORY_DB="${FILAMENT_PRICE_HISTORY_DB_PATH:-${REPO_DIR}/data/price-history.db}"
+# Paths canônicos: DB_PATH é a mesma variável usada por src/config.py.
+# O banco principal é gerado por build.py em data/filament.db por padrão.
+FILAMENT_DB="${DB_PATH:-${REPO_DIR}/data/filament.db}"
+INVENTORY_DB="${FILAMENT_INVENTORY_DB_PATH:-${FILAMENT_DB%/*}/inventory.db}"
+PRICE_HISTORY_DB="${FILAMENT_PRICE_HISTORY_DB_PATH:-${FILAMENT_DB%/*}/price-history.db}"
 BACKUP_DIR="${FILAMENTDB_BACKUP_DIR:-${REPO_DIR}/backups}"
 MAX_DB_BACKUPS="${MAX_DB_BACKUPS:-30}"
 
@@ -71,13 +82,11 @@ backup_db "$INVENTORY_DB" "inventory"
 backup_db "$FILAMENT_DB" "filament"
 backup_db "$PRICE_HISTORY_DB" "price-history"
 
-# ── Limpeza de artefatos de build antes do pull ──
 log "Limpando artefatos de build (regenerados pelo build.py)..."
-git rm --cached --quiet filament.db data/filament.db 2>/dev/null || true
-rm -f filament.db data/filament.db 2>/dev/null || true
-git checkout -- filament.db data/filament.db 2>/dev/null || true
+git rm --cached --quiet filament.db 2>/dev/null || true
+rm -f filament.db 2>/dev/null || true
+git checkout -- filament.db 2>/dev/null || true
 
-# ── Git pull ──
 log "Verificando atualizações..."
 BEFORE=$(git rev-parse HEAD)
 git pull --ff-only origin main 2>&1 || { err "git pull falhou"; exit 1; }
@@ -91,61 +100,76 @@ else
     git log --oneline "$BEFORE..$AFTER" | sed 's/^/  /'
 fi
 
-# ── Rebuild ──
 log "Executando build..."
 if ! python3 build.py 2>&1 | sed 's/^/  /'; then
-    err "build.py falhou. Serviço NÃO será reiniciado (mantém estado anterior)."
+    err "build.py falhou. Serviço NÃO será reiniciado."
     exit 1
 fi
 
-# Validação: usa exatamente o mesmo caminho resolvido pelo backend.
-if ! python3 -c "import sqlite3,sys; c=sqlite3.connect('${FILAMENT_DB}'); c.execute('SELECT 1 FROM filament_profiles LIMIT 1'); sys.exit(0)" 2>/dev/null; then
+# Re-resolve DB_PATH after build/config and validate the exact canonical path.
+FILAMENT_DB="${DB_PATH:-${REPO_DIR}/data/filament.db}"
+if ! python3 -c "import sqlite3,sys; p='${FILAMENT_DB}'; c=sqlite3.connect(p); c.execute('SELECT 1 FROM filament_profiles LIMIT 1'); c.close(); sys.exit(0)" 2>/dev/null; then
     err "${FILAMENT_DB} inválido ou sem tabela filament_profiles após o build. Serviço NÃO reiniciado."
     exit 1
 fi
-log "Banco validado (filament_profiles presente em ${FILAMENT_DB})."
+log "Banco validado (${FILAMENT_DB}; filament_profiles presente)."
 
-# ── Importação dos snapshots de preços ──
 log "Importando snapshots de preços..."
 if ! python3 scripts/import_price_data.py 2>&1 | sed 's/^/  /'; then
     err "import_price_data.py falhou. Serviço NÃO será reiniciado."
     exit 1
 fi
+log "Snapshots de preços importados e validados."
 
-# ── Reinício ──
-log "Reiniciando serviço ${SERVICE_NAME}..."
-if ! systemctl restart "$SERVICE_NAME"; then
-    err "Falha ao reiniciar ${SERVICE_NAME}."
-    exit 1
-fi
-
-log "Aguardando serviço..."
+log "Reiniciando ${SERVICE}..."
+systemctl restart "$SERVICE" 2>&1
 sleep 2
 
-if ! systemctl is-active --quiet "$SERVICE_NAME"; then
-    err "Serviço ${SERVICE_NAME} não ficou ativo."
-    systemctl status "$SERVICE_NAME" --no-pager || true
+if systemctl is-active --quiet "$SERVICE"; then
+    log "Serviço reiniciado com sucesso."
+else
+    err "Serviço falhou ao reiniciar!"
+    systemctl status "$SERVICE" --no-pager 2>&1 | sed 's/^/  /'
     exit 1
 fi
 
-log "Serviço ${SERVICE_NAME} ativo."
+API_URL="${FILAMENTDB_API_URL:-http://localhost:5000}"
+JSON_BACKUP_DIR="${BACKUP_DIR}/inventory-json"
+MAX_JSON_BACKUPS="${MAX_JSON_BACKUPS:-30}"
 
-# Health check opcional, se curl estiver disponível.
 if command -v curl >/dev/null 2>&1; then
-    PORT="${PORT:-5000}"
-    if curl -fsS --max-time 10 "http://127.0.0.1:${PORT}/health/ready" >/dev/null; then
-        log "Health check OK."
+    mkdir -p "$JSON_BACKUP_DIR"
+    ts_json="$(date '+%Y%m%d_%H%M%S')"
+    json_dest="${JSON_BACKUP_DIR}/inventory_${ts_json}.json"
+    if curl -fsS --max-time 15 "${API_URL}/api/inventory/export" -o "$json_dest" 2>/dev/null; then
+        if python3 -c "import json,sys; d=json.load(open('$json_dest')); sys.exit(0 if 'items' in d else 1)" 2>/dev/null; then
+            log "Dump JSON do estoque → ${json_dest}"
+        else
+            err "Export JSON retornou conteúdo inesperado. Descartando ${json_dest}."
+            rm -f "$json_dest"
+        fi
     else
-        err "Health check falhou após reinício."
-        exit 1
+        rm -f "$json_dest" 2>/dev/null || true
+        err "Export JSON do estoque falhou (API em ${API_URL} não respondeu). Backup binário do início permanece válido."
     fi
+    json_count=$(find "$JSON_BACKUP_DIR" -maxdepth 1 -name "inventory_*.json" -type f 2>/dev/null | wc -l)
+    if [ "$json_count" -gt "$MAX_JSON_BACKUPS" ]; then
+        find "$JSON_BACKUP_DIR" -maxdepth 1 -name "inventory_*.json" -type f -printf '%T+ %p\n' \
+            | sort | head -n "$((json_count - MAX_JSON_BACKUPS))" | cut -d' ' -f2- \
+            | while read -r old; do rm -f "$old"; done
+        log "Rotação dumps JSON: mantidos últimos ${MAX_JSON_BACKUPS}."
+    fi
+else
+    err "curl ausente — dump JSON do estoque pulado (backup binário permanece válido)."
 fi
 
-# ── Registrar build-info ──
 BUILD_INFO_PATH="${FILAMENTDB_BUILD_INFO_PATH:-${REPO_DIR}/build-info.env}"
-cat > "$BUILD_INFO_PATH" <<EOF
-BUILD_COMMIT=${AFTER}
-BUILD_AT=$(date -Iseconds)
-EOF
-log "build-info gravado em ${BUILD_INFO_PATH} (commit ${AFTER})."
-log "Atualização concluída com sucesso."
+CURRENT_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+CURRENT_SUBJECT="$(git log -1 --pretty=%s 2>/dev/null | tr -d '\n' | tr '"' "'" || echo '')"
+{
+    echo "updated_at=$(date '+%Y-%m-%dT%H:%M:%S%z')"
+    echo "commit=${CURRENT_COMMIT}"
+    echo "commit_subject=${CURRENT_SUBJECT}"
+} > "$BUILD_INFO_PATH"
+log "build-info gravado em ${BUILD_INFO_PATH} (commit ${CURRENT_COMMIT})."
+log "Atualização concluída."
