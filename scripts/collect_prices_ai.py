@@ -24,7 +24,7 @@ SOURCES_PATH = ROOT / "data" / "price-sources.json"
 SNAPSHOT_DIR = ROOT / "data" / "price-data"
 TZ = ZoneInfo("America/Sao_Paulo")
 BATCH_SIZE = int(os.getenv("PRICE_AGENT_BATCH_SIZE", "2"))
-GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "groq/compound-mini")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free")
 
@@ -71,7 +71,7 @@ class GroqProvider(Provider):
         return self.client is not None
     def collect(self, prompt):
         try:
-            response = self.client.chat.completions.create(model=GROQ_MODEL, messages=[{"role":"user","content":prompt}], tools=[{"type":"browser_search"}], tool_choice="required", reasoning_effort="low", max_completion_tokens=4000, temperature=0.2)
+            response = self.client.chat.completions.create(model=GROQ_MODEL, messages=[{"role":"user","content":prompt}], response_format={"type":"json_object"}, max_completion_tokens=4000, temperature=0.2)
             content = response.choices[0].message.content
             if not content: raise ProviderError("Groq retornou resposta sem conteúdo")
             return parse_json_response(content)
@@ -105,6 +105,28 @@ class GeminiProvider(Provider):
             raise ProviderError(f"Gemini: {exc}") from exc
 
 
+class OpenAIProvider(Provider):
+    name = "openai"
+    def __init__(self):
+        key = os.getenv("OPENAI_API_KEY")
+        self.client = OpenAI(api_key=key) if key else None
+    def available(self):
+        return self.client is not None
+    def collect(self, prompt):
+        try:
+            response = self.client.responses.create(
+                model=os.getenv("OPENAI_MODEL", "gpt-5.6-luna"),
+                input=prompt,
+                tools=[{"type": "web_search"}],
+                reasoning={"effort": "low"},
+            )
+            content = response.output_text
+            if not content: raise ProviderError("OpenAI retornou resposta sem conteúdo")
+            return parse_json_response(content)
+        except Exception as exc:
+            raise ProviderError(f"OpenAI: {exc}") from exc
+
+
 class OpenRouterProvider(Provider):
     name = "openrouter"
     def __init__(self):
@@ -115,7 +137,7 @@ class OpenRouterProvider(Provider):
         return self.client is not None
     def collect(self, prompt):
         try:
-            response = self.client.chat.completions.create(model=OPENROUTER_MODEL, messages=[{"role":"user","content":prompt}], plugins=[{"id":"web","max_results":5}], response_format={"type":"json_object"}, max_tokens=4000, temperature=0.2)
+            response = self.client.chat.completions.create(model=(OPENROUTER_MODEL + ":online" if not OPENROUTER_MODEL.endswith(":online") else OPENROUTER_MODEL), messages=[{"role":"user","content":prompt}], plugins=[{"id":"web","max_results":5}], response_format={"type":"json_object"}, max_tokens=4000, temperature=0.2)
             content = response.choices[0].message.content
             if not content: raise ProviderError("OpenRouter retornou resposta sem conteúdo")
             return parse_json_response(content)
@@ -124,7 +146,7 @@ class OpenRouterProvider(Provider):
 
 
 def providers():
-    return [GroqProvider(), GeminiProvider(), OpenRouterProvider()]
+    return [GroqProvider(), GeminiProvider(), OpenAIProvider(), OpenRouterProvider()]
 
 
 def load_sources():
