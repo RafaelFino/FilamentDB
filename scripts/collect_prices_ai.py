@@ -186,7 +186,7 @@ def collect_batch(client, catalog, sources, today):
     research = client.responses.create(
         model="openai/gpt-oss-120b",
         input=build_prompt(catalog, sources, today),
-        tool_choice="required",
+        tool_choice="auto",
         tools=[{"type": "browser_search"}],
         max_output_tokens=6000,
     )
