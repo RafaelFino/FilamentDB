@@ -541,9 +541,12 @@ def main():
     if path.exists() and not os.getenv("ALLOW_SNAPSHOT_REPLACE"):
         raise RuntimeError(f"Snapshot jÃ¡ existe: {path}. Use ALLOW_SNAPSHOT_REPLACE=1 para correÃ§Ã£o deliberada.")
     parts = []
-    provider_list = [p for p in providers() if p.available()]
+    configured_order = [x.strip().casefold() for x in os.getenv("PRICE_AGENT_PROVIDERS", "cerebras,z.ai,groq,openrouter,openai,gemini").split(",") if x.strip()]
+    all_providers = [p for p in providers() if p.available()]
+    by_name = {p.name.casefold(): p for p in all_providers}
+    provider_list = [by_name[name] for name in configured_order if name in by_name]
     if not provider_list:
-        raise RuntimeError("Nenhum provedor de IA com chave/configuração disponível")
+        raise RuntimeError("Nenhum provedor de IA habilitado e com chave/configuração disponível")
     batches = list(chunked(catalog, BATCH_SIZE))
     print(f"[INFO] Catálogo monitorado: {len(catalog)} perfis; lotes: {len(batches)}; provedores: {', '.join(p.name for p in provider_list)}")
     for idx, batch in enumerate(batches, 1):
