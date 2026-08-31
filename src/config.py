@@ -35,6 +35,8 @@ _DEFAULTS = {
     "FILAMENTDB_BACKUP_DIR": str(ROOT_DIR / "backups"),
     "FILAMENTDB_BUILD_INFO_PATH": str(ROOT_DIR / "build-info.env"),
     "PORT": "5000",
+    "FILAMENTDB_API_HOST": "127.0.0.1",
+    "FILAMENTDB_API_PORT": "5001",
     # Autorização (feature flag desligada por padrão → sistema aberto).
     "FILAMENTDB_AUTH_ENABLED": "0",
     "FILAMENTDB_WRITERS": "",

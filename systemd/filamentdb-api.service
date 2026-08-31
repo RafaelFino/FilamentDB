@@ -1,0 +1,19 @@
+[Unit]
+Description=FilamentDB public ingestion API
+After=network.target
+
+[Service]
+Type=simple
+User=fino
+Group=fino
+WorkingDirectory=/srv/FilamentDB
+EnvironmentFile=/srv/FilamentDB/config.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/srv/FilamentDB/.venv/bin/python /srv/FilamentDB/src/api_app.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

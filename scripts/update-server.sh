@@ -133,6 +133,25 @@ else
     exit 1
 fi
 
+# A API pública é um serviço separado. No primeiro deploy a unit pode ainda não
+# existir; nesse caso o update principal continua funcionando e a API pode ser
+# habilitada depois com `systemctl enable --now filamentdb-api`.
+API_SERVICE="filamentdb-api.service"
+if systemctl cat "$API_SERVICE" >/dev/null 2>&1; then
+    log "Reiniciando ${API_SERVICE}..."
+    systemctl restart "$API_SERVICE" 2>&1
+    sleep 1
+    if systemctl is-active --quiet "$API_SERVICE"; then
+        log "${API_SERVICE} reiniciado com sucesso."
+    else
+        err "${API_SERVICE} falhou ao reiniciar!"
+        systemctl status "$API_SERVICE" --no-pager 2>&1 | sed 's/^/  /'
+        exit 1
+    fi
+else
+    log "${API_SERVICE} ainda não está instalado — reinício da API pulado."
+fi
+
 API_URL="${FILAMENTDB_API_URL:-http://localhost:5000}"
 JSON_BACKUP_DIR="${BACKUP_DIR}/inventory-json"
 MAX_JSON_BACKUPS="${MAX_JSON_BACKUPS:-30}"
