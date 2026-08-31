@@ -6,6 +6,11 @@ on:
     - cron: '30 6 * * *'
   workflow_dispatch:
     inputs:
+      limit:
+        description: 'Número de perfis a testar; 0 = catálogo completo.'
+        required: false
+        type: number
+        default: 0
       date:
         description: 'Optional snapshot date (YYYY-MM-DD). Leave empty for São Paulo today.'
         required: false
@@ -48,7 +53,9 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           CEREBRAS_MODEL: ${{ vars.CEREBRAS_PRICE_MODEL || 'gpt-oss-120b' }}
+          MISTRAL_MODEL: ${{ vars.MISTRAL_PRICE_MODEL || 'mistral-small-latest' }}
           FILAMENTDB_API_URL: ${{ vars.FILAMENTDB_API_URL || 'https://filamentdb-api.learnops.duckdns.org' }}
           FILAMENTDB_API_SECRET: ${{ secrets.FILAMENTDB_API_SECRET }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -60,7 +67,8 @@ jobs:
           OPENROUTER_MODEL: ${{ vars.OPENROUTER_PRICE_MODEL || 'openrouter/free' }}
           OPENROUTER_ENABLE_WEB_SEARCH: '1'
           PRICE_AGENT_BATCH_SIZE: ${{ vars.PRICE_AGENT_BATCH_SIZE || '1' }}
-          PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'cerebras' }}
+          PRICE_AGENT_MAX_PROFILES: ${{ inputs.limit || '0' }}
+          PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'mistral' }}
           ALLOW_SNAPSHOT_REPLACE: ${{ inputs.replace && '1' || '' }}
         run: |
           if [ -n "${{ inputs.date }}" ]; then
