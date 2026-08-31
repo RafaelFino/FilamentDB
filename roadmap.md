@@ -367,6 +367,38 @@ No teste seguinte, o collector montava dinamicamente `petg|3dfila|petg xt line`,
 
 O erro de `429` do Mistral no mesmo teste é um problema independente de rate limit. O fallback para Gemini funcionou como caminho de execução, mas terminou no mesmo bloqueio da API porque o filamento estava corretamente não rastreado.
 
+## 14.6 Incidente de 2026-08-31 — dependência PyYAML ausente no GitHub Actions
+
+Depois de corrigir o contrato de `tracking` e passar a executar `python build.py --only-db` no workflow, a execução falhou imediatamente no runner com:
+
+```text
+ModuleNotFoundError: No module named 'yaml'
+```
+
+A investigação mostrou que `requirements.txt` **já declarava `PyYAML>=6.0`**, porém o workflow instalava apenas:
+
+```text
+openai ddgs
+```
+
+Portanto a dependência existia no projeto, mas não estava sendo instalada pelo ambiente do GitHub Actions.
+
+### Solução
+
+O passo `Install collector dependencies` foi alterado para instalar `requirements.txt` junto das dependências específicas do collector:
+
+```bash
+python -m pip install --upgrade -r requirements.txt openai ddgs
+```
+
+Assim `PyYAML` passa a ser instalado antes de `build.py --only-db`, sem duplicar a declaração da dependência.
+
+### Estado após a correção
+
+O erro de ambiente do runner está corrigido no código, mas ainda falta executar novamente o workflow para validar a próxima etapa real da coleta.
+
+Não consumir novos créditos de LLM antes de essa etapa básica do pipeline estar verde.
+
 ## 15. Critério de pronto da fase atual
 
 A fase de API/preços só deve ser considerada concluída quando:
