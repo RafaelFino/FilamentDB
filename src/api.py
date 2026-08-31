@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import hmac
+import json
 import math
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.parse import urlparse
 
 from flask import Blueprint, Flask, jsonify, request
@@ -188,7 +190,40 @@ def catalog_filaments():
         conn.close()
 
 
+@bp.get("/agent/instructions")
+def agent_instructions():
+    if not _authorized():
+        return _unauthorized()
+    root = Path(__file__).resolve().parents[1]
+    sources_path = root / "data" / "price-sources.json"
+    try:
+        sources = json.loads(sources_path.read_text(encoding="utf-8"))
+        sources = [{"name": s.get("name"), "domain": s.get("domain"), "marketplace": bool(s.get("marketplace"))} for s in sources if s.get("enabled", True)]
+    except Exception:
+        sources = []
+    return jsonify({
+        "ok": True,
+        "version": 1,
+        "mission": "Pesquisar preços atuais de filamentos PLA e PETG no Brasil e publicar somente ofertas diretamente verificáveis.",
+        "catalog_endpoint": "/v1/catalog/filaments",
+        "offer_endpoint": "/v1/agent/offers",
+        "sources": sources,
+        "rules": [
+            "Use o filament_key exatamente como fornecido pelo catálogo; nunca invente uma chave.",
+            "O produto precisa corresponder a fabricante, material e linha/modelo do catálogo.",
+            "Busque cada fonte configurada e preserve todas as ofertas verificáveis, não apenas a mais barata.",
+            "Use URL direta da página do produto/oferta, nunca página de resultados.",
+            "Registre preço observado, moeda, quantidade e peso por rolo sem conversões inventadas.",
+            "Para kits, quantity é o número de rolos e total_price é o preço total do kit.",
+            "Para preço por unidade, price_basis=unit e total_price=price*quantity.",
+            "Não fabrique disponibilidade, vendedor, SKU, preço, cupom ou URL.",
+            "Se não houver oferta confiável, não publique uma oferta.",
+        ],
+    })
+
+
 @bp.post("/ingest/prices")
+@bp.post("/agent/offers")
 def ingest_price():
     if not _authorized():
         return _unauthorized()

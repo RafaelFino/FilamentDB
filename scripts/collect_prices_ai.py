@@ -12,6 +12,8 @@ import json
 import os
 import sqlite3
 import sys
+import urllib.error
+import urllib.request
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -28,6 +30,9 @@ GROQ_MODEL = os.getenv("GROQ_MODEL", "groq/compound-mini")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free")
 Z_MODEL = os.getenv("Z_MODEL", "glm-5.3")
+CEREBRAS_MODEL = os.getenv("CEREBRAS_MODEL", "gpt-oss-120b")
+FILAMENTDB_API_URL = os.getenv("FILAMENTDB_API_URL", "https://filamentdb-api.learnops.duckdns.org").rstrip("/")
+FILAMENTDB_API_SECRET = os.getenv("FILAMENTDB_API_SECRET", "")
 
 
 class ProviderError(RuntimeError):
@@ -78,6 +83,144 @@ class GroqProvider(Provider):
             return parse_json_response(content)
         except Exception as exc:
             raise ProviderError(f"Groq: {exc}") from exc
+
+
+def _agent_api(method, path, payload=None):
+    if not FILAMENTDB_API_SECRET:
+        raise ProviderError("FILAMENTDB_API_SECRET não configurado para o agente Cerebras")
+    body = None
+    headers = {
+        "Accept": "application/json",
+        "X-Proxy-Secret": FILAMENTDB_API_SECRET,
+    }
+    if payload is not None:
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+    request = urllib.request.Request(
+        FILAMENTDB_API_URL + path,
+        data=body,
+        method=method,
+        headers=headers,
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            raw = response.read().decode("utf-8", errors="replace")
+            return json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as exc:
+        raw = exc.read().decode("utf-8", errors="replace")
+        raise ProviderError(f"FilamentDB API HTTP {exc.code}: {raw[:1000]}") from exc
+    except urllib.error.URLError as exc:
+        raise ProviderError(f"FilamentDB API connection failed: {exc.reason}") from exc
+
+
+class CerebrasProvider(Provider):
+    name = "cerebras"
+    def __init__(self):
+        key = os.getenv("CEREBRAS_API_KEY")
+        self.client = OpenAI(
+            base_url="https://api.cerebras.ai/v1",
+            api_key=key,
+        ) if key else None
+
+    def available(self):
+        return self.client is not None and bool(FILAMENTDB_API_SECRET)
+
+    @staticmethod
+    def _search_web(query, max_results=8):
+        from ddgs import DDGS
+        results = DDGS(timeout=15).text(
+            query,
+            region="br-pt",
+            safesearch="off",
+            max_results=max(1, min(int(max_results), 10)),
+        )
+        return [
+            {"title": r.get("title", ""), "url": r.get("href", ""), "snippet": r.get("body", "")}
+            for r in results
+        ]
+
+    @staticmethod
+    def _open_url(url):
+        from ddgs import DDGS
+        text = DDGS(timeout=20).extract(url, fmt="text_rich")
+        return {"url": url, "content": (text or "")[:16000]}
+
+    def collect(self, prompt):
+        try:
+            submitted = []
+            searched = []
+
+            def get_instructions():
+                return _agent_api("GET", "/v1/agent/instructions")
+
+            def get_catalog():
+                return _agent_api("GET", "/v1/catalog/filaments")
+
+            def search_web(query, max_results=8):
+                result = self._search_web(query, max_results)
+                searched.append({"query": query, "results": len(result)})
+                return result
+
+            def open_url(url):
+                return self._open_url(url)
+
+            def submit_offer(**offer):
+                result = _agent_api("POST", "/v1/agent/offers", offer)
+                if result.get("status") not in ("accepted", "duplicate") and result.get("ok") is not True:
+                    raise ProviderError(f"Oferta rejeitada pela API: {result}")
+                submitted.append(dict(offer))
+                return result
+
+            tools = [
+                {"type": "function", "function": {"name": "get_instructions", "strict": True, "description": "Obtém as regras oficiais do agente FilamentDB e as fontes que devem ser pesquisadas.", "parameters": {"type": "object", "properties": {}, "required": [], "additionalProperties": False}}},
+                {"type": "function", "function": {"name": "get_catalog", "strict": True, "description": "Obtém o catálogo oficial de filamentos rastreados. Use-o para preservar exatamente os filament_key e identidades dos produtos.", "parameters": {"type": "object", "properties": {}, "required": [], "additionalProperties": False}}},
+                {"type": "function", "function": {"name": "search_web", "strict": True, "description": "Pesquisa a web por ofertas atuais. Use consultas específicas por produto, fonte, peso e cor.", "parameters": {"type": "object", "properties": {"query": {"type": "string"}, "max_results": {"type": "integer", "minimum": 1, "maximum": 10}}, "required": ["query", "max_results"], "additionalProperties": False}}},
+                {"type": "function", "function": {"name": "open_url", "strict": True, "description": "Abre uma URL de produto e extrai o texto visível para verificar preço, peso, quantidade e identidade.", "parameters": {"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"], "additionalProperties": False}}},
+                {"type": "function", "function": {"name": "submit_offer", "strict": True, "description": "Publica uma oferta verificada diretamente na API FilamentDB. Só chame depois de confirmar a oferta em uma página direta.", "parameters": {"type": "object", "properties": {
+                    "filament_key": {"type": "string"}, "material": {"type": "string"}, "manufacturer": {"type": "string"}, "line": {"type": "string"}, "store": {"type": "string"}, "domain": {"type": "string"}, "marketplace": {"type": "boolean"}, "url": {"type": "string"}, "title": {"type": "string"}, "price": {"type": "number"}, "original_price": {"type": ["number", "null"]}, "shipping": {"type": ["number", "null"]}, "currency": {"type": "string"}, "available": {"type": ["integer", "null"]}, "coupon": {"type": ["string", "null"]}, "color_name": {"type": ["string", "null"]}, "seller": {"type": ["string", "null"]}, "quantity": {"type": "integer", "minimum": 1}, "unit_weight_g": {"type": "number", "minimum": 1}, "price_basis": {"type": "string", "enum": ["unit", "total"]}, "total_price": {"type": "number", "minimum": 0.01}, "external_id": {"type": ["string", "null"]}, "source": {"type": "string"}, "notes": {"type": ["string", "null"]}
+                }, "required": ["filament_key", "material", "manufacturer", "line", "store", "domain", "marketplace", "url", "title", "price", "original_price", "shipping", "currency", "available", "coupon", "color_name", "seller", "quantity", "unit_weight_g", "price_basis", "total_price", "external_id", "source", "notes"], "additionalProperties": False}}}
+            ]
+            messages = [
+                {"role": "system", "content": "You are the FilamentDB price acquisition agent. Use tools, not prose. First call get_instructions and get_catalog. Then research every source for the assigned catalog item. Use search_web and open_url to verify current offers. Only publish a price after direct verification. Publish each verified offer with submit_offer. Never invent data. Do not return JSON; the submit_offer tool is the authoritative write path."},
+                {"role": "user", "content": prompt},
+            ]
+            functions = {
+                "get_instructions": lambda **_: get_instructions(),
+                "get_catalog": lambda **_: get_catalog(),
+                "search_web": search_web,
+                "open_url": open_url,
+                "submit_offer": submit_offer,
+            }
+            for _ in range(40):
+                response = self.client.chat.completions.create(
+                    model=CEREBRAS_MODEL,
+                    messages=messages,
+                    tools=tools,
+                    parallel_tool_calls=False,
+                    max_completion_tokens=6000,
+                )
+                msg = response.choices[0].message
+                if not msg.tool_calls:
+                    break
+                messages.append(msg.model_dump())
+                for call in msg.tool_calls:
+                    fn = call.function.name
+                    if fn not in functions:
+                        raise ProviderError(f"Cerebras solicitou ferramenta desconhecida: {fn}")
+                    args = json.loads(call.function.arguments or "{}")
+                    result = functions[fn](**args)
+                    messages.append({"role": "tool", "tool_call_id": call.id, "content": json.dumps(result, ensure_ascii=False)})
+            else:
+                raise ProviderError("Cerebras excedeu o limite de ciclos de ferramentas")
+            collection = [{"filament_key": r.get("filament_key", ""), "color": r.get("color_name"), "store": r.get("store", ""), "status": "found", "offers_found": 1, "notes": "Publicado diretamente pela ferramenta submit_offer."} for r in submitted]
+            if not submitted:
+                collection = [{"filament_key": "", "color": None, "store": "", "status": "not_found", "offers_found": 0, "notes": "Cerebras concluiu sem publicar oferta verificável."}]
+            print(f"[INFO] Cerebras publicou {len(submitted)} oferta(s) diretamente na API; pesquisas web: {len(searched)}", flush=True)
+            return {"offers": submitted, "collection": collection}
+        except ProviderError:
+            raise
+        except Exception as exc:
+            raise ProviderError(f"Cerebras: {exc}") from exc
 
 
 class GeminiProvider(Provider):
@@ -181,7 +324,7 @@ class OpenRouterProvider(Provider):
 
 
 def providers():
-    return [ZAIProvider(), GroqProvider(), OpenRouterProvider(), OpenAIProvider(), GeminiProvider()]
+    return [CerebrasProvider(), ZAIProvider(), GroqProvider(), OpenRouterProvider(), OpenAIProvider(), GeminiProvider()]
 
 
 def load_sources():
@@ -340,6 +483,13 @@ CATALOG
 
 
 def collect_batch(provider, catalog, sources, today):
+    if provider.name == "cerebras":
+        item = catalog[0]
+        return provider.collect(
+            f"Research the assigned catalog item for today ({today}). Assigned item: {json.dumps(item, ensure_ascii=False)}. "
+            "Research all configured sources for this item, including relevant colors/weights when directly verifiable. "
+            "Do not assume a source is unavailable; search it. Publish every directly verified offer using submit_offer."
+        )
     prompt = build_prompt(catalog, sources, today) + "\n\nJSON CONTRACT: Return one JSON object with exactly two top-level keys: offers (array) and collection (array). Each offer must contain the exact fields required by the FilamentDB schema; each collection item must contain filament_key, color, store, status, offers_found, and notes. Return JSON only."
     return provider.collect(prompt)
 
@@ -417,7 +567,7 @@ def main():
         "snapshot_date": today,
         "collected_at": now.isoformat(),
         "collector": "FilamentDB AI Price Agent",
-        "collector_version": "1.0",
+        "collector_version": "1.1",
         "scope": {"tracked_profiles": len(catalog), "sources": [s["name"] for s in sources]},
         "collection": collection,
         "offers": offers,
