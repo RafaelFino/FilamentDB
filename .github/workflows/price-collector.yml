@@ -2,7 +2,6 @@ name: Daily price collection
 
 on:
   schedule:
-    # 03:30 America/Sao_Paulo (06:30 UTC). GitHub schedules are UTC.
     - cron: '30 6 * * *'
   workflow_dispatch:
     inputs:
@@ -44,52 +43,30 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install collector dependency
-        run: python -m pip install --upgrade openai google-genai ddgs
+      - name: Install collector dependencies
+        run: python -m pip install --upgrade openai ddgs
 
-      - name: Collect daily prices
+      - name: Collect daily prices with API-driven agents
         env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          CEREBRAS_MODEL: ${{ vars.CEREBRAS_PRICE_MODEL || 'gpt-oss-120b' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           MISTRAL_MODEL: ${{ vars.MISTRAL_PRICE_MODEL || 'mistral-small-latest' }}
+          GEMINI_MODEL: ${{ vars.GEMINI_PRICE_MODEL || 'gemini-3.7-flash' }}
           FILAMENTDB_API_URL: ${{ vars.FILAMENTDB_API_URL || 'https://filamentdb-api.learnops.duckdns.org' }}
           FILAMENTDB_API_SECRET: ${{ secrets.FILAMENTDB_API_SECRET }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          Z_API_KEY: ${{ secrets.Z_API_KEY }}
-          OPENAI_MODEL: ${{ vars.OPENAI_PRICE_MODEL || 'gpt-5.6-luna' }}
-          Z_MODEL: ${{ vars.Z_PRICE_MODEL || 'glm-5.3' }}
-          GROQ_MODEL: ${{ vars.GROQ_PRICE_MODEL || 'groq/compound-mini' }}
-          GEMINI_MODEL: ${{ vars.GEMINI_PRICE_MODEL || 'gemini-3.6-flash' }}
-          OPENROUTER_MODEL: ${{ vars.OPENROUTER_PRICE_MODEL || 'openrouter/free' }}
-          OPENROUTER_ENABLE_WEB_SEARCH: '1'
-          PRICE_AGENT_BATCH_SIZE: ${{ vars.PRICE_AGENT_BATCH_SIZE || '1' }}
           PRICE_AGENT_MAX_PROFILES: ${{ inputs.limit || '0' }}
           PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'mistral,gemini' }}
+          PRICE_AGENT_MAX_TURNS: ${{ vars.PRICE_AGENT_MAX_TURNS || '30' }}
           ALLOW_SNAPSHOT_REPLACE: ${{ inputs.replace && '1' || '' }}
         run: |
           if [ -n "${{ inputs.date }}" ]; then
-            python scripts/collect_prices_ai.py --date "${{ inputs.date }}"
+            python scripts/collect_prices_agent.py --date "${{ inputs.date }}"
           else
-            python scripts/collect_prices_ai.py
+            python scripts/collect_prices_agent.py
           fi
 
       - name: Validate snapshot
         run: python scripts/validate_price_snapshot.py
-
-      - name: Publish offers through API
-        env:
-          FILAMENTDB_API_URL: ${{ vars.FILAMENTDB_API_URL || 'https://filamentdb-api.learnops.duckdns.org' }}
-          FILAMENTDB_API_SECRET: ${{ secrets.FILAMENTDB_API_SECRET }}
-        run: |
-          if [ -n "${{ inputs.date }}" ]; then
-            python scripts/publish_price_snapshot.py "data/price-data/${{ inputs.date }}.json"
-          else
-            python scripts/publish_price_snapshot.py
-          fi
 
       - name: Commit snapshot
         run: |
