@@ -6,7 +6,7 @@ import math
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, Flask, jsonify, request
 
 from src import config, database, prices
 
@@ -151,6 +151,26 @@ def health():
     return jsonify({"status": "ok", "service": "filamentdb-api"})
 
 
+def ready():
+    if not config.get("FILAMENTDB_PROXY_SECRET", ""):
+        return jsonify({"status": "not_ready", "service": "filamentdb-api", "reason": "secret_not_configured"}), 503
+
+    conn = None
+    try:
+        conn = database.get_db_connection()
+        conn.execute("SELECT 1 FROM filament_profiles LIMIT 1").fetchone()
+        return jsonify({"status": "ready", "service": "filamentdb-api"}), 200
+    except Exception:
+        return jsonify({"status": "not_ready", "service": "filamentdb-api", "reason": "database_unavailable"}), 503
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+bp.add_url_rule("/health", endpoint="v1_health", view_func=health, methods=["GET"])
+bp.add_url_rule("/health/ready", endpoint="v1_ready", view_func=ready, methods=["GET"])
+
+
 @bp.get("/catalog/filaments")
 def catalog_filaments():
     if not _authorized():
@@ -221,6 +241,10 @@ def ingest_price():
             conn.close()
 
 
-def register_public_api(app):
+def register_public_api(app: Flask):
     app.config["MAX_CONTENT_LENGTH"] = MAX_BODY_BYTES
     app.register_blueprint(bp)
+    # The public service exposes only these two unauthenticated operational endpoints
+    # at the root. Pangolin protects the normal web application separately.
+    app.add_url_rule("/health", endpoint="public_api_health", view_func=health, methods=["GET"])
+    app.add_url_rule("/health/ready", endpoint="public_api_ready", view_func=ready, methods=["GET"])

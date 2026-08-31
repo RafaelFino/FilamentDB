@@ -20,7 +20,7 @@ register_public_api(app)
 
 
 if __name__ == "__main__":
-    host = os.environ.get("FILAMENTDB_API_HOST", "127.0.0.1")
+    host = os.environ.get("FILAMENTDB_API_HOST", "0.0.0.0")
     port = int(os.environ.get("FILAMENTDB_API_PORT", "5001"))
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"
     app.run(host=host, port=port, debug=debug)

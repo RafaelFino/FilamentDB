@@ -9,6 +9,8 @@ Group=fino
 WorkingDirectory=/srv/FilamentDB
 EnvironmentFile=/srv/FilamentDB/config.env
 Environment=PYTHONUNBUFFERED=1
+Environment=FILAMENTDB_API_HOST=0.0.0.0
+Environment=FILAMENTDB_API_PORT=5001
 ExecStart=/srv/FilamentDB/.venv/bin/python /srv/FilamentDB/src/api_app.py
 Restart=on-failure
 RestartSec=3

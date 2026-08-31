@@ -100,6 +100,22 @@ else
     git log --oneline "$BEFORE..$AFTER" | sed 's/^/  /'
 fi
 
+# Install/update the isolated public API unit from the repository.
+# This makes a fresh server self-healing: `git pull` brings the unit and this
+# script installs it before the API restart below.
+API_SERVICE="filamentdb-api.service"
+API_UNIT_SOURCE="${REPO_DIR}/systemd/${API_SERVICE}"
+API_UNIT_TARGET="/etc/systemd/system/${API_SERVICE}"
+if [ -f "$API_UNIT_SOURCE" ]; then
+    install -m 0644 "$API_UNIT_SOURCE" "$API_UNIT_TARGET"
+    systemctl daemon-reload
+    systemctl enable "$API_SERVICE" >/dev/null
+    log "Unit ${API_SERVICE} instalada/atualizada e habilitada."
+else
+    err "${API_UNIT_SOURCE} não encontrado após git pull. Serviço API NÃO será iniciado."
+    exit 1
+fi
+
 log "Executando build..."
 if ! python3 build.py 2>&1 | sed 's/^/  /'; then
     err "build.py falhou. Serviço NÃO será reiniciado."
@@ -133,24 +149,30 @@ else
     exit 1
 fi
 
-# A API pública é um serviço separado. No primeiro deploy a unit pode ainda não
-# existir; nesse caso o update principal continua funcionando e a API pode ser
-# habilitada depois com `systemctl enable --now filamentdb-api`.
-API_SERVICE="filamentdb-api.service"
-if systemctl cat "$API_SERVICE" >/dev/null 2>&1; then
-    log "Reiniciando ${API_SERVICE}..."
-    systemctl restart "$API_SERVICE" 2>&1
-    sleep 1
-    if systemctl is-active --quiet "$API_SERVICE"; then
-        log "${API_SERVICE} reiniciado com sucesso."
-    else
-        err "${API_SERVICE} falhou ao reiniciar!"
-        systemctl status "$API_SERVICE" --no-pager 2>&1 | sed 's/^/  /'
-        exit 1
-    fi
+log "Reiniciando ${API_SERVICE}..."
+systemctl restart "$API_SERVICE" 2>&1
+sleep 2
+if systemctl is-active --quiet "$API_SERVICE"; then
+    log "${API_SERVICE} reiniciado com sucesso."
 else
-    log "${API_SERVICE} ainda não está instalado — reinício da API pulado."
+    err "${API_SERVICE} falhou ao reiniciar!"
+    systemctl status "$API_SERVICE" --no-pager 2>&1 | sed 's/^/  /'
+    exit 1
 fi
+
+# Validate the API locally before declaring the deployment successful.
+API_LOCAL_URL="http://${FILAMENTDB_API_HOST:-127.0.0.1}:${FILAMENTDB_API_PORT:-5001}"
+if ! curl -fsS --max-time 10 "${API_LOCAL_URL}/health" >/dev/null; then
+    err "Health da ${API_SERVICE} falhou em ${API_LOCAL_URL}/health."
+    systemctl status "$API_SERVICE" --no-pager 2>&1 | sed 's/^/  /'
+    exit 1
+fi
+if ! curl -fsS --max-time 10 "${API_LOCAL_URL}/health/ready" >/dev/null; then
+    err "Ready da ${API_SERVICE} falhou em ${API_LOCAL_URL}/health/ready."
+    systemctl status "$API_SERVICE" --no-pager 2>&1 | sed 's/^/  /'
+    exit 1
+fi
+log "API health e ready OK em ${API_LOCAL_URL}."
 
 API_URL="${FILAMENTDB_API_URL:-http://localhost:5000}"
 JSON_BACKUP_DIR="${BACKUP_DIR}/inventory-json"
