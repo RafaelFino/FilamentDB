@@ -1,79 +1,367 @@
 # FilamentDB — Roadmap e Estado do Projeto
 
 > Documento de continuidade. Deve ser atualizado sempre que uma etapa importante da arquitetura, API, coleta de preços, deploy ou integração com LLMs mudar.
+>
 > Estado registrado em 2026-08-30/31, durante a conclusão da nova API pública de ingestão de preços.
 
-## REGRA DE MANUTENÇÃO
-Toda alteração relevante no repositório deve atualizar este documento no mesmo commit, registrando problema, causa, solução e estado de validação.
+## 1. Objetivo do projeto
 
-## Arquitetura e chaves
+O FilamentDB é o sistema central de catálogo de filamentos, perfis de impressão e dados de estoque/preços. A arquitetura atual separa o catálogo técnico da coleta de preços:
 
-O FilamentDB separa catálogo técnico, histórico de preços e coleta agentic. O catálogo principal é `data/filament.db`; o histórico é `price-history.db`; snapshots ficam em `data/price-data/`.
+- catálogo principal: `filament.db`;
+- histórico de preços: `price-history.db`;
+- snapshots de coleta: `price-data/`;
+- aplicação web/API existente para consulta humana;
+- API pública de ingestão para agentes/LLMs;
+- GitHub Actions como orquestrador da coleta automatizada;
+- LLM + busca web para localizar ofertas reais;
+- deploy no servidor Linux com serviços separados.
 
-Há duas identificações intencionais: `technical_key`, derivada da identidade interna do registro (`filament_profiles.id`), e `filament_key`, chave canônica persistida para correlação de ofertas. `offer_key` identifica uma oferta específica. Nunca misturar essas responsabilidades.
+## 2. Arquitetura de preços atual
 
-`tracking` é o opt-in de coleta: `tracking=1` significa pesquisar preços; `tracking=0` significa não pesquisar. Collector, API e validator devem respeitar a flag.
-
-## Estado atual
-
-A nova API de ingestão está separada da aplicação web e é usada pelo collector agentic do GitHub Actions. Mistral e Gemini estão configurados para a fase de validação; Groq, Z.ai, Cerebras e OpenRouter ficam para o fallback posterior.
-
-O workflow reconstrói o catálogo com `python build.py --only-db` antes da coleta e instala `requirements.txt`, incluindo PyYAML.
-
-## Incidentes recentes
-
-### Schema antigo / `tracking`
-O validator chegou a consultar `fp.tracking` em um artefato antigo do banco. A arquitetura correta mantém `tracking` no schema produzido por `build.py`, e o workflow passou a reconstruir o banco antes da coleta.
-
-### `unknown_or_untracked_filament`
-O collector chegou a montar uma chave para PETG 3DFila enquanto a API corretamente recusava perfis não rastreados. A solução foi tornar `tracking` o opt-in oficial e fazer o collector consumir o `filament_key` persistido no catálogo.
-
-### PyYAML ausente
-O workflow executava `build.py`, mas não instalava `requirements.txt`. Corrigido para instalar o arquivo de dependências antes do build.
-
-### 2026-08-31 — banco errado usado pelo collector
-O workflow confirmou que `build.py --only-db` criou o banco em `data/filament.db` e importou 98 perfis. Apesar disso, o collector usava `ROOT / "filament.db"`. Esse arquivo não era o banco recém-construído; por isso a consulta encontrou um schema sem `filament_key` e falhou com:
+Fluxo pretendido:
 
 ```text
-sqlite3.OperationalError: no such column: fp.filament_key
+GitHub Actions
+    |
+    v
+collect_prices_agent.py
+    |
+    +--> LLM (atualmente Mistral/Gemini em teste)
+    |       |
+    |       +--> busca web
+    |       +--> normalização das ofertas
+    |
+    v
+POST /v1/agent/offers
+    |
+    v
+API pública de ingestão
+    |
+    v
+price-history.db
+    |
+    +--> snapshot JSON / price-data
+    |
+    v
+commit/persistência no GitHub
 ```
 
-**Causa:** divergência de caminho entre o produtor do catálogo (`build.py`) e o consumidor (`collect_prices_agent.py`).
+A API de ingestão deve permanecer separada da aplicação web principal e ter seu próprio processo/systemd. O `run.sh` e o `update-server.sh` devem continuar tratando as duas aplicações de forma independente.
 
-**Correção:** o collector agora aponta explicitamente para `ROOT / "data" / "filament.db"`, o mesmo artefato produzido pelo build.
+## 3. Modelo de chaves — REGRA IMPORTANTE
 
-**Lição:** o caminho do catálogo deve ser uma configuração compartilhada ou uma constante claramente alinhada ao `DB_PATH` do build; nunca manter dois caminhos implícitos para o mesmo banco.
+Não voltar ao modelo em que a API ou o agente constroem uma chave de filamento de forma improvisada/dinâmica.
 
-## Teste controlado
+Existem **duas identificações diferentes e intencionais**:
 
-O teste deve continuar usando somente o perfil PETG XT Line da 3DFila com `tracking=1`, limitando a execução a um perfil. Não ampliar o catálogo nem reativar todos os providers enquanto o fluxo ponta a ponta não estiver verde.
+### 3.1 Chave técnica interna
 
-A sequência esperada é: build do catálogo → collector lê `data/filament.db` → LLM → `POST /v1/agent/offers` → persistência em `price-history.db` → snapshot → validator.
+É a identificação estável usada internamente pelo banco/aplicação para referenciar uma entidade de filamento. Ela deve apontar para o registro técnico/cadastral correto e não deve depender de texto apresentado por uma LLM.
 
-## Backlog P0
+Exemplos de componentes que podem participar dessa identidade interna: material/tipo, fabricante, linha/modelo/qualidade e identificadores técnicos do cadastro.
 
-- [ ] Reexecutar coleta controlada após correção do caminho do banco.
-- [ ] Confirmar oferta real via API e persistência em `price-history.db`.
-- [ ] Confirmar snapshot válido.
-- [ ] Validar Mistral e Gemini.
+A regra é: **a chave técnica é propriedade do catálogo e não deve ser recriada pelo collector.**
 
-## Backlog P1
+### 3.2 Chave de correlação de ofertas
 
-- [ ] Liberar consulta para todos os filamentos desejados, mantendo `tracking` como controle explícito.
-- [ ] Reativar Groq, Z.ai, Cerebras e OpenRouter como fallback.
-- [ ] Definir ordem de fallback por disponibilidade/custo.
-- [ ] Melhorar logs e relatório de coleta.
+As ofertas encontradas na web precisam de uma chave semântica/canônica para correlacionar o produto comercial encontrado com o cadastro do FilamentDB.
 
-## Backlog P2/P3
+Essa chave é baseada nos atributos acordados para correlação, especialmente:
 
-- [ ] Mostrar todas as ofertas.
-- [ ] Consolidar estoque/quantidades.
-- [ ] Mostrar múltiplas cores.
-- [ ] Melhorar normalização de kits/unidades/peso/preço.
-- [ ] Melhorar histórico e comparações.
+```text
+nome | tipo/material | fabricante | qualidade/linha (quando aplicável)
+```
+
+A normalização deve ser determinística (case folding, espaços e demais normalizações previstas pelo projeto), mas a chave deve ser **derivada do cadastro**, não inventada de forma independente pela LLM.
+
+### 3.3 Regra de ouro
+
+- `technical/internal key` = identidade estável do FilamentDB.
+- `offer correlation key` = chave canônica para relacionar produto/oferta externa ao cadastro.
+- `offer_key` = identidade da oferta específica, incluindo loja/produto/identificador externo conforme o schema de preços.
+
+Nunca misturar essas três coisas.
+
+Antes de alterar qualquer código que lide com `filament_key`, consultar este documento e o schema vigente.
+
+## 3.4 Contrato implementado no catálogo da API
+
+A API expõe duas identificações para o agente: `technical_key`, derivada da identidade interna do registro (`filament_profiles.id`), e `filament_key`, que é a chave canônica persistida de correlação usada para relacionar ofertas externas ao catálogo.
+
+O `tracking` é uma flag explícita do cadastro: `tracking=1` significa que queremos pesquisar preços daquele filamento; `tracking=0` significa que ele não entra na coleta. Collector, API e validator devem respeitar essa flag.
+
+O collector deve usar o `filament_key` persistido fornecido pelo catálogo/API; ele não deve reconstruir a chave a partir de material/fabricante/linha. O schema gerado por `build.py` já possui `filament_key` e `tracking`; artefatos antigos do banco podem não possuir essas colunas, por isso o workflow precisa executar o build do catálogo antes da coleta.
+
+Esta distinção deve ser preservada em futuras alterações.
+
+## 4. O que já foi feito
+
+### API de ingestão
+
+- Criada a nova API para receber ofertas produzidas pelo agente/LLM.
+- Endpoint de health implementado.
+- Endpoint de catálogo/consulta preparado para uso do agente.
+- Endpoint de ingestão de ofertas implementado.
+- Validação e normalização de valores vindos de LLM foram endurecidas.
+- Foram tratados valores como `R$ 89,90`, `sim/não`, `1 kg`, `3 rolos`, `por unidade`, etc.
+- Testes de resiliência da API foram restaurados.
+- A API possui serviço/systemd próprio e script `scripts/run-api.sh`.
+
+### Collector / agente
+
+- Collector de preços integrado ao GitHub Actions.
+- Agente foi endurecido contra timeouts e falhas de busca web.
+- Assinaturas/chamadas do Gemini foram corrigidas.
+- O fluxo de coleta foi testado com Mistral e Gemini.
+- Durante os testes, provedores gratuitos como Groq, Z.ai, Cerebras e OpenRouter consumiram seus créditos disponíveis; eles devem voltar posteriormente como fallback, não necessariamente como primeira opção.
+
+### Deploy
+
+- Servidor foi atualizado com a versão mais recente antes desta fase de validação.
+- `update-server.sh` foi preparado para atualizar a aplicação e preservar os dados.
+- A API possui processo separado da aplicação web.
+- Scripts de inicialização devem manter permissões executáveis (`chmod +x`) após qualquer alteração.
+
+### Testes recentes
+
+- Houve testes reais usando Mistral e Gemini.
+- O próximo passo é validar o fluxo completo contra a versão atualmente instalada no servidor, antes de ampliar o catálogo e reativar todos os fallbacks.
+
+## 5. Situação atual / ponto exato da retomada
+
+O código está no commit mais recente relacionado à API resiliente, atualmente em torno de:
+
+- `fix: restore resilient API implementation`
+- `fix: restore API resilience tests`
+
+A validação do deploy ainda é a etapa crítica.
+
+### Ordem obrigatória da próxima sessão
+
+1. Confirmar que a API está saudável no servidor atualizado.
+2. Fazer uma ingestão real controlada usando o agente/LLM.
+3. Confirmar resposta HTTP da API.
+4. Confirmar que a oferta foi persistida em `price-history.db`.
+5. Confirmar que a correlação com o catálogo usa as chaves corretas.
+6. Confirmar snapshot/resultado da coleta.
+7. Executar o workflow do GitHub Actions e analisar logs.
+8. Só depois liberar a consulta do catálogo completo de filamentos.
+9. Só depois reativar os demais provedores de LLM como fallback.
+
+## 6. Estratégia de LLMs
+
+Provedores configurados no GitHub incluem, conforme o ambiente atual:
+
+- Mistral — atualmente respondendo e deve ser usado durante a validação;
+- Gemini — ainda possui aproximadamente créditos pagos disponíveis e deve ser usado com cautela;
+- Groq — configurado, mas créditos free consumidos durante os testes;
+- Z.ai — configurado, créditos free consumidos durante os testes;
+- Cerebras — configurado, mas créditos free consumidos durante os testes;
+- OpenRouter — configurado, mas créditos free consumidos durante os testes.
+
+A ordem de fallback deve ser configurável por variável do workflow, sem acoplar a persistência a um provedor específico.
+
+## 7. Workflow e dependências
+
+O workflow `.github/workflows/price-collector.yml` instala `requirements.txt`, incluindo `PyYAML`, antes de executar `build.py --only-db`. O build é obrigatório antes da coleta para produzir o banco de catálogo atual.
+
+O workflow recebe `limit` para permitir testes controlados. `limit=1` é a estratégia recomendada enquanto o fluxo ponta a ponta não estiver validado.
+
+## 8. Coleta e qualidade dos preços
+
+A coleta deve continuar registrando:
+
+- loja/fonte;
+- URL;
+- título encontrado;
+- preço;
+- preço original, quando houver;
+- frete;
+- preço total, quando calculável;
+- moeda;
+- disponibilidade;
+- quantidade de rolos/unidades;
+- peso unitário;
+- base do preço (`unit`, `total`, etc.);
+- vendedor, quando aplicável;
+- identificador externo, quando disponível;
+- data/hora da coleta;
+- status da coleta por filamento/fonte;
+- observações e falhas.
+
+A UI deve continuar podendo mostrar **todas as ofertas encontradas**, e não somente a melhor oferta.
+
+## 9. Fontes de preço previstas
+
+Fontes monitoradas/planejadas incluem Amazon.com, AliExpress, Shopee, Mercado Livre, Voolt3D, 3D Lab, Filamentos3D Brasil e sites oficiais dos fabricantes quando relevantes.
+
+Marcas prioritárias já discutidas incluem Voolt3D, 3DLab, Sunlu, eSun, Elegoo e Creality.
+
+Materiais prioritários: PLA e PETG, com atenção especial a linhas premium, matte/velvet e produtos de boa qualidade.
+
+## 10. Regras importantes para marketplaces
+
+Não assumir que o preço exibido é sempre de um rolo. A coleta deve distinguir preço por unidade, kit/multipack, quantidade de rolos, peso por rolo, preço total do anúncio e frete.
+
+Uma oferta de kit pode ser melhor que uma oferta unitária depois da normalização, mas a informação original deve ser preservada.
+
+## 11. Histórico e persistência
+
+`price-history.db` é o banco de histórico e não deve ser confundido com o catálogo principal.
+
+Snapshots JSON em `price-data/` servem como artefato auditável da coleta e como entrada para o processo de atualização/importação do servidor.
+
+Não apagar ou substituir dados históricos simplesmente para corrigir uma coleta nova.
+
+## 12. Deploy no servidor
+
+Scripts relevantes: `scripts/update-server.sh`, `scripts/run.sh`, `scripts/run-api.sh`, `systemd/filamentdb-api.service`.
+
+Sempre que scripts forem alterados:
+
+```bash
+chmod +x scripts/*.sh
+```
+
+O deploy deve atualizar código, preservar banco/dados, atualizar dependências quando necessário, reiniciar o serviço correto, validar healthcheck e deixar aplicação web e API funcionando independentemente.
+
+## 13. Backlog
+
+### P0 — concluir agora
+
+- [ ] Validar API no servidor atualizado.
+- [ ] Validar ingestão real com Mistral.
+- [ ] Validar ingestão real com Gemini sem consumir créditos excessivos.
+- [ ] Confirmar persistência no `price-history.db`.
+- [ ] Confirmar correlação usando as duas camadas de chave corretas.
+- [ ] Executar e estabilizar GitHub Actions de coleta.
+- [ ] Corrigir qualquer problema encontrado no fluxo ponta a ponta.
+
+### P1 — imediatamente após validação
+
+- [ ] Liberar consulta para todos os filamentos.
+- [ ] Reativar Groq, Z.ai, Cerebras e OpenRouter como fallbacks.
+- [ ] Implementar/confirmar ordem de fallback por disponibilidade/custo.
+- [ ] Melhorar logs de escolha/falha de provedor.
+- [ ] Garantir que nenhum secret seja impresso.
+- [ ] Rodar coleta em escala maior.
+
+### P2 — qualidade e produto
+
+- [ ] Melhorar relatório de coleta: encontrados, não encontrados e falhas.
+- [ ] Garantir visualização de todas as ofertas.
+- [ ] Consolidar visualização de estoque/quantidade por filamento quando aplicável.
+- [ ] Mostrar múltiplas cores disponíveis para uma mesma chave de filamento.
+- [ ] Ordenar preços por material e fabricante.
+- [ ] Revisar normalização de kits/unidades/peso/preço.
+- [ ] Melhorar histórico e comparações de preço.
+
+### P3 — manutenção
+
+- [ ] Manter `roadmap.md` atualizado.
+- [ ] Documentar mudanças de schema antes de alterar queries.
 - [ ] Criar testes de contrato entre collector, API e banco.
-- [ ] Adicionar testes de integração do workflow.
+- [ ] Adicionar testes de integração do workflow quando possível.
+- [ ] Revisar periodicamente limites/custos dos provedores LLM.
 
-## Critério de pronto
+## 14. Problemas que já apareceram e lições
 
-A fase só termina quando healthcheck, ingestão real, persistência, correlação das chaves, snapshot, workflow e pelo menos dois provedores estiverem validados. Só depois disso ampliar escala e fallback.
+### Caminho de banco hardcoded
+
+Problema: código dependia de caminhos absolutos como `/srv/FilamentDB`.
+
+Solução: usar configuração de caminho (`DB_PATH`/configuração central) para permitir execução local e no servidor.
+
+### Encoding
+
+Problema: textos como `preÃ§o` apareceram na UI.
+
+Solução: garantir UTF-8 de ponta a ponta e revisar arquivos/headers quando alterações de texto forem feitas.
+
+### Schema divergente
+
+Problema: queries assumiram colunas que não existiam no schema vigente.
+
+Lição: sempre consultar o schema real antes de criar uma query nova. Não inferir nomes de colunas a partir de versões antigas do projeto.
+
+### Preços 100x menores
+
+Problema: erro de cálculo/normalização de preço em determinadas ofertas.
+
+Lição: separar preço do anúncio, quantidade, peso e base do preço; testar unitário versus total explicitamente.
+
+### API / histórico
+
+Problema anterior: endpoint de histórico apresentou erro 500 e a UI informou que não conseguia carregar o histórico.
+
+Lição: manter testes de API e de banco sincronizados com o schema e testar também a integração completa.
+
+### Chaves de filamento
+
+Problema: risco de construir `filament_key` dinamicamente a partir de strings diferentes entre collector, API e banco.
+
+Solução arquitetural: manter uma chave técnica interna estável e uma chave canônica de correlação de ofertas, com responsabilidades separadas.
+
+**Não reintroduzir o modelo antigo sem atualizar este documento.**
+
+## 14.5 Incidente de 2026-08-30/31 — tracking e banco desatualizado
+
+O primeiro teste após a publicação da API falhou na validação do snapshot porque o validator consultava uma coluna `tracking` que não existia no artefato `filament.db` versionado. A correção intermediária também revelou o problema inverso: o schema produzido por `build.py` **já define** `filament_key` e `tracking`, mas o workflow não executava o build antes do collector.
+
+No teste seguinte, o collector montava dinamicamente `petg|3dfila|petg xt line`, enquanto a API consultava apenas registros com `tracking=1`. O perfil `PETG XT Line` da 3DFila estava com `tracking=0`, portanto a API corretamente respondeu `404 unknown_or_untracked_filament`.
+
+### Solução definitiva
+
+- `tracking` permanece como **opt-in de coleta de preços**.
+- `filament_key` é persistido no catálogo e é a única chave de correlação fornecida ao collector/LLM.
+- Collector e validator usam `fp.filament_key` e filtram `fp.tracking=1`.
+- O workflow executa `python build.py --only-db` antes da coleta para garantir schema e dados do catálogo atuais.
+- O teste controlado marca `PETG XT Line` da 3DFila como `tracking: 1` na fonte YAML.
+- Não devemos marcar todos os filamentos como rastreados automaticamente; a expansão da coleta deve ser feita deliberadamente pela flag `tracking`.
+
+O erro de `429` do Mistral no mesmo teste é um problema independente de rate limit. O fallback para Gemini funcionou como caminho de execução, mas terminou no mesmo bloqueio da API porque o filamento estava corretamente não rastreado.
+
+## 14.6 Incidente de 2026-08-31 — dependência PyYAML ausente no GitHub Actions
+
+Depois de corrigir o contrato de `tracking` e passar a executar `python build.py --only-db` no workflow, a execução falhou imediatamente no runner com `ModuleNotFoundError: No module named 'yaml'`.
+
+A investigação mostrou que `requirements.txt` já declarava `PyYAML>=6.0`, porém o workflow instalava apenas `openai ddgs`. O passo foi corrigido para instalar `requirements.txt` junto das dependências específicas do collector.
+
+## 14.7 Incidente de 2026-08-31 — collector apontava para o banco errado
+
+Após a correção das dependências, o workflow confirmou que `build.py --only-db` criou `data/filament.db`, importou 98 perfis e gerou 26 perfis de processo. Em seguida, o collector falhou com `sqlite3.OperationalError: no such column: fp.filament_key`.
+
+A causa foi uma divergência de caminho: `build.py` produz `data/filament.db`, mas o collector ainda apontava para `ROOT/filament.db`, que podia ser um artefato antigo sem o schema atual.
+
+### Correção
+
+O collector agora usa `ROOT / "data" / "filament.db"`, exatamente o mesmo banco produzido pelo build. `tracking` continua sendo o opt-in explícito da coleta e `filament_key` continua sendo lido do catálogo persistido, sem reconstrução pelo collector.
+
+Foi adicionado teste de regressão para impedir que o caminho do catálogo volte a divergir do build.
+
+### Erro durante a aplicação e recuperação
+
+Uma primeira tentativa automática de correção substituiu indevidamente o conteúdo completo do collector por uma implementação incompleta. O erro foi detectado antes de pedir novo teste e o arquivo foi restaurado a partir da versão testada anterior; a correção final altera somente o caminho do banco. Este incidente reforça a regra de preservar conteúdo existente e verificar arquivos completos após qualquer commit.
+
+## 15. Critério de pronto da fase atual
+
+A fase de API/preços só deve ser considerada concluída quando:
+
+- healthcheck da API responde corretamente;
+- uma oferta real chega pela API;
+- a oferta é validada/normalizada;
+- a oferta é persistida;
+- a chave técnica e a chave de correlação permanecem corretas;
+- o workflow termina sem erro;
+- o snapshot é produzido;
+- a aplicação consegue consultar o resultado;
+- pelo menos dois provedores LLM foram validados;
+- fallback pode ser reativado sem alterar a lógica de persistência;
+- uma coleta em escala maior é possível sem intervenção manual.
+
+## 16. Próximo passo imediato
+
+**Não ampliar o escopo ainda.** Primeiro executar uma coleta pequena e controlada contra a API instalada no servidor. Se passar, ampliar progressivamente.
+
+A próxima sessão deve começar lendo este `roadmap.md` e os documentos `API-INGEST.md`, `PRICE-COLLECTOR.md` e `PRICE_AGENT.md`, depois verificar o último workflow do GitHub Actions e seguir a seção 5 deste documento.
