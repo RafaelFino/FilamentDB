@@ -1,7 +1,6 @@
 # FilamentDB — Roadmap e Estado do Projeto
 
 > Documento de continuidade. Deve ser atualizado sempre que uma etapa importante da arquitetura, API, coleta de preços, deploy ou integração com LLMs mudar.
->
 > Estado registrado em 2026-08-30/31, durante a conclusão da nova API pública de ingestão de preços.
 
 ## 1. Objetivo do projeto
@@ -170,25 +169,7 @@ O workflow recebe `limit` para permitir testes controlados. `limit=1` é a estra
 
 ## 8. Coleta e qualidade dos preços
 
-A coleta deve continuar registrando:
-
-- loja/fonte;
-- URL;
-- título encontrado;
-- preço;
-- preço original, quando houver;
-- frete;
-- preço total, quando calculável;
-- moeda;
-- disponibilidade;
-- quantidade de rolos/unidades;
-- peso unitário;
-- base do preço (`unit`, `total`, etc.);
-- vendedor, quando aplicável;
-- identificador externo, quando disponível;
-- data/hora da coleta;
-- status da coleta por filamento/fonte;
-- observações e falhas.
+A coleta deve continuar registrando loja/fonte, URL, título encontrado, preço, preço original, frete, preço total, moeda, disponibilidade, quantidade de rolos/unidades, peso unitário, base do preço, vendedor, identificador externo, data/hora, status e observações/falhas.
 
 A UI deve continuar podendo mostrar **todas as ofertas encontradas**, e não somente a melhor oferta.
 
@@ -196,35 +177,21 @@ A UI deve continuar podendo mostrar **todas as ofertas encontradas**, e não som
 
 Fontes monitoradas/planejadas incluem Amazon.com, AliExpress, Shopee, Mercado Livre, Voolt3D, 3D Lab, Filamentos3D Brasil e sites oficiais dos fabricantes quando relevantes.
 
-Marcas prioritárias já discutidas incluem Voolt3D, 3DLab, Sunlu, eSun, Elegoo e Creality.
-
-Materiais prioritários: PLA e PETG, com atenção especial a linhas premium, matte/velvet e produtos de boa qualidade.
+Marcas prioritárias: Voolt3D, 3DLab, Sunlu, eSun, Elegoo e Creality. Materiais prioritários: PLA e PETG, com atenção especial a linhas premium, matte/velvet e produtos de boa qualidade.
 
 ## 10. Regras importantes para marketplaces
 
-Não assumir que o preço exibido é sempre de um rolo. A coleta deve distinguir preço por unidade, kit/multipack, quantidade de rolos, peso por rolo, preço total do anúncio e frete.
-
-Uma oferta de kit pode ser melhor que uma oferta unitária depois da normalização, mas a informação original deve ser preservada.
+Não assumir que o preço exibido é sempre de um rolo. Distinguir preço por unidade, kit/multipack, quantidade de rolos, peso por rolo, preço total e frete. Preservar a informação original mesmo após normalização.
 
 ## 11. Histórico e persistência
 
-`price-history.db` é o banco de histórico e não deve ser confundido com o catálogo principal.
-
-Snapshots JSON em `price-data/` servem como artefato auditável da coleta e como entrada para o processo de atualização/importação do servidor.
-
-Não apagar ou substituir dados históricos simplesmente para corrigir uma coleta nova.
+`price-history.db` é o banco de histórico e não deve ser confundido com o catálogo principal. Snapshots JSON em `price-data/` servem como artefato auditável. Não apagar ou substituir dados históricos simplesmente para corrigir uma coleta nova.
 
 ## 12. Deploy no servidor
 
 Scripts relevantes: `scripts/update-server.sh`, `scripts/run.sh`, `scripts/run-api.sh`, `systemd/filamentdb-api.service`.
 
-Sempre que scripts forem alterados:
-
-```bash
-chmod +x scripts/*.sh
-```
-
-O deploy deve atualizar código, preservar banco/dados, atualizar dependências quando necessário, reiniciar o serviço correto, validar healthcheck e deixar aplicação web e API funcionando independentemente.
+Sempre que scripts forem alterados: `chmod +x scripts/*.sh`.
 
 ## 13. Backlog
 
@@ -249,10 +216,10 @@ O deploy deve atualizar código, preservar banco/dados, atualizar dependências 
 
 ### P2 — qualidade e produto
 
-- [ ] Melhorar relatório de coleta: encontrados, não encontrados e falhas.
+- [ ] Melhorar relatório de coleta.
 - [ ] Garantir visualização de todas as ofertas.
-- [ ] Consolidar visualização de estoque/quantidade por filamento quando aplicável.
-- [ ] Mostrar múltiplas cores disponíveis para uma mesma chave de filamento.
+- [ ] Consolidar estoque/quantidade por filamento.
+- [ ] Mostrar múltiplas cores disponíveis.
 - [ ] Ordenar preços por material e fabricante.
 - [ ] Revisar normalização de kits/unidades/peso/preço.
 - [ ] Melhorar histórico e comparações de preço.
@@ -262,7 +229,7 @@ O deploy deve atualizar código, preservar banco/dados, atualizar dependências 
 - [ ] Manter `roadmap.md` atualizado.
 - [ ] Documentar mudanças de schema antes de alterar queries.
 - [ ] Criar testes de contrato entre collector, API e banco.
-- [ ] Adicionar testes de integração do workflow quando possível.
+- [ ] Adicionar testes de integração do workflow.
 - [ ] Revisar periodicamente limites/custos dos provedores LLM.
 
 ## 14. Problemas que já apareceram e lições
@@ -271,97 +238,79 @@ O deploy deve atualizar código, preservar banco/dados, atualizar dependências 
 
 Problema: código dependia de caminhos absolutos como `/srv/FilamentDB`.
 
-Solução: usar configuração de caminho (`DB_PATH`/configuração central) para permitir execução local e no servidor.
+Solução: usar configuração de caminho para permitir execução local e no servidor.
 
 ### Encoding
 
-Problema: textos como `preÃ§o` apareceram na UI.
-
-Solução: garantir UTF-8 de ponta a ponta e revisar arquivos/headers quando alterações de texto forem feitas.
+Problema: textos como `preÃ§o` apareceram na UI. Solução: garantir UTF-8 de ponta a ponta.
 
 ### Schema divergente
 
-Problema: queries assumiram colunas que não existiam no schema vigente.
-
-Lição: sempre consultar o schema real antes de criar uma query nova. Não inferir nomes de colunas a partir de versões antigas do projeto.
+Problema: queries assumiram colunas que não existiam no schema vigente. Lição: sempre consultar o schema real antes de criar uma query nova.
 
 ### Preços 100x menores
 
-Problema: erro de cálculo/normalização de preço em determinadas ofertas.
-
-Lição: separar preço do anúncio, quantidade, peso e base do preço; testar unitário versus total explicitamente.
+Problema: erro de cálculo/normalização. Lição: separar preço, quantidade, peso e base do preço.
 
 ### API / histórico
 
-Problema anterior: endpoint de histórico apresentou erro 500 e a UI informou que não conseguia carregar o histórico.
-
-Lição: manter testes de API e de banco sincronizados com o schema e testar também a integração completa.
+Problema anterior: endpoint de histórico apresentou erro 500. Lição: manter testes de API e banco sincronizados.
 
 ### Chaves de filamento
 
-Problema: risco de construir `filament_key` dinamicamente a partir de strings diferentes entre collector, API e banco.
-
-Solução arquitetural: manter uma chave técnica interna estável e uma chave canônica de correlação de ofertas, com responsabilidades separadas.
+Problema: risco de construir `filament_key` dinamicamente a partir de strings diferentes. Solução: chave técnica interna estável + chave canônica de correlação.
 
 **Não reintroduzir o modelo antigo sem atualizar este documento.**
 
 ## 14.5 Incidente de 2026-08-30/31 — tracking e banco desatualizado
 
-O primeiro teste após a publicação da API falhou na validação do snapshot porque o validator consultava uma coluna `tracking` que não existia no artefato `filament.db` versionado. A correção intermediária também revelou o problema inverso: o schema produzido por `build.py` **já define** `filament_key` e `tracking`, mas o workflow não executava o build antes do collector.
+O primeiro teste após a publicação da API falhou na validação do snapshot porque o validator consultava uma coluna `tracking` que não existia no artefato antigo. O schema produzido por `build.py` já define `filament_key` e `tracking`, e o workflow passou a reconstruir o banco antes da coleta.
 
-No teste seguinte, o collector montava dinamicamente `petg|3dfila|petg xt line`, enquanto a API consultava apenas registros com `tracking=1`. O perfil `PETG XT Line` da 3DFila estava com `tracking=0`, portanto a API corretamente respondeu `404 unknown_or_untracked_filament`.
+No teste seguinte, a API corretamente respondeu `404 unknown_or_untracked_filament` porque o perfil controlado ainda estava com `tracking=0`.
 
-### Solução definitiva
+### Solução
 
 - `tracking` permanece como **opt-in de coleta de preços**.
-- `filament_key` é persistido no catálogo e é a única chave de correlação fornecida ao collector/LLM.
-- Collector e validator usam `fp.filament_key` e filtram `fp.tracking=1`.
-- O workflow executa `python build.py --only-db` antes da coleta para garantir schema e dados do catálogo atuais.
-- O teste controlado marca `PETG XT Line` da 3DFila como `tracking: 1` na fonte YAML.
-- Não devemos marcar todos os filamentos como rastreados automaticamente; a expansão da coleta deve ser feita deliberadamente pela flag `tracking`.
+- `filament_key` é persistido no catálogo e fornecido ao collector/LLM.
+- Collector e validator filtram `tracking=1`.
+- Workflow executa `python build.py --only-db` antes da coleta.
+- O teste controlado usa PETG XT Line da 3DFila com `tracking: 1`.
+- A expansão deve ser deliberada pela flag `tracking`.
 
-O erro de `429` do Mistral no mesmo teste é um problema independente de rate limit. O fallback para Gemini funcionou como caminho de execução, mas terminou no mesmo bloqueio da API porque o filamento estava corretamente não rastreado.
+O erro `429` do Mistral é independente e deve ser tratado por fallback.
 
 ## 14.6 Incidente de 2026-08-31 — dependência PyYAML ausente no GitHub Actions
 
-Depois de corrigir o contrato de `tracking` e passar a executar `python build.py --only-db` no workflow, a execução falhou imediatamente no runner com `ModuleNotFoundError: No module named 'yaml'`.
+`build.py` falhou com `ModuleNotFoundError: No module named 'yaml'`. `requirements.txt` já declarava `PyYAML>=6.0`, mas o workflow não instalava o arquivo.
 
-A investigação mostrou que `requirements.txt` já declarava `PyYAML>=6.0`, porém o workflow instalava apenas `openai ddgs`. O passo foi corrigido para instalar `requirements.txt` junto das dependências específicas do collector.
+### Solução
+
+O passo de dependências passou a executar:
+
+```bash
+python -m pip install --upgrade -r requirements.txt openai ddgs
+```
 
 ## 14.7 Incidente de 2026-08-31 — collector apontava para o banco errado
 
-Após a correção das dependências, o workflow confirmou que `build.py --only-db` criou `data/filament.db`, importou 98 perfis e gerou 26 perfis de processo. Em seguida, o collector falhou com `sqlite3.OperationalError: no such column: fp.filament_key`.
-
-A causa foi uma divergência de caminho: `build.py` produz `data/filament.db`, mas o collector ainda apontava para `ROOT/filament.db`, que podia ser um artefato antigo sem o schema atual.
+Após o build confirmar `data/filament.db`, o collector falhou com `no such column: fp.filament_key`. A causa foi uma divergência de caminho: `build.py` produz `data/filament.db`, mas o collector apontava para `ROOT/filament.db`.
 
 ### Correção
 
-O collector agora usa `ROOT / "data" / "filament.db"`, exatamente o mesmo banco produzido pelo build. `tracking` continua sendo o opt-in explícito da coleta e `filament_key` continua sendo lido do catálogo persistido, sem reconstrução pelo collector.
+O collector agora usa `ROOT / "data" / "filament.db"`, exatamente o banco produzido pelo build. `tracking` continua como opt-in e `filament_key` continua vindo do catálogo persistido.
 
-Foi adicionado teste de regressão para impedir que o caminho do catálogo volte a divergir do build.
+Foi adicionado teste de regressão para o caminho do catálogo.
 
-### Erro durante a aplicação e recuperação
+### Incidente durante a aplicação da correção
 
-Uma primeira tentativa automática de correção substituiu indevidamente o conteúdo completo do collector por uma implementação incompleta. O erro foi detectado antes de pedir novo teste e o arquivo foi restaurado a partir da versão testada anterior; a correção final altera somente o caminho do banco. Este incidente reforça a regra de preservar conteúdo existente e verificar arquivos completos após qualquer commit.
+Uma primeira tentativa automática substituiu indevidamente o conteúdo completo do collector por uma implementação incompleta. Isso foi identificado antes de novo teste. O arquivo foi restaurado a partir da versão testada anterior e a correção final foi reaplicada de forma mínima. O roadmap registra esse incidente para rastreabilidade.
 
 ## 15. Critério de pronto da fase atual
 
-A fase de API/preços só deve ser considerada concluída quando:
-
-- healthcheck da API responde corretamente;
-- uma oferta real chega pela API;
-- a oferta é validada/normalizada;
-- a oferta é persistida;
-- a chave técnica e a chave de correlação permanecem corretas;
-- o workflow termina sem erro;
-- o snapshot é produzido;
-- a aplicação consegue consultar o resultado;
-- pelo menos dois provedores LLM foram validados;
-- fallback pode ser reativado sem alterar a lógica de persistência;
-- uma coleta em escala maior é possível sem intervenção manual.
+A fase de API/preços só deve ser considerada concluída quando healthcheck, ingestão real, validação/normalização, persistência, chaves, workflow, snapshot, consulta e pelo menos dois provedores LLM estiverem validados.
 
 ## 16. Próximo passo imediato
 
-**Não ampliar o escopo ainda.** Primeiro executar uma coleta pequena e controlada contra a API instalada no servidor. Se passar, ampliar progressivamente.
+**Não ampliar o escopo ainda.** Executar uma coleta pequena e controlada contra a API instalada no servidor. Se passar, ampliar progressivamente.
 
-A próxima sessão deve começar lendo este `roadmap.md` e os documentos `API-INGEST.md`, `PRICE-COLLECTOR.md` e `PRICE_AGENT.md`, depois verificar o último workflow do GitHub Actions e seguir a seção 5 deste documento.
+A próxima sessão deve começar lendo este `roadmap.md` e os documentos `API-INGEST.md`, `PRICE-COLLECTOR.md` e `PRICE_AGENT.md`, depois verificar o último workflow do GitHub Actions.
