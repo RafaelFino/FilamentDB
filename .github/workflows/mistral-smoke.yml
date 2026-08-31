@@ -1,0 +1,37 @@
+name: Mistral agent smoke test
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Mistral model to test'
+        required: false
+        type: string
+        default: 'mistral-small-latest'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependency
+        run: python -m pip install --upgrade openai
+
+      - name: Test Mistral tool calling
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          MISTRAL_MODEL: ${{ inputs.model }}
+          FILAMENTDB_API_URL: ${{ vars.FILAMENTDB_API_URL || 'https://filamentdb-api.learnops.duckdns.org' }}
+          FILAMENTDB_API_SECRET: ${{ secrets.FILAMENTDB_API_SECRET }}
+        run: python scripts/test_mistral_agent.py
