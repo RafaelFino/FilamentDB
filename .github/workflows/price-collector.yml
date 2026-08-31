@@ -68,7 +68,7 @@ jobs:
           OPENROUTER_ENABLE_WEB_SEARCH: '1'
           PRICE_AGENT_BATCH_SIZE: ${{ vars.PRICE_AGENT_BATCH_SIZE || '1' }}
           PRICE_AGENT_MAX_PROFILES: ${{ inputs.limit || '0' }}
-          PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'mistral' }}
+          PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'mistral,gemini' }}
           ALLOW_SNAPSHOT_REPLACE: ${{ inputs.replace && '1' || '' }}
         run: |
           if [ -n "${{ inputs.date }}" ]; then
