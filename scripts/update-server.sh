@@ -161,7 +161,7 @@ else
 fi
 
 # Validate the API locally before declaring the deployment successful.
-API_LOCAL_URL="http://${FILAMENTDB_API_HOST:-127.0.0.1}:${FILAMENTDB_API_PORT:-5001}"
+API_LOCAL_URL="http://127.0.0.1:${FILAMENTDB_API_PORT:-5001}"
 if ! curl -fsS --max-time 10 "${API_LOCAL_URL}/health" >/dev/null; then
     err "Health da ${API_SERVICE} falhou em ${API_LOCAL_URL}/health."
     systemctl status "$API_SERVICE" --no-pager 2>&1 | sed 's/^/  /'
