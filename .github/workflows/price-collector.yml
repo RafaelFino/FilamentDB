@@ -60,6 +60,7 @@ jobs:
           OPENROUTER_MODEL: ${{ vars.OPENROUTER_PRICE_MODEL || 'openrouter/free' }}
           OPENROUTER_ENABLE_WEB_SEARCH: '1'
           PRICE_AGENT_BATCH_SIZE: ${{ vars.PRICE_AGENT_BATCH_SIZE || '1' }}
+          PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'cerebras' }}
           ALLOW_SNAPSHOT_REPLACE: ${{ inputs.replace && '1' || '' }}
         run: |
           if [ -n "${{ inputs.date }}" ]; then
