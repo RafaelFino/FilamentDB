@@ -203,7 +203,21 @@ class MistralProvider(Provider):
                 msg = response.choices[0].message
                 if not msg.tool_calls:
                     break
-                messages.append(msg.model_dump())
+                messages.append({
+                    "role": "assistant",
+                    "content": msg.content,
+                    "tool_calls": [
+                        {
+                            "id": call.id,
+                            "type": "function",
+                            "function": {
+                                "name": call.function.name,
+                                "arguments": call.function.arguments or "{}",
+                            },
+                        }
+                        for call in msg.tool_calls
+                    ],
+                })
                 for call in msg.tool_calls:
                     fn = call.function.name
                     if fn not in functions:
