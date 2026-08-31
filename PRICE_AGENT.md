@@ -5,7 +5,7 @@
 O agente de preços é responsável somente pela aquisição diária e publicação dos dados. A aplicação e o deploy são responsáveis pela projeção para SQLite.
 
 ```text
-CATÁLOGO → PESQUISA WEB COM IA → SNAPSHOT JSON → Git → DEPLOY → SQLite → UI
+CATÁLOGO → PESQUISA WEB COM IA → SNAPSHOT JSON → API DE INGESTÃO → Git → DEPLOY → SQLite → UI
 ```
 
 ## Automação diária
@@ -17,25 +17,51 @@ O workflow:
 1. faz checkout do repositório;
 2. lê o `filament.db` versionado;
 3. seleciona somente `filament_profiles.tracking = 1`;
-4. consulta a Web Search da OpenAI por meio da Responses API;
+4. consulta os provedores de IA configurados com pesquisa web;
 5. pesquisa todas as fontes habilitadas em `data/price-sources.json`;
 6. preserva todas as ofertas diretamente verificáveis, não apenas a vencedora;
 7. registra resultados `found`, `not_found`, `partial` e `error`;
 8. valida identidade, URL, preço, peso, quantidade e `total_price`;
 9. gera `data/price-data/YYYY-MM-DD.json`;
-10. faz commit e push do snapshot para `main`.
+10. valida o snapshot;
+11. publica cada oferta por `POST /v1/ingest/prices` usando a API pública;
+12. somente depois faz commit e push do snapshot para `main`.
 
-A API usa Structured Outputs para manter o formato do JSON estável e a ferramenta Web Search para obter dados atuais. O modelo padrão é `gpt-5.6-luna`, configurável pela variável de repositório `OPENAI_PRICE_MODEL`.
+O agente não escreve diretamente em `price-history.db`. A API é a única porta de entrada para os preços produzidos pelo workflow.
 
-## Segredo necessário
+## Configuração do GitHub Actions
 
-O repositório precisa ter o secret `OPENAI_API_KEY`. A chave nunca deve ser gravada no código, nos snapshots ou em arquivos do projeto.
+O repositório precisa destes valores:
 
-## Escopo
+### Secret
 
-Priorizar PLA e PETG de alta qualidade, incluindo Premium, Matte/Velvet e linhas High Speed/High Fluidity equivalentes. Fabricantes prioritários: Voolt3D, 3D Lab, F3D, SUNLU, eSUN, Elegoo e Creality.
+`FILAMENTDB_API_SECRET` — deve ser **exatamente o mesmo valor** usado no servidor em `FILAMENTDB_PROXY_SECRET`. Nunca coloque esse valor no código, em variáveis públicas, no snapshot ou nos commits.
 
-Para SUNLU, `Meta`, `Matte`, `High Speed` e `High Speed Matte` são linhas distintas e nunca devem ser normalizadas entre si.
+### Variable
+
+`FILAMENTDB_API_URL` — URL pública da API, normalmente:
+
+`https://filamentdb-api.learnops.duckdns.org`
+
+O workflow possui esse valor como fallback, então a variável só é necessária se a URL mudar.
+
+As chaves dos provedores de IA continuam sendo secrets (`OPENAI_API_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `Z_API_KEY`, etc.) e não são compartilhadas com o servidor.
+
+## Configuração do servidor
+
+Nenhuma nova chave secreta é necessária no `config.env`. A API reutiliza a variável existente:
+
+```env
+FILAMENTDB_PROXY_SECRET=um-segredo-forte-e-privado
+```
+
+O mesmo valor deve existir no GitHub Actions como `FILAMENTDB_API_SECRET`. A URL pública é configuração do cliente/workflow, não segredo do servidor.
+
+O serviço da API usa `FILAMENTDB_API_HOST`/`FILAMENTDB_API_PORT` conforme o deployment atual e deve permanecer acessível localmente em `127.0.0.1:5001`, com Caddy fazendo o proxy do hostname público.
+
+## Segurança
+
+A API pública não fica atrás do Pangolin. Ela exige `X-Proxy-Secret` e compara o segredo em tempo constante. O workflow nunca imprime o segredo nos logs.
 
 ## Regra principal: todas as ofertas
 
@@ -58,12 +84,6 @@ Nunca associar uma oferta Elegoo a Voolt3D, 3D Lab ou outro fabricante apenas po
 
 Registrar sempre `quantity` e `unit_weight_g`. Registrar explicitamente `price_basis`: `unit` se o preço é por rolo/unidade e `total` se é o preço do pacote inteiro. Registrar também `total_price`.
 
-Exemplos:
-
-- `1 × 1kg por R$ 109`: `quantity=1`, `price_basis=total`, `total_price=109`.
-- `3 × 1kg por R$ 299`: `quantity=3`, `price_basis=total`, `total_price=299`.
-- `10+ rolos a R$ 88,10 por rolo`: `quantity=10`, `price_basis=unit`, `total_price=881`.
-
 ## Resultado negativo
 
 A coleta também registra o que não encontrou. Para cada fonte relevante, usa `collection` com `found`, `not_found`, `partial` ou `error` e explica a razão em `notes`.
@@ -78,7 +98,15 @@ Gerar exatamente um arquivo diário:
 
 O JSON contém `schema_version`, `snapshot_date`, `collected_at`, `collector`, `collector_version`, `scope`, `offers` e `collection`.
 
-O workflow valida o snapshot antes do commit. O agente não escreve `price-history.db`.
+## Publicação pela API
+
+Depois da validação, `scripts/publish_price_snapshot.py` lê o snapshot e envia cada item de `offers` para:
+
+`POST ${FILAMENTDB_API_URL}/v1/ingest/prices`
+
+com o header `X-Proxy-Secret`. O `collected_at` do snapshot é preservado na publicação.
+
+A publicação ocorre antes do commit. Se uma oferta falhar, o workflow falha e o snapshot não é enviado ao Git como se estivesse completo. A API possui deduplicação, portanto uma repetição deliberada de uma publicação não cria duplicatas da mesma oferta.
 
 ## Pós-coleta
 
