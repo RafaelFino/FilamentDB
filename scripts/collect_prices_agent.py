@@ -39,7 +39,7 @@ def api_call(method: str, path: str, payload=None):
         headers["Content-Type"] = "application/json"
     req = urllib.request.Request(API_URL + path, data=body, method=method, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=30) as response:
+        with urllib.request.urlopen(req, timeout=60) as response:
             raw = response.read().decode("utf-8", errors="replace")
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as exc:
@@ -84,7 +84,7 @@ def search_web(query: str, max_results: int = 8):
     errors = []
     for options in attempts:
         try:
-            results = DDGS(timeout=20).text(query, max_results=limit, **options)
+            results = DDGS(timeout=60).text(query, max_results=limit, **options)
             if results:
                 return [{"title": r.get("title", ""), "url": r.get("href", ""), "snippet": r.get("body", "")} for r in results]
         except Exception as exc:
@@ -100,7 +100,7 @@ def search_web(query: str, max_results: int = 8):
             "https://www.bing.com/search?q=" + quote_plus(query) + "&count=" + str(limit),
             headers={"User-Agent": "Mozilla/5.0"},
         )
-        html = urlopen(req, timeout=20).read().decode("utf-8", "ignore")
+        html = urlopen(req, timeout=60).read().decode("utf-8", "ignore")
         found = []
         for block in re.findall(r'<li class="b_algo".*?</li>', html, flags=re.I | re.S):
             m = re.search(r'<h2[^>]*>\s*<a[^>]+href="([^"]+)"[^>]*>(.*?)</a>', block, flags=re.I | re.S)
@@ -130,7 +130,7 @@ def search_web(query: str, max_results: int = 8):
 
 def open_url(url: str):
     from ddgs import DDGS
-    raw = DDGS(timeout=25).extract(url, fmt="text_rich")
+    raw = DDGS(timeout=60).extract(url, fmt="text_rich")
     if isinstance(raw, str):
         text = raw
     elif isinstance(raw, dict):
@@ -151,7 +151,7 @@ def tool_definitions():
         "line": {"type":"string"}, "store": {"type":"string"}, "domain": {"type":"string"},
         "marketplace": {"type":"boolean"}, "url": {"type":"string"}, "title": {"type":"string"},
         "price": {"type":"number"}, "original_price": nullable_number, "shipping": nullable_number,
-        "currency": {"type":"string"}, "available": nullable_int, "coupon": nullable_string,
+        "currency": {"type":"string"}, "available": {"type": ["boolean", "null"]}, "coupon": nullable_string,
         "color_name": nullable_string, "seller": nullable_string, "quantity": {"type":"integer","minimum":1},
         "unit_weight_g": {"type":"number","minimum":1}, "price_basis": {"type":"string","enum":["unit","total"]},
         "total_price": {"type":"number","minimum":0.01}, "external_id": nullable_string,
@@ -173,7 +173,11 @@ def tool_definitions():
 def assistant_message(msg):
     calls = []
     for call in (getattr(msg, "tool_calls", None) or []):
-        calls.append({"id": call.id, "type": "function", "function": {"name": call.function.name, "arguments": call.function.arguments or "{}"}})
+        entry = {"id": call.id, "type": "function", "function": {"name": call.function.name, "arguments": call.function.arguments or "{}"}}
+        extra_content = getattr(call, "extra_content", None)
+        if extra_content:
+            entry["extra_content"] = extra_content
+        calls.append(entry)
     return {"role":"assistant", "content": msg.content if isinstance(msg.content, str) else None, "tool_calls": calls}
 
 
@@ -235,6 +239,18 @@ class AgentProvider:
                 elif name == "open_url":
                     result = open_url(args["url"])
                 elif name == "submit_offer":
+                    if "available" in args and args["available"] is not None and not isinstance(args["available"], bool):
+                        raw_available = args["available"]
+                        if isinstance(raw_available, (int, float)) and raw_available in (0, 1):
+                            args["available"] = bool(raw_available)
+                        else:
+                            normalized = str(raw_available).strip().lower()
+                            if normalized in ("true", "yes", "sim", "available", "in_stock", "instock"):
+                                args["available"] = True
+                            elif normalized in ("false", "no", "não", "nao", "unavailable", "out_of_stock", "outofstock"):
+                                args["available"] = False
+                            else:
+                                args["available"] = None
                     result = api_call("POST", "/v1/agent/offers", args)
                     status = result.get("status") if isinstance(result, dict) else None
                     if status not in ("accepted", "duplicate") and result.get("ok") is not True:
@@ -250,10 +266,10 @@ class AgentProvider:
 def providers():
     result = []
     if os.getenv("MISTRAL_API_KEY"):
-        result.append(AgentProvider(OpenAI(base_url="https://api.mistral.ai/v1", api_key=os.environ["MISTRAL_API_KEY"]), MISTRAL_MODEL))
+        result.append(AgentProvider(OpenAI(base_url="https://api.mistral.ai/v1", api_key=os.environ["MISTRAL_API_KEY"], timeout=180), MISTRAL_MODEL))
         result[-1].name = "mistral"
     if os.getenv("GEMINI_API_KEY"):
-        result.append(AgentProvider(OpenAI(base_url="https://generativelanguage.googleapis.com/v1beta/openai/", api_key=os.environ["GEMINI_API_KEY"]), GEMINI_MODEL))
+        result.append(AgentProvider(OpenAI(base_url="https://generativelanguage.googleapis.com/v1beta/openai/", api_key=os.environ["GEMINI_API_KEY"], timeout=180), GEMINI_MODEL))
         result[-1].name = "gemini"
     return result
 
