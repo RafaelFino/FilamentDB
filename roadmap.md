@@ -85,6 +85,14 @@ Nunca misturar essas três coisas.
 
 Antes de alterar qualquer código que lide com `filament_key`, consultar este documento e o schema vigente.
 
+## 3.4 Contrato implementado no catálogo da API
+
+A API expõe duas identificações para o agente: `technical_key`, derivada da identidade interna do registro (`filament_profiles.id`), e `filament_key`, que é a chave canônica de correlação usada para relacionar ofertas externas ao catálogo.
+
+O collector deve usar `filament_key` fornecido pelo catálogo/API; ele não deve reconstruir uma chave técnica interna. A validação do snapshot usa a mesma expressão canônica do catálogo e não depende de uma coluna `tracking`, que não existe no schema atual de `filament_profiles`.
+
+Esta distinção deve ser preservada em futuras alterações.
+
 ## 4. O que já foi feito
 
 ### API de ingestão

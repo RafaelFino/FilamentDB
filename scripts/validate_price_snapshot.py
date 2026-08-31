@@ -23,7 +23,11 @@ def main(path: Path):
         FROM filament_profiles fp
         JOIN materials m ON m.id=fp.material_id
         JOIN manufacturers mf ON mf.id=fp.manufacturer_id
-        WHERE fp.active=1 AND fp.tracking=1
+        WHERE fp.active=1
+          AND UPPER(TRIM(m.name)) IN ('PLA', 'PETG')
+          AND fp.line IS NOT NULL
+          AND TRIM(fp.line) <> ''
+        GROUP BY m.name, mf.name, fp.line
     """)}
     conn.close()
     seen = set()

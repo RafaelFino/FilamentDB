@@ -54,6 +54,30 @@ class PublicApiTests(unittest.TestCase):
         response = self.client.get("/v1/catalog/filaments", headers={"X-Proxy-Secret": "wrong"})
         self.assertEqual(response.status_code, 401)
 
+
+    def test_catalog_returns_correlation_and_technical_keys(self):
+        fake_conn = Mock()
+        fake_conn.execute.return_value.fetchall.return_value = [
+            {
+                "technical_key": "42",
+                "filament_key": "petg|3dfila|petg xt line",
+                "commercial_name": "PETG XT Line",
+                "line": "PETG XT Line",
+                "material": "PETG",
+                "manufacturer": "3DFila",
+            }
+        ]
+        with patch("src.api.database.get_db_connection", return_value=fake_conn):
+            response = self.client.get(
+                "/v1/catalog/filaments",
+                headers={"X-Proxy-Secret": "test-secret"},
+            )
+        self.assertEqual(response.status_code, 200)
+        item = response.get_json()["filaments"][0]
+        self.assertEqual(item["technical_key"], "42")
+        self.assertEqual(item["filament_key"], "petg|3dfila|petg xt line")
+        fake_conn.close.assert_called_once()
+
     def test_ingest_rejects_non_json(self):
         response = self.client.post("/v1/ingest/prices", data="hello", headers={"X-Proxy-Secret": "test-secret"})
         self.assertEqual(response.status_code, 415)
