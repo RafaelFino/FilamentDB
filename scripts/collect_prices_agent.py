@@ -53,7 +53,7 @@ def load_catalog():
     conn = sqlite3.connect(CATALOG_DB)
     conn.row_factory = sqlite3.Row
     rows = conn.execute("""
-        SELECT LOWER(TRIM(m.name)) || '|' || LOWER(TRIM(mf.name)) || '|' || LOWER(TRIM(fp.line)) AS filament_key,
+        SELECT fp.filament_key, fp.tracking, fp.commercial_name,
                fp.line, fp.color, fp.line_positioning, fp.line_tier, fp.line_category,
                fp.line_finish, fp.line_target_use, fp.surface_finish,
                m.name AS material_name, mf.name AS manufacturer_name,
@@ -63,8 +63,9 @@ def load_catalog():
         JOIN materials m ON m.id = fp.material_id
         JOIN manufacturers mf ON mf.id = fp.manufacturer_id
         LEFT JOIN filament_variants fv ON fv.filament_id = fp.id
-        WHERE fp.active = 1 AND UPPER(TRIM(m.name)) IN ('PLA','PETG')
-          AND fp.line IS NOT NULL AND TRIM(fp.line) <> ''
+        WHERE fp.active = 1 AND fp.tracking = 1
+          AND UPPER(TRIM(m.name)) IN ('PLA','PETG')
+          AND fp.filament_key IS NOT NULL AND TRIM(fp.filament_key) <> ''
         GROUP BY m.name, mf.name, fp.line
         ORDER BY m.name, mf.name, fp.line
     """).fetchall()

@@ -19,15 +19,13 @@ def main(path: Path):
             raise ValueError(f"Campo obrigatório ausente: {key}")
     conn = sqlite3.connect(DB)
     valid = {r[0]: r[1:] for r in conn.execute("""
-        SELECT LOWER(TRIM(m.name)) || '|' || LOWER(TRIM(mf.name)) || '|' || LOWER(TRIM(fp.line)), m.name, mf.name
+        SELECT fp.filament_key, m.name, mf.name
         FROM filament_profiles fp
         JOIN materials m ON m.id=fp.material_id
         JOIN manufacturers mf ON mf.id=fp.manufacturer_id
-        WHERE fp.active=1
-          AND UPPER(TRIM(m.name)) IN ('PLA', 'PETG')
-          AND fp.line IS NOT NULL
-          AND TRIM(fp.line) <> ''
-        GROUP BY m.name, mf.name, fp.line
+        WHERE fp.active=1 AND fp.tracking=1
+          AND fp.filament_key IS NOT NULL
+          AND TRIM(fp.filament_key) <> ''
     """)}
     conn.close()
     seen = set()

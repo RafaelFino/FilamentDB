@@ -87,9 +87,11 @@ Antes de alterar qualquer código que lide com `filament_key`, consultar este do
 
 ## 3.4 Contrato implementado no catálogo da API
 
-A API expõe duas identificações para o agente: `technical_key`, derivada da identidade interna do registro (`filament_profiles.id`), e `filament_key`, que é a chave canônica de correlação usada para relacionar ofertas externas ao catálogo.
+A API expõe duas identificações para o agente: `technical_key`, derivada da identidade interna do registro (`filament_profiles.id`), e `filament_key`, que é a chave canônica persistida de correlação usada para relacionar ofertas externas ao catálogo.
 
-O collector deve usar `filament_key` fornecido pelo catálogo/API; ele não deve reconstruir uma chave técnica interna. A validação do snapshot usa a mesma expressão canônica do catálogo e não depende de uma coluna `tracking`, que não existe no schema atual de `filament_profiles`.
+O `tracking` é uma flag explícita do cadastro: `tracking=1` significa que queremos pesquisar preços daquele filamento; `tracking=0` significa que ele não entra na coleta. Collector, API e validator devem respeitar essa flag.
+
+O collector deve usar o `filament_key` persistido fornecido pelo catálogo/API; ele não deve reconstruir a chave a partir de material/fabricante/linha. O schema gerado por `build.py` já possui `filament_key` e `tracking`; artefatos antigos do banco podem não possuir essas colunas, por isso o workflow precisa executar o build do catálogo antes da coleta.
 
 Esta distinção deve ser preservada em futuras alterações.
 
@@ -347,6 +349,23 @@ Problema: risco de construir `filament_key` dinamicamente a partir de strings di
 Solução arquitetural: manter uma chave técnica interna estável e uma chave canônica de correlação de ofertas, com responsabilidades separadas.
 
 **Não reintroduzir o modelo antigo sem atualizar este documento.**
+
+## 14.5 Incidente de 2026-08-30/31 — tracking e banco desatualizado
+
+O primeiro teste após a publicação da API falhou na validação do snapshot porque o validator consultava uma coluna `tracking` que não existia no artefato `filament.db` versionado. A correção intermediária também revelou o problema inverso: o schema produzido por `build.py` **já define** `filament_key` e `tracking`, mas o workflow não executava o build antes do collector.
+
+No teste seguinte, o collector montava dinamicamente `petg|3dfila|petg xt line`, enquanto a API consultava apenas registros com `tracking=1`. O perfil `PETG XT Line` da 3DFila estava com `tracking=0`, portanto a API corretamente respondeu `404 unknown_or_untracked_filament`.
+
+### Solução definitiva
+
+- `tracking` permanece como **opt-in de coleta de preços**.
+- `filament_key` é persistido no catálogo e é a única chave de correlação fornecida ao collector/LLM.
+- Collector e validator usam `fp.filament_key` e filtram `fp.tracking=1`.
+- O workflow executa `python build.py --only-db` antes da coleta para garantir schema e dados do catálogo atuais.
+- O teste controlado marca `PETG XT Line` da 3DFila como `tracking: 1` na fonte YAML.
+- Não devemos marcar todos os filamentos como rastreados automaticamente; a expansão da coleta deve ser feita deliberadamente pela flag `tracking`.
+
+O erro de `429` do Mistral no mesmo teste é um problema independente de rate limit. O fallback para Gemini funcionou como caminho de execução, mas terminou no mesmo bloqueio da API porque o filamento estava corretamente não rastreado.
 
 ## 15. Critério de pronto da fase atual
 

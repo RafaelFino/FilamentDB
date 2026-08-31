@@ -149,6 +149,7 @@ materials:
     - line: PETG XT Line
       commercial_name: PETG XT
       profile_name: 3DFila PETG XT
+      tracking: 1
       nozzle:
         initial: 240
         min: 230

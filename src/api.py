@@ -261,14 +261,13 @@ def catalog_filaments():
         rows = conn.execute(
             "SELECT "
             "CAST(fp.id AS TEXT) AS technical_key, "
-            "LOWER(TRIM(m.name)) || '|' || LOWER(TRIM(mf.name)) || '|' || LOWER(TRIM(fp.line)) AS filament_key, "
+            "fp.filament_key AS filament_key, fp.tracking, "
             "fp.commercial_name, fp.line, m.name AS material, mf.name AS manufacturer "
             "FROM filament_profiles fp JOIN materials m ON m.id=fp.material_id "
             "JOIN manufacturers mf ON mf.id=fp.manufacturer_id "
-            "WHERE fp.active=1 "
+            "WHERE fp.active=1 AND fp.tracking=1 "
             "AND UPPER(TRIM(m.name)) IN ('PLA','PETG') "
-            "AND fp.line IS NOT NULL AND TRIM(fp.line) <> '' "
-            "GROUP BY m.name, mf.name, fp.line "
+            "AND fp.filament_key IS NOT NULL AND TRIM(fp.filament_key) <> '' "
             "ORDER BY m.name,mf.name,fp.line"
         ).fetchall()
         return jsonify({"ok": True, "filaments": [dict(r) for r in rows]})

@@ -65,6 +65,7 @@ class PublicApiTests(unittest.TestCase):
                 "line": "PETG XT Line",
                 "material": "PETG",
                 "manufacturer": "3DFila",
+                "tracking": 1,
             }
         ]
         with patch("src.api.database.get_db_connection", return_value=fake_conn):
@@ -76,6 +77,7 @@ class PublicApiTests(unittest.TestCase):
         item = response.get_json()["filaments"][0]
         self.assertEqual(item["technical_key"], "42")
         self.assertEqual(item["filament_key"], "petg|3dfila|petg xt line")
+        self.assertEqual(item["tracking"], 1)
         fake_conn.close.assert_called_once()
 
     def test_ingest_rejects_non_json(self):
