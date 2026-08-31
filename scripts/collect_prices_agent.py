@@ -137,13 +137,14 @@ class AgentProvider:
         submitted = []
         instructions_cache = None
         catalog_cache = None
+        nudges = 0
         tools = tool_definitions()
         system = ("You are the FilamentDB price acquisition agent. Use tools, not prose. "
                   "First call get_instructions and get_catalog. Then research EVERY configured source for the assigned item. "
                   "Use search_web and open_url to verify current direct product pages. "
                   "Publish EVERY directly verifiable offer with submit_offer. Never invent data. "
                   "Do not return a JSON report: submit_offer is the authoritative write path. "
-                  f"Assigned filament_key: {item['filament_key']}. Today: {today} America/Sao_Paulo.")
+                  f"Assigned catalog item: {json.dumps(item, ensure_ascii=False)}. Today: {today} America/Sao_Paulo.")
         messages = [{"role":"system","content":system}, {"role":"user","content":"Research the assigned FilamentDB item now. Keep the prompt small; obtain rules and catalog data through the tools."}]
         for turn in range(MAX_TURNS):
             try:
@@ -171,6 +172,8 @@ class AgentProvider:
                         full = api_call("GET", "/v1/catalog/filaments")
                         if isinstance(full, dict) and isinstance(full.get("filaments"), list):
                             rows = full["filaments"]
+                        elif isinstance(full, dict) and isinstance(full.get("items"), list):
+                            rows = full["items"]
                         elif isinstance(full, list):
                             rows = full
                         else:
