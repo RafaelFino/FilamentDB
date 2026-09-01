@@ -336,3 +336,10 @@ A próxima sessão deve começar lendo este `roadmap.md` e os documentos `API-IN
 - O código da API foi corrigido no repositório.
 - **O servidor precisa receber esta versão antes do próximo teste**, porque `/v1/agent/instructions` é servido pela API em produção.
 - O workflow ainda deve ser testado novamente somente depois do update do servidor.
+
+
+### Incidente de rastreabilidade — commit intermediário inválido
+Durante a aplicação da correção, houve um commit intermediário que gravou conteúdo placeholder nos três arquivos alvo. O estado foi imediatamente detectado e restaurado no commit seguinte, antes de qualquer novo teste. O commit de restauração é o estado válido do `main`. Este incidente fica registrado para manter a cadeia de auditoria completa.
+
+### Endurecimento adicional
+O collector agora também possui fallback local: se a API antiga/indisponível devolver instruções sem `system_prompt` ou `user_prompt`, ele não envia mensagens vazias ao LLM. Ele monta um prompt mínimo usando a chave canônica e as regras estruturadas retornadas pela API. A API continua sendo a fonte canônica e deve ser atualizada no servidor.

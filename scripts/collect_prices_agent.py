@@ -110,7 +110,22 @@ class AgentProvider:
 
     def run(self, item, today):
         instructions = api_call("GET", "/v1/agent/instructions?filament_key=" + urllib.parse.quote(item["filament_key"]))
-        messages = [{"role": "system", "content": instructions.get("system_prompt", "")}, {"role": "user", "content": instructions.get("user_prompt", "")}]
+        system_prompt = instructions.get("system_prompt", "").strip()
+        user_prompt = instructions.get("user_prompt", "").strip()
+        if not system_prompt or not user_prompt:
+            rules = instructions.get("rules") or []
+            system_prompt = (
+                "Você é um agente de pesquisa de preços do FilamentDB. "
+                "Encontre ofertas reais e atuais no Brasil, verifique as páginas diretamente "
+                "e nunca invente dados. Use exatamente o filament_key fornecido."
+            )
+            user_prompt = (
+                f"Pesquise ofertas atuais para o filament_key exato: {item['filament_key']}. "
+                "Use as ferramentas disponíveis e publique somente ofertas verificáveis. "
+                + (" Regras: " + "; ".join(str(r) for r in rules) if rules else "")
+            )
+            print(f"[WARN] {self.name}: API não retornou prompts; usando fallback local.", flush=True)
+        messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
         offers = []
         for turn in range(MAX_TURNS):
             response = self.client.chat.completions.create(model=self.model, messages=messages, tools=make_tools(item), tool_choice="auto")
