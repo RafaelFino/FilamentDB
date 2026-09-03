@@ -6,6 +6,12 @@
 
 set -euo pipefail
 
+# Deploy roda em cron/root, sem terminal interativo. Impede que qualquer git que
+# precise de credencial (ex.: remote virou privado/SSH sem chave) fique pendurado
+# esperando input — falha na hora com erro claro em vez de travar o cron.
+export GIT_TERMINAL_PROMPT=0
+export GIT_SSH_COMMAND="ssh -oBatchMode=yes"
+
 REPO_DIR="/srv/FilamentDB"
 SERVICE="filamentdb.service"
 # Usuário/grupo dono do projeto e sob o qual AMBOS os serviços rodam. Precisa
@@ -98,7 +104,12 @@ git checkout -- filament.db 2>/dev/null || true
 
 log "Verificando atualizações..."
 BEFORE=$(git rev-parse HEAD)
-git pull --ff-only origin main 2>&1 || { err "git pull falhou"; exit 1; }
+git pull --ff-only origin main 2>&1 || {
+    err "git pull falhou. Se for erro de autenticação, o remote pode ter virado"
+    err "  privado/SSH sem credencial disponível ao usuário do deploy."
+    err "  Remote atual: $(git remote get-url origin 2>/dev/null || echo '?')"
+    exit 1
+}
 AFTER=$(git rev-parse HEAD)
 
 if [ "$BEFORE" = "$AFTER" ]; then
