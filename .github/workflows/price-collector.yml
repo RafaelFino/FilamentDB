@@ -49,7 +49,7 @@ jobs:
       - name: Build catalog database
         run: python build.py --only-db
 
-      - name: Collect daily prices with API-driven agents
+      - name: Collect daily price snapshot with AI agents
         env:
           PYTHONUNBUFFERED: "1"
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
@@ -71,6 +71,12 @@ jobs:
 
       - name: Validate snapshot
         run: python scripts/validate_price_snapshot.py
+
+      - name: Publish validated snapshot to ingest API
+        env:
+          FILAMENTDB_API_URL: ${{ vars.FILAMENTDB_API_URL || 'https://filamentdb-api.learnops.duckdns.org' }}
+          FILAMENTDB_API_SECRET: ${{ secrets.FILAMENTDB_API_SECRET }}
+        run: python scripts/publish_price_snapshot.py
 
       - name: Commit snapshot
         run: |

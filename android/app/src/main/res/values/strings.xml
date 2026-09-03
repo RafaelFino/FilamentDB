@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">FilamentDB</string>
-    <string name="err_open_link">Nao foi possivel abrir o link.</string>
-    <string name="err_load">Falha ao carregar: %1$s</string>
-    <string name="download_started">Download iniciado.</string>
-    <string name="err_download">Falha ao iniciar o download.</string>
-</resources>

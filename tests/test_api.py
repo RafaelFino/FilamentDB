@@ -53,17 +53,14 @@ class FlaskApiTests(unittest.TestCase):
         self.assertIn("manufacturer", payload[0])
         self.assertIn("material", payload[0])
 
-    def test_tree_page(self):
-        response = self.client.get("/tree")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("FilamentDB Explorer", response.get_data(as_text=True))
-
-    def test_tree_page_contains_richer_material_data(self):
-        response = self.client.get("/tree")
-        self.assertEqual(response.status_code, 200)
-        body = response.get_data(as_text=True)
-        self.assertIn("Preço médio", body)
-        self.assertIn("Recomendações", body)
+    def test_page_routes_render_dashboard(self):
+        # /, /dashboard, /tree and /process-profiles all serve the single
+        # consolidated dashboard.html (client-side tabs). The old dedicated
+        # tree.html/process-profiles.html templates were removed.
+        for route in ("/", "/dashboard", "/tree", "/process-profiles"):
+            response = self.client.get(route)
+            self.assertEqual(response.status_code, 200, route)
+            self.assertIn("FilamentDB Dashboard", response.get_data(as_text=True), route)
 
     def test_agent_offer_normalizes_common_llm_values(self):
         offer, _ = _validate_offer({

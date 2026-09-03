@@ -313,7 +313,7 @@ A fase de API/preços só deve ser considerada concluída quando healthcheck, in
 
 **Não ampliar o escopo ainda.** Executar uma coleta pequena e controlada contra a API instalada no servidor. Se passar, ampliar progressivamente.
 
-A próxima sessão deve começar lendo este `roadmap.md` e os documentos `API-INGEST.md`, `PRICE-COLLECTOR.md` e `PRICE_AGENT.md`, depois verificar o último workflow do GitHub Actions.
+A próxima sessão deve começar lendo este `roadmap.md` e os documentos `API-INGEST.md` e `PRICE_AGENT.md`, depois verificar o último workflow do GitHub Actions.
 
 
 ## 2026-09-01 — incidente: API de instruções devolvia prompts vazios

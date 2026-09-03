@@ -224,6 +224,7 @@ def _validate_offer(data):
         "external_id": _optional_string(data, "external_id", 240),
         "source": _optional_string(data, "source", 120) or "api",
         "notes": _optional_string(data, "notes", 2000),
+        "collected_at": collected_at,
     }, None
 
 

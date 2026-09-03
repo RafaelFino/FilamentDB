@@ -8,6 +8,7 @@ import os
 import sqlite3
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime
 from pathlib import Path
@@ -98,8 +99,93 @@ def search_web(query: str, max_results: int = 8):
 def make_tools(item):
     return [
         {"type": "function", "function": {"name": "search_web", "description": "Search the web for current filament offers.", "parameters": {"type": "object", "properties": {"query": {"type": "string"}, "max_results": {"type": "integer"}}, "required": ["query"]}}},
-        {"type": "function", "function": {"name": "submit_offer", "description": "Submit a real offer to FilamentDB using the exact filament_key from the catalog.", "parameters": {"type": "object", "properties": {"filament_key": {"type": "string"}, "store": {"type": "string"}, "url": {"type": "string"}, "title": {"type": "string"}, "price": {"type": "number"}, "original_price": {"type": ["number", "null"]}, "shipping": {"type": ["number", "null"]}, "total_price": {"type": ["number", "null"]}, "currency": {"type": "string"}, "availability": {"type": ["string", "null"]}, "quantity": {"type": ["number", "null"]}, "unit_weight_g": {"type": ["number", "null"]}, "price_basis": {"type": ["string", "null"]}, "seller": {"type": ["string", "null"]}, "external_id": {"type": ["string", "null"]}}, "required": ["filament_key", "store", "url", "title", "price", "currency"]}}}
+        {"type": "function", "function": {"name": "submit_offer", "description": "Record a real, verified offer for the current filament_key. The offer is accumulated into the daily snapshot; it is validated and published afterwards. Always include unit_weight_g (grams per roll) and quantity (number of rolls). Use price_basis='unit' when price is per roll, 'total' when it is the whole package.", "parameters": {"type": "object", "properties": {"filament_key": {"type": "string"}, "store": {"type": "string"}, "url": {"type": "string"}, "title": {"type": "string"}, "price": {"type": "number"}, "original_price": {"type": ["number", "null"]}, "shipping": {"type": ["number", "null"]}, "total_price": {"type": ["number", "null"]}, "currency": {"type": "string"}, "availability": {"type": ["string", "null"]}, "quantity": {"type": ["number", "null"]}, "unit_weight_g": {"type": ["number", "null"]}, "price_basis": {"type": ["string", "null"]}, "seller": {"type": ["string", "null"]}, "external_id": {"type": ["string", "null"]}}, "required": ["filament_key", "store", "url", "title", "price", "currency"]}}}
     ]
+
+
+def _to_number(value):
+    """Best-effort numeric coercion tolerant of common LLM string formats."""
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        s = value.strip()
+        if not s:
+            return None
+        import re
+        s = re.sub(r"[^0-9,.-]", "", s)
+        if not s:
+            return None
+        if "," in s and "." in s:
+            s = s.replace(".", "").replace(",", ".") if s.rfind(",") > s.rfind(".") else s.replace(",", "")
+        elif "," in s:
+            parts = s.split(",")
+            s = s.replace(",", ".") if len(parts[-1]) in (1, 2) else s.replace(",", "")
+        try:
+            return float(s)
+        except ValueError:
+            return None
+    return None
+
+
+def normalize_offer(args, filament_key):
+    """Build a complete, self-contained offer dict matching the ingest/validator contract.
+
+    The agent only accumulates offers in memory; publication happens later via
+    publish_price_snapshot.py. This keeps the snapshot as the source of truth.
+    """
+    price = _to_number(args.get("price"))
+    if price is None or price <= 0:
+        raise ProviderError(f"submit_offer com preço inválido: {args.get('price')!r}")
+
+    quantity = _to_number(args.get("quantity"))
+    quantity = int(quantity) if quantity and quantity >= 1 else 1
+
+    unit_weight_g = _to_number(args.get("unit_weight_g"))
+    if unit_weight_g is None or unit_weight_g <= 0:
+        raise ProviderError(f"submit_offer sem unit_weight_g válido: {args.get('unit_weight_g')!r}")
+
+    basis = str(args.get("price_basis") or "total").strip().casefold()
+    basis = "unit" if basis in {"unit", "unidade", "unitario", "unitário", "por_unidade", "each", "per_unit"} else "total"
+
+    total_price = _to_number(args.get("total_price"))
+    if total_price is None or total_price <= 0:
+        total_price = round(price * quantity, 2) if basis == "unit" else price
+
+    url = str(args.get("url") or "").strip()
+    if not url.startswith(("http://", "https://")):
+        raise ProviderError(f"submit_offer com URL inválida: {url!r}")
+
+    currency = str(args.get("currency") or "BRL").strip().upper() or "BRL"
+
+    offer = {
+        "filament_key": filament_key,
+        "store": str(args.get("store") or "").strip(),
+        "url": url,
+        "title": str(args.get("title") or "").strip(),
+        "price": round(price, 2),
+        "currency": currency,
+        "quantity": quantity,
+        "unit_weight_g": round(unit_weight_g, 2),
+        "price_basis": basis,
+        "total_price": round(total_price, 2),
+    }
+    if not offer["store"]:
+        raise ProviderError("submit_offer sem store")
+    if not offer["title"]:
+        raise ProviderError("submit_offer sem title")
+
+    # Optional fields preserved when present.
+    for src, dst in (("original_price", "original_price"), ("shipping", "shipping"), ("seller", "seller"), ("color_name", "color_name"), ("external_id", "external_id"), ("coupon", "coupon")):
+        val = args.get(src)
+        if val is not None and str(val).strip() != "":
+            offer[dst] = _to_number(val) if src in ("original_price", "shipping") else str(val).strip()
+    avail = args.get("availability", args.get("available"))
+    if avail is not None:
+        offer["available"] = avail
+    offer["source"] = str(args.get("store") or "agentic").strip()
+    return offer
 
 
 class AgentProvider:
@@ -109,7 +195,14 @@ class AgentProvider:
         self.name = "agent"
 
     def run(self, item, today):
-        instructions = api_call("GET", "/v1/agent/instructions?filament_key=" + urllib.parse.quote(item["filament_key"]))
+        try:
+            instructions = api_call("GET", "/v1/agent/instructions?filament_key=" + urllib.parse.quote(item["filament_key"]))
+        except ProviderError as exc:
+            # The instructions endpoint is a convenience, not a hard dependency.
+            # If it is unavailable, fall back to local prompts instead of aborting
+            # the whole collection.
+            print(f"[WARN] {self.name}: /v1/agent/instructions indisponível ({exc}); usando fallback local.", flush=True)
+            instructions = {}
         system_prompt = instructions.get("system_prompt", "").strip()
         user_prompt = instructions.get("user_prompt", "").strip()
         if not system_prompt or not user_prompt:
@@ -141,10 +234,15 @@ class AgentProvider:
                 if name == "search_web":
                     result = search_web(args.get("query", ""), args.get("max_results", 8))
                 elif name == "submit_offer":
-                    args["filament_key"] = item["filament_key"]
-                    result = api_call("POST", "/v1/agent/offers", args)
-                    offers.append(result.get("offer", result))
-                    print(f"[OK] {self.name} publicou oferta: {args.get('filament_key')} | {args.get('store')} | R$ {args.get('total_price')}", flush=True)
+                    try:
+                        offer = normalize_offer(args, item["filament_key"])
+                        offers.append(offer)
+                        result = {"ok": True, "status": "recorded", "offer": offer}
+                        print(f"[OK] {self.name} registrou oferta: {offer['filament_key']} | {offer['store']} | R$ {offer['total_price']}", flush=True)
+                    except ProviderError as exc:
+                        # Do not kill the whole run for one malformed offer; tell the model to fix it.
+                        result = {"ok": False, "error": str(exc)}
+                        print(f"[WARN] {self.name}: oferta rejeitada localmente: {exc}", flush=True)
                 else:
                     raise ProviderError(f"{self.name}: ferramenta desconhecida: {name}")
                 messages.append({"role": "tool", "tool_call_id": call.id, "name": name, "content": json.dumps(result, ensure_ascii=False)})
@@ -201,7 +299,7 @@ def main():
         else:
             raise RuntimeError(f"Todos os agentes falharam para {item['filament_key']}: {last_error}")
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
-    payload = {"schema_version": 2, "snapshot_date": today, "collected_at": datetime.now(TZ).isoformat(), "collector": "FilamentDB API-driven AI Price Agent", "collector_version": "2.0", "scope": {"tracked_profiles": len(catalog), "sources": "API /v1/agent/instructions"}, "collection": collection, "offers": all_offers, "notes": "Ofertas publicadas pelo agente diretamente na API; o snapshot é apenas a auditoria versionada da coleta."}
+    payload = {"schema_version": 2, "snapshot_date": today, "collected_at": datetime.now(TZ).isoformat(), "collector": "FilamentDB API-driven AI Price Agent", "collector_version": "2.0", "scope": {"tracked_profiles": len(catalog), "sources": "API /v1/agent/instructions"}, "collection": collection, "offers": all_offers, "notes": "Snapshot é a fonte de verdade: ofertas coletadas pelos agentes, validadas offline e publicadas na API por publish_price_snapshot.py."}
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"[OK] Snapshot escrito: {path}; ofertas={len(all_offers)}", flush=True)
 

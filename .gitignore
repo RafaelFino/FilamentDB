@@ -17,6 +17,10 @@ ENV/
 data/*.db
 !data/price-history.db
 
+# Legacy: filament.db must live in data/ (via DB_PATH), never at the repo root.
+# A stale root-level copy previously broke the price collector validation.
+/filament.db
+
 # Inventory database (user data, created/managed at runtime by the app)
 
 # Price intelligence database: historical data is persistent and may be versioned.

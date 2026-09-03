@@ -8,7 +8,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DB = ROOT / "filament.db"
+sys.path.insert(0, str(ROOT))
+
+from src import config  # noqa: E402
+
+config.load()
+# Catalog DB lives in the data dir (resolved by config), the same file build.py writes.
+# There is intentionally no filament.db at the repo root.
+DB = Path(config.database_path("filament.db"))
 DATA = ROOT / "data" / "price-data"
 
 

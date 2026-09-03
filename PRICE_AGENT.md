@@ -15,19 +15,19 @@ A execução ocorre no GitHub Actions por `.github/workflows/price-collector.yml
 O workflow:
 
 1. faz checkout do repositório;
-2. lê o `filament.db` versionado;
+2. gera o catálogo com `build.py --only-db` em `data/filament.db` (não há `filament.db` versionado na raiz);
 3. seleciona somente `filament_profiles.tracking = 1`;
 4. consulta os provedores de IA configurados com pesquisa web;
 5. pesquisa todas as fontes habilitadas em `data/price-sources.json`;
 6. preserva todas as ofertas diretamente verificáveis, não apenas a vencedora;
 7. registra resultados `found`, `not_found`, `partial` e `error`;
-8. valida identidade, URL, preço, peso, quantidade e `total_price`;
-9. gera `data/price-data/YYYY-MM-DD.json`;
-10. valida o snapshot;
-11. publica cada oferta por `POST /v1/ingest/prices` usando a API pública;
+8. o agente acumula cada oferta completa em memória (via `submit_offer`) — **não** publica durante a coleta;
+9. grava `data/price-data/YYYY-MM-DD.json` com as ofertas completas e autocontidas;
+10. valida o snapshot offline (`validate_price_snapshot.py`): identidade, URL, preço, peso, quantidade e `total_price`;
+11. publica cada oferta por `POST /v1/ingest/prices` (`publish_price_snapshot.py`), etapa separada e explícita;
 12. somente depois faz commit e push do snapshot para `main`.
 
-O agente não escreve diretamente em `price-history.db`. A API é a única porta de entrada para os preços produzidos pelo workflow.
+O agente não escreve diretamente em `price-history.db`. A API é a única porta de entrada para os preços produzidos pelo workflow. O snapshot é a fonte de verdade auditável: se a validação falhar, nada é publicado; se a publicação falhar, o snapshot não é commitado.
 
 ## Configuração do GitHub Actions
 
