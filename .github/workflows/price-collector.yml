@@ -71,8 +71,11 @@ jobs:
           PRICE_AGENT_MAX_PROFILES: ${{ inputs.limit || '0' }}
           PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'cerebras,groq,mistral,openai,openrouter,z,gemini' }}
           PRICE_AGENT_MAX_TURNS: ${{ vars.PRICE_AGENT_MAX_TURNS || '30' }}
-          PRICE_AGENT_LLM_RETRIES: ${{ vars.PRICE_AGENT_LLM_RETRIES || '3' }}
-          PRICE_AGENT_LLM_BACKOFF: ${{ vars.PRICE_AGENT_LLM_BACKOFF || '5' }}
+          PRICE_AGENT_LLM_RETRIES: ${{ vars.PRICE_AGENT_LLM_RETRIES || '5' }}
+          PRICE_AGENT_LLM_BACKOFF: ${{ vars.PRICE_AGENT_LLM_BACKOFF || '10' }}
+          PRICE_AGENT_LLM_TIMEOUT: ${{ vars.PRICE_AGENT_LLM_TIMEOUT || '300' }}
+          PRICE_AGENT_SEARCH_BACKENDS: ${{ vars.PRICE_AGENT_SEARCH_BACKENDS || 'bing,brave,yandex,mojeek' }}
+          PRICE_AGENT_SEARCH_TIMEOUT: ${{ vars.PRICE_AGENT_SEARCH_TIMEOUT || '45' }}
           ALLOW_SNAPSHOT_REPLACE: ${{ inputs.replace && '1' || '' }}
         run: |
           if [ -n "${{ inputs.date }}" ]; then

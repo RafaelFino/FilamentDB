@@ -1136,7 +1136,8 @@ Os agentes usam a API compatível com OpenAI de cada provider. A ordem de tentat
 
 Tratamento de falhas (para não perder a coleta inteira por um erro pontual):
 
-- **Erros transitórios do LLM** (429 rate limit, 5xx, timeout) são reto­mados com backoff exponencial (`PRICE_AGENT_LLM_RETRIES`, `PRICE_AGENT_LLM_BACKOFF`). Persistindo, viram `ProviderError` e o collector **cai para o próximo provider** (ex.: mistral esgotou → gemini).
+- **Erros transitórios do LLM** (429 rate limit, 5xx, 413 tokens/min, timeout, tool-call malformado) são reto­mados com backoff (`PRICE_AGENT_LLM_RETRIES`, `PRICE_AGENT_LLM_BACKOFF`, `PRICE_AGENT_LLM_TIMEOUT`). Persistindo, viram `ProviderError` e o collector **cai para o próximo provider**. Erros permanentes (401/402/403/404) falham na hora, sem retry.
+- **Busca web** usa `ddgs` com backends fixos e confiáveis no CI (`bing,brave,yandex,mojeek` por default, via `PRICE_AGENT_SEARCH_BACKENDS`) — google/duckduckgo/yahoo/wikipedia foram removidos por serem bloqueados/instáveis nos runners. Resultados são enxugados (5 itens, snippet ≤300 chars) para caber no orçamento de tokens/min de tiers gratuitos.
 - Um provider que bate rate limit é **marcado como esgotado** e não é tentado de novo nos filamentos seguintes da mesma coleta (economiza tempo e cota).
 - Se **todos** os providers falharem para um filamento, ele é registrado como `error` no `collection` e a coleta **continua** com os demais — o snapshot é salvo com o que foi obtido, em vez de abortar e perder tudo.
 - Como a reexecução no mesmo dia faz merge idempotente, basta rodar o job de novo (após a cota resetar) para completar os filamentos que ficaram como `error`.

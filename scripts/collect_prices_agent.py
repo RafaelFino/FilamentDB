@@ -31,10 +31,14 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 ZAI_MODEL = os.getenv("ZAI_MODEL", "glm-4.6")
 MAX_TURNS = int(os.getenv("PRICE_AGENT_MAX_TURNS", "30"))
-# Bounded retry for transient LLM errors (429 rate limit, 5xx). After these run
-# out, the provider raises ProviderError and the caller falls back to the next LLM.
-LLM_MAX_RETRIES = int(os.getenv("PRICE_AGENT_LLM_RETRIES", "3"))
-LLM_BACKOFF_BASE = float(os.getenv("PRICE_AGENT_LLM_BACKOFF", "5"))
+# This job runs once a day; correctness/coverage matters far more than speed, so
+# the retry budget and backoff are deliberately generous.
+LLM_MAX_RETRIES = int(os.getenv("PRICE_AGENT_LLM_RETRIES", "5"))
+LLM_BACKOFF_BASE = float(os.getenv("PRICE_AGENT_LLM_BACKOFF", "10"))
+# HTTP timeout for the LLM client (seconds).
+LLM_TIMEOUT = int(os.getenv("PRICE_AGENT_LLM_TIMEOUT", "300"))
+# HTTP timeout for each web-search backend attempt (seconds).
+SEARCH_TIMEOUT = int(os.getenv("PRICE_AGENT_SEARCH_TIMEOUT", "45"))
 
 class ProviderError(RuntimeError):
     pass
@@ -88,9 +92,13 @@ def load_catalog():
 # "auto" backend also tries wikipedia/grokipedia — which fail with DNS errors on
 # CI runners and never return shopping results. We pin real web engines and try
 # them in order, skipping any that error out. Override via PRICE_AGENT_SEARCH_BACKENDS.
+# Order matters: bing/brave/yandex proved reliable and relevant in testing;
+# the rest are kept as last-ditch fallbacks. google/duckduckgo/yahoo/wikipedia/
+# grokipedia were dropped from the default because they are blocked, unstable or
+# return no results on CI runners. Override via PRICE_AGENT_SEARCH_BACKENDS.
 SEARCH_BACKENDS = [
     b.strip() for b in os.getenv(
-        "PRICE_AGENT_SEARCH_BACKENDS", "duckduckgo,bing,brave,google,mojeek,startpage"
+        "PRICE_AGENT_SEARCH_BACKENDS", "bing,brave,yandex,mojeek"
     ).split(",") if b.strip()
 ]
 SEARCH_REGION = os.getenv("PRICE_AGENT_SEARCH_REGION", "us-en")
@@ -115,7 +123,7 @@ def search_web(query: str, max_results: int = None):
     errors = []
     for backend in SEARCH_BACKENDS:
         try:
-            results = DDGS(timeout=60).text(
+            results = DDGS(timeout=SEARCH_TIMEOUT).text(
                 query, region=SEARCH_REGION, safesearch="off",
                 max_results=limit, backend=backend,
             )
@@ -397,7 +405,7 @@ def providers():
         api_key = os.getenv(env_key)
         if not api_key:
             continue
-        provider = AgentProvider(OpenAI(base_url=base_url, api_key=api_key, timeout=180), model)
+        provider = AgentProvider(OpenAI(base_url=base_url, api_key=api_key, timeout=LLM_TIMEOUT), model)
         provider.name = name
         result.append(provider)
     return result
