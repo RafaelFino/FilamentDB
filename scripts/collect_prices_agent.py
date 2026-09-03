@@ -7,6 +7,7 @@ import json
 import os
 import sqlite3
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -25,6 +26,10 @@ API_SECRET = os.getenv("FILAMENTDB_API_SECRET", "")
 MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.7-flash")
 MAX_TURNS = int(os.getenv("PRICE_AGENT_MAX_TURNS", "30"))
+# Bounded retry for transient LLM errors (429 rate limit, 5xx). After these run
+# out, the provider raises ProviderError and the caller falls back to the next LLM.
+LLM_MAX_RETRIES = int(os.getenv("PRICE_AGENT_LLM_RETRIES", "3"))
+LLM_BACKOFF_BASE = float(os.getenv("PRICE_AGENT_LLM_BACKOFF", "5"))
 
 class ProviderError(RuntimeError):
     pass
@@ -229,6 +234,31 @@ class AgentProvider:
         self.model = model
         self.name = "agent"
 
+    def _complete(self, messages, tools):
+        """Call the LLM with bounded retry on transient errors (429/5xx).
+
+        Any error that survives the retries is converted into a ProviderError so
+        the caller's provider loop can fall back to the next LLM instead of the
+        whole run crashing on a raw openai exception (e.g. RateLimitError).
+        """
+        last_exc = None
+        for attempt in range(LLM_MAX_RETRIES):
+            try:
+                return self.client.chat.completions.create(
+                    model=self.model, messages=messages, tools=tools, tool_choice="auto"
+                )
+            except Exception as exc:  # openai.RateLimitError, APIStatusError, timeouts, etc.
+                last_exc = exc
+                status = getattr(exc, "status_code", None)
+                transient = status in (429, 500, 502, 503, 504) or status is None
+                if not transient or attempt == LLM_MAX_RETRIES - 1:
+                    break
+                wait = LLM_BACKOFF_BASE * (2 ** attempt)
+                print(f"[WARN] {self.name}: erro transitório do LLM ({status or type(exc).__name__}); "
+                      f"retry {attempt + 1}/{LLM_MAX_RETRIES - 1} em {wait:.0f}s", flush=True)
+                time.sleep(wait)
+        raise ProviderError(f"{self.name}: chamada ao LLM falhou: {last_exc}") from last_exc
+
     def run(self, item, today):
         try:
             instructions = api_call("GET", "/v1/agent/instructions?filament_key=" + urllib.parse.quote(item["filament_key"]))
@@ -256,7 +286,7 @@ class AgentProvider:
         messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
         offers = []
         for turn in range(MAX_TURNS):
-            response = self.client.chat.completions.create(model=self.model, messages=messages, tools=make_tools(item), tool_choice="auto")
+            response = self._complete(messages, make_tools(item))
             msg = response.choices[0].message
             messages.append(msg)
             calls = msg.tool_calls or []
@@ -326,29 +356,51 @@ def main():
         raise RuntimeError("Nenhum agente configurado com chave disponível")
     all_offers = []
     collection = []
+    # Providers that hit a hard rate limit are parked so we don't waste retries
+    # on them for every remaining filament — the next collection/run resets this.
+    exhausted = set()
+    failures = 0
     print(f"[INFO] Catálogo monitorado: {len(catalog)} perfis; agentes: {', '.join(p.name for p in selected)}", flush=True)
     for index, item in enumerate(catalog, 1):
         print(f"[INFO] Pesquisando {index}/{len(catalog)}: {item['filament_key']}", flush=True)
         last_error = None
+        used = None
         for provider in selected:
+            if provider.name in exhausted:
+                continue
             try:
                 print(f"[INFO]   -> agente {provider.name}", flush=True)
                 offers = provider.run(item, today)
                 all_offers.extend(offers)
-                collection.append({"filament_key": item["filament_key"], "color": item.get("color"), "store": "agentic", "status": "found" if offers else "not_found", "offers_found": len(offers), "notes": f"Pesquisa agentic via {provider.name}; ofertas gravadas diretamente na API."})
+                used = provider.name
+                collection.append({"filament_key": item["filament_key"], "color": item.get("color"), "store": "agentic", "status": "found" if offers else "not_found", "offers_found": len(offers), "notes": f"Pesquisa agentic via {provider.name}."})
                 last_error = None
                 break
             except ProviderError as exc:
                 last_error = exc
                 print(f"[WARN]   -> {exc}", flush=True)
-        else:
-            raise RuntimeError(f"Todos os agentes falharam para {item['filament_key']}: {last_error}")
+                if "rate limit" in str(exc).lower() or "429" in str(exc):
+                    exhausted.add(provider.name)
+                    print(f"[WARN]   -> {provider.name} marcado como esgotado (rate limit); não será tentado novamente nesta coleta.", flush=True)
+        if used is None:
+            # Every provider failed for this filament. Do NOT abort the whole run:
+            # record the failure, keep what we already collected, and move on.
+            failures += 1
+            collection.append({"filament_key": item["filament_key"], "color": item.get("color"), "store": "agentic", "status": "error", "offers_found": 0, "notes": f"Todos os agentes falharam: {last_error}"})
+            print(f"[WARN]   -> nenhum agente disponível para {item['filament_key']}: {last_error}", flush=True)
+            if len(exhausted) >= len(selected):
+                print("[WARN] Todos os agentes esgotados; encerrando a coleta e salvando o que foi obtido.", flush=True)
+                break
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
     merged_offers = merge_offers(existing_offers, all_offers)
     payload = {"schema_version": 2, "snapshot_date": today, "collected_at": datetime.now(TZ).isoformat(), "collector": "FilamentDB API-driven AI Price Agent", "collector_version": "2.0", "scope": {"tracked_profiles": len(catalog), "sources": "API /v1/agent/instructions"}, "collection": collection, "offers": merged_offers, "notes": "Snapshot é a fonte de verdade: ofertas coletadas pelos agentes, validadas offline e publicadas na API por publish_price_snapshot.py."}
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     added = len(merged_offers) - len(existing_offers)
     print(f"[OK] Snapshot escrito: {path}; ofertas={len(merged_offers)} (novas nesta coleta: {len(all_offers)}, líquidas após merge: {added})", flush=True)
+    if failures:
+        print(f"[INFO] {failures} filamento(s) sem coleta por falha de agente (registrados como 'error' no snapshot).", flush=True)
+    if exhausted:
+        print(f"[INFO] Agentes esgotados por rate limit nesta coleta: {', '.join(sorted(exhausted))}.", flush=True)
 
 if __name__ == "__main__":
     try:

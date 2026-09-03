@@ -148,5 +148,51 @@ class MergeOffersTests(unittest.TestCase):
         self.assertEqual(len(merged), 2)
 
 
+class _RateLimit(Exception):
+    status_code = 429
+
+
+class LlmRetryAndFallbackTests(unittest.TestCase):
+    def setUp(self):
+        self._prev = (collector.LLM_MAX_RETRIES, collector.LLM_BACKOFF_BASE)
+        collector.LLM_MAX_RETRIES = 2
+        collector.LLM_BACKOFF_BASE = 0  # no sleep in tests
+
+    def tearDown(self):
+        collector.LLM_MAX_RETRIES, collector.LLM_BACKOFF_BASE = self._prev
+
+    def _client(self, effect):
+        import types
+        comp = types.SimpleNamespace(create=effect)
+        return types.SimpleNamespace(chat=types.SimpleNamespace(completions=comp))
+
+    def test_rate_limit_becomes_provider_error(self):
+        # A raw 429 from the openai lib must be converted to ProviderError so the
+        # provider loop can fall back — not crash the whole run.
+        def always_429(**kwargs):
+            raise _RateLimit("Rate limit exceeded")
+        p = collector.AgentProvider(self._client(always_429), "m")
+        p.name = "mistral"
+        with self.assertRaises(collector.ProviderError) as ctx:
+            p._complete([{"role": "user", "content": "x"}], [])
+        self.assertIn("rate limit", str(ctx.exception).lower())
+
+    def test_retry_then_success(self):
+        # First call 429, second succeeds → _complete returns the response.
+        import types
+        calls = {"n": 0}
+        def flaky(**kwargs):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise _RateLimit("Rate limit exceeded")
+            return types.SimpleNamespace(choices=[types.SimpleNamespace(
+                message=types.SimpleNamespace(tool_calls=None, content="ok"))])
+        p = collector.AgentProvider(self._client(flaky), "m")
+        p.name = "mistral"
+        resp = p._complete([{"role": "user", "content": "x"}], [])
+        self.assertEqual(calls["n"], 2)
+        self.assertEqual(resp.choices[0].message.content, "ok")
+
+
 if __name__ == "__main__":
     unittest.main()

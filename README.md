@@ -1120,9 +1120,16 @@ Pontos importantes do contrato:
 - Se a validação falhar, nada é publicado nem commitado. Se a publicação de qualquer oferta falhar, o workflow falha e o snapshot não é tratado como completo.
 - **Reexecução no mesmo dia é idempotente**: se o snapshot do dia já existe, uma nova coleta faz *merge* com as ofertas anteriores, deduplicando por identidade (`loja|url|quantidade|peso|price_basis`) e mantendo a observação mais recente. Rodar N vezes só enriquece/atualiza o snapshot, nunca duplica nem perde ofertas. O input `replace=true` força recomeço do zero (descarta o snapshot do dia).
 
-#### Providers de IA
+#### Providers de IA e resiliência
 
 Os agentes usam a API compatível com OpenAI de cada provider. Por padrão, `mistral` e depois `gemini` como fallback (`PRICE_AGENT_PROVIDERS`). As chaves são secrets do repositório (`MISTRAL_API_KEY`, `GEMINI_API_KEY`), nunca compartilhadas com o servidor.
+
+Tratamento de falhas (para não perder a coleta inteira por um erro pontual):
+
+- **Erros transitórios do LLM** (429 rate limit, 5xx, timeout) são reto­mados com backoff exponencial (`PRICE_AGENT_LLM_RETRIES`, `PRICE_AGENT_LLM_BACKOFF`). Persistindo, viram `ProviderError` e o collector **cai para o próximo provider** (ex.: mistral esgotou → gemini).
+- Um provider que bate rate limit é **marcado como esgotado** e não é tentado de novo nos filamentos seguintes da mesma coleta (economiza tempo e cota).
+- Se **todos** os providers falharem para um filamento, ele é registrado como `error` no `collection` e a coleta **continua** com os demais — o snapshot é salvo com o que foi obtido, em vez de abortar e perder tudo.
+- Como a reexecução no mesmo dia faz merge idempotente, basta rodar o job de novo (após a cota resetar) para completar os filamentos que ficaram como `error`.
 
 #### Segredos e variáveis do Actions
 

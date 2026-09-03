@@ -61,6 +61,8 @@ jobs:
           PRICE_AGENT_MAX_PROFILES: ${{ inputs.limit || '0' }}
           PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'mistral,gemini' }}
           PRICE_AGENT_MAX_TURNS: ${{ vars.PRICE_AGENT_MAX_TURNS || '30' }}
+          PRICE_AGENT_LLM_RETRIES: ${{ vars.PRICE_AGENT_LLM_RETRIES || '3' }}
+          PRICE_AGENT_LLM_BACKOFF: ${{ vars.PRICE_AGENT_LLM_BACKOFF || '5' }}
           ALLOW_SNAPSHOT_REPLACE: ${{ inputs.replace && '1' || '' }}
         run: |
           if [ -n "${{ inputs.date }}" ]; then
