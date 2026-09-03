@@ -1,0 +1,108 @@
+{
+  "schema_version": 2,
+  "snapshot_date": "2026-09-02",
+  "collected_at": "2026-09-02T22:06:48.667137-03:00",
+  "collector": "FilamentDB API-driven AI Price Agent",
+  "collector_version": "2.0",
+  "scope": {
+    "tracked_profiles": 1,
+    "sources": "API /v1/agent/instructions"
+  },
+  "collection": [
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "found",
+      "offers_found": 6,
+      "notes": "Pesquisa agentic via mistral; ofertas gravadas diretamente na API."
+    }
+  ],
+  "offers": [
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "Shopee",
+      "url": "https://shopee.com.br/Filamento-PETG-Transparente-3DLAB-1-75mm-1Kg-3D-LAB-i.298290042.22617276373",
+      "title": "Filamento PETG Transparente 3DLAB | 1,75mm | 1Kg | 3D LAB",
+      "price": 119.9,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 119.9,
+      "available": "Em estoque",
+      "source": "Shopee"
+    },
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "Shopee",
+      "url": "https://shopee.com.br/Filamento-PETG-Branco-3DLAB-1-75mm-1Kg-3D-LAB-i.298290042.6388968757",
+      "title": "Filamento PETG Branco 3DLAB | 1,75mm | 1Kg | 3D LAB",
+      "price": 119.9,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 119.9,
+      "available": "Em estoque",
+      "source": "Shopee"
+    },
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "Shopee",
+      "url": "https://shopee.com.br/Filamento-PETG-Preto-3DLAB-1-75mm-1Kg-3D-LAB-i.298290042.22917286823",
+      "title": "Filamento PETG Preto 3DLAB | 1,75mm | 1Kg | 3D LAB",
+      "price": 119.9,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 119.9,
+      "available": "Em estoque",
+      "source": "Shopee"
+    },
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "Mercado Livre",
+      "url": "https://www.mercadolivre.com.br/filamento-petg-branco-3dlab-175mm-1kg-impresso-3d/p/MLB2051204065",
+      "title": "Filamento Petg Branco 3dlab | 1,75mm | 1kg",
+      "price": 119.9,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 119.9,
+      "available": "Disponível",
+      "source": "Mercado Livre"
+    },
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "Loja 3D House",
+      "url": "https://www.loja3dhouse.com.br/filamento-petg-preto-175mm-500g-3d-lab",
+      "title": "Filamento PETG Preto | 1,75Mm | 500g | 3D LAB",
+      "price": 79.9,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 500.0,
+      "price_basis": "unit",
+      "total_price": 79.9,
+      "available": "Disponível",
+      "source": "Loja 3D House"
+    },
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "Loja 3D House",
+      "url": "https://www.loja3dhouse.com.br/3d-lab",
+      "title": "Filamento PETG Preto | 1,75Mm | 1Kg | 3D LAB",
+      "price": 119.9,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 119.9,
+      "available": "Disponível",
+      "source": "Loja 3D House"
+    }
+  ],
+  "notes": "Snapshot é a fonte de verdade: ofertas coletadas pelos agentes, validadas offline e publicadas na API por publish_price_snapshot.py."
+}
