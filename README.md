@@ -1122,7 +1122,9 @@ Pontos importantes do contrato:
 
 #### Providers de IA e resiliência
 
-Os agentes usam a API compatível com OpenAI de cada provider. A ordem de tentativa é controlada por `PRICE_AGENT_PROVIDERS` (default: `cerebras,groq,mistral,openai,openrouter,z,gemini`) — provedores com cota gratuita/diária primeiro, deixando o **Gemini pré-pago por último**. Cada provider só é montado se sua chave existir; os ausentes são ignorados silenciosamente. As chaves são secrets do repositório, nunca compartilhadas com o servidor.
+Os agentes usam a API compatível com OpenAI de cada provider. A ordem de tentativa é controlada por `PRICE_AGENT_PROVIDERS` (default: `groq,mistral,gemini`) — os provedores com cota gratuita funcional primeiro, deixando o **Gemini pré-pago como rede de segurança** no fim. Cada provider só é montado se sua chave existir; os ausentes são ignorados silenciosamente. As chaves são secrets do repositório, nunca compartilhadas com o servidor.
+
+Os demais provedores da tabela abaixo (cerebras, z, openrouter, openai) continuam suportados no código, mas ficam fora do default porque exigem saldo/billing na conta para funcionar. Para reativá-los depois de recarregar, basta incluí-los na variável `PRICE_AGENT_PROVIDERS` do repositório — sem alterar código.
 
 | Provider | Secret | Base URL | Modelo (var / default) |
 |----------|--------|----------|------------------------|

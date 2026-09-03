@@ -442,7 +442,7 @@ def main():
         except (ValueError, OSError) as exc:
             print(f"[WARN] Não foi possível ler snapshot existente ({exc}); recomeçando do zero.", flush=True)
             existing_offers = []
-    order = [x.strip().casefold() for x in os.getenv("PRICE_AGENT_PROVIDERS", "cerebras,groq,mistral,openai,openrouter,z,gemini").split(",") if x.strip()]
+    order = [x.strip().casefold() for x in os.getenv("PRICE_AGENT_PROVIDERS", "groq,mistral,gemini").split(",") if x.strip()]
     available = {p.name: p for p in providers()}
     selected = [available[x] for x in order if x in available]
     if not selected:

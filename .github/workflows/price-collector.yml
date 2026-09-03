@@ -69,7 +69,7 @@ jobs:
           FILAMENTDB_API_URL: ${{ vars.FILAMENTDB_API_URL || 'https://filamentdb-api.learnops.duckdns.org' }}
           FILAMENTDB_API_SECRET: ${{ secrets.FILAMENTDB_API_SECRET }}
           PRICE_AGENT_MAX_PROFILES: ${{ inputs.limit || '0' }}
-          PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'cerebras,groq,mistral,openai,openrouter,z,gemini' }}
+          PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'groq,mistral,gemini' }}
           PRICE_AGENT_MAX_TURNS: ${{ vars.PRICE_AGENT_MAX_TURNS || '30' }}
           PRICE_AGENT_LLM_RETRIES: ${{ vars.PRICE_AGENT_LLM_RETRIES || '5' }}
           PRICE_AGENT_LLM_BACKOFF: ${{ vars.PRICE_AGENT_LLM_BACKOFF || '10' }}
