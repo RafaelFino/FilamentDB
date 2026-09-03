@@ -26,7 +26,7 @@ API_SECRET = os.getenv("FILAMENTDB_API_SECRET", "")
 MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.7-flash")
 CEREBRAS_MODEL = os.getenv("CEREBRAS_MODEL", "gpt-oss-120b")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 ZAI_MODEL = os.getenv("ZAI_MODEL", "glm-4.6")
@@ -84,25 +84,37 @@ def load_catalog():
     return [dict(r) for r in rows]
 
 
+# Web-search engines to use, in order. ddgs (>=9) is a METAsearch lib whose
+# "auto" backend also tries wikipedia/grokipedia — which fail with DNS errors on
+# CI runners and never return shopping results. We pin real web engines and try
+# them in order, skipping any that error out. Override via PRICE_AGENT_SEARCH_BACKENDS.
+SEARCH_BACKENDS = [
+    b.strip() for b in os.getenv(
+        "PRICE_AGENT_SEARCH_BACKENDS", "duckduckgo,bing,brave,google,mojeek,startpage"
+    ).split(",") if b.strip()
+]
+SEARCH_REGION = os.getenv("PRICE_AGENT_SEARCH_REGION", "us-en")
+
+
 def search_web(query: str, max_results: int = 8):
-    """Search the web without turning an empty/blocked backend into an agent failure."""
+    """Search the web across real engines; never turn a blocked/empty backend
+    into an agent failure (returns [] so the model can try another query)."""
     from ddgs import DDGS
 
     limit = max(1, min(max_results, 10))
-    attempts = [
-        {"region": "br-pt", "safesearch": "off"},
-        {"region": "wt-wt", "safesearch": "off"},
-    ]
     errors = []
-    for options in attempts:
+    for backend in SEARCH_BACKENDS:
         try:
-            results = DDGS(timeout=60).text(query, max_results=limit, **options)
+            results = DDGS(timeout=60).text(
+                query, region=SEARCH_REGION, safesearch="off",
+                max_results=limit, backend=backend,
+            )
             if results:
                 return [{"title": r.get("title", ""), "url": r.get("href", ""), "snippet": r.get("body", "")} for r in results]
         except Exception as exc:
-            errors.append(str(exc))
+            errors.append(f"{backend}: {exc}")
     if errors:
-        print(f"[WARN] busca web indisponível: {errors[-1]}", flush=True)
+        print(f"[WARN] busca web sem resultados (últimos erros: {'; '.join(errors[-2:])})", flush=True)
     return []
 
 
@@ -255,7 +267,11 @@ class AgentProvider:
             except Exception as exc:  # openai.RateLimitError, APIStatusError, timeouts, etc.
                 last_exc = exc
                 status = getattr(exc, "status_code", None)
-                transient = status in (429, 500, 502, 503, 504) or status is None
+                # Permanent errors (auth/payment/bad model/bad request) never
+                # recover with retry — fail fast so the caller falls back to the
+                # next provider immediately. Only 429/5xx/network are transient.
+                permanent = status in (400, 401, 402, 403, 404, 422)
+                transient = (not permanent) and (status in (429, 500, 502, 503, 504) or status is None)
                 if not transient or attempt == LLM_MAX_RETRIES - 1:
                     break
                 wait = LLM_BACKOFF_BASE * (2 ** attempt)
@@ -396,9 +412,15 @@ def main():
             except ProviderError as exc:
                 last_error = exc
                 print(f"[WARN]   -> {exc}", flush=True)
-                if "rate limit" in str(exc).lower() or "429" in str(exc):
+                msg = str(exc).lower()
+                # Park a provider for the rest of the run when the failure will
+                # clearly repeat for every filament: rate limit (429), quota/
+                # payment (402), auth (401/403) or missing model (404).
+                if any(s in msg for s in ("rate limit", "429", "402", "payment", "quota",
+                                          "401", "403", "404", "model_not_found",
+                                          "insufficient", "does not exist")):
                     exhausted.add(provider.name)
-                    print(f"[WARN]   -> {provider.name} marcado como esgotado (rate limit); não será tentado novamente nesta coleta.", flush=True)
+                    print(f"[WARN]   -> {provider.name} marcado como indisponível nesta coleta (não será tentado de novo).", flush=True)
         if used is None:
             # Every provider failed for this filament. Do NOT abort the whole run:
             # record the failure, keep what we already collected, and move on.

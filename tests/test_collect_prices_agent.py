@@ -216,6 +216,21 @@ class LlmRetryAndFallbackTests(unittest.TestCase):
             p._complete([{"role": "user", "content": "x"}], [])
         self.assertIn("rate limit", str(ctx.exception).lower())
 
+    def test_permanent_error_does_not_retry(self):
+        # 402 (payment) / 404 (bad model) must fail fast — no retry — so the
+        # provider loop falls back immediately instead of waiting on backoff.
+        class _Payment(Exception):
+            status_code = 402
+        calls = {"n": 0}
+        def always_402(**kwargs):
+            calls["n"] += 1
+            raise _Payment("Payment required")
+        p = collector.AgentProvider(self._client(always_402), "m")
+        p.name = "cerebras"
+        with self.assertRaises(collector.ProviderError):
+            p._complete([{"role": "user", "content": "x"}], [])
+        self.assertEqual(calls["n"], 1)  # exactly one attempt, no retry
+
     def test_retry_then_success(self):
         # First call 429, second succeeds → _complete returns the response.
         import types
