@@ -61,7 +61,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           MISTRAL_MODEL: ${{ vars.MISTRAL_PRICE_MODEL || 'mistral-small-latest' }}
           CEREBRAS_MODEL: ${{ vars.CEREBRAS_PRICE_MODEL || 'gpt-oss-120b' }}
-          GROQ_MODEL: ${{ vars.GROQ_PRICE_MODEL || 'llama-3.1-8b-instant' }}
+          GROQ_MODEL: ${{ vars.GROQ_PRICE_MODEL || 'openai/gpt-oss-20b' }}
           OPENAI_MODEL: ${{ vars.OPENAI_PRICE_MODEL || 'gpt-4o-mini' }}
           OPENROUTER_MODEL: ${{ vars.OPENROUTER_PRICE_MODEL || 'openai/gpt-4o-mini' }}
           ZAI_MODEL: ${{ vars.ZAI_PRICE_MODEL || 'glm-4.6' }}

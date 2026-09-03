@@ -1127,7 +1127,7 @@ Os agentes usam a API compatível com OpenAI de cada provider. A ordem de tentat
 | Provider | Secret | Base URL | Modelo (var / default) |
 |----------|--------|----------|------------------------|
 | cerebras | `CEREBRAS_API_KEY` | `api.cerebras.ai/v1` | `CEREBRAS_PRICE_MODEL` / `gpt-oss-120b` |
-| groq | `GROQ_API_KEY` | `api.groq.com/openai/v1` | `GROQ_PRICE_MODEL` / `llama-3.3-70b-versatile` |
+| groq | `GROQ_API_KEY` | `api.groq.com/openai/v1` | `GROQ_PRICE_MODEL` / `openai/gpt-oss-20b` |
 | mistral | `MISTRAL_API_KEY` | `api.mistral.ai/v1` | `MISTRAL_PRICE_MODEL` / `mistral-small-latest` |
 | openai | `OPENAI_API_KEY` | `api.openai.com/v1` | `OPENAI_PRICE_MODEL` / `gpt-4o-mini` |
 | openrouter | `OPENROUTER_API_KEY` | `openrouter.ai/api/v1` | `OPENROUTER_PRICE_MODEL` / `openai/gpt-4o-mini` |

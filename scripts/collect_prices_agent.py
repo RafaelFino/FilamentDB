@@ -26,7 +26,7 @@ API_SECRET = os.getenv("FILAMENTDB_API_SECRET", "")
 MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.7-flash")
 CEREBRAS_MODEL = os.getenv("CEREBRAS_MODEL", "gpt-oss-120b")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 ZAI_MODEL = os.getenv("ZAI_MODEL", "glm-4.6")
@@ -96,12 +96,22 @@ SEARCH_BACKENDS = [
 SEARCH_REGION = os.getenv("PRICE_AGENT_SEARCH_REGION", "us-en")
 
 
-def search_web(query: str, max_results: int = 8):
+# Keep web-search results compact: they accumulate in the message history every
+# turn and blow the per-minute token budget on free tiers (e.g. Groq TPM=8000).
+SEARCH_MAX_RESULTS = int(os.getenv("PRICE_AGENT_SEARCH_MAX_RESULTS", "5"))
+SEARCH_SNIPPET_CHARS = int(os.getenv("PRICE_AGENT_SEARCH_SNIPPET_CHARS", "300"))
+
+
+def search_web(query: str, max_results: int = None):
     """Search the web across real engines; never turn a blocked/empty backend
-    into an agent failure (returns [] so the model can try another query)."""
+    into an agent failure (returns [] so the model can try another query).
+
+    Results are trimmed (count + snippet length) to keep the running message
+    history within tight per-minute token limits of free provider tiers."""
     from ddgs import DDGS
 
-    limit = max(1, min(max_results, 10))
+    cap = max_results if max_results is not None else SEARCH_MAX_RESULTS
+    limit = max(1, min(int(cap or SEARCH_MAX_RESULTS), SEARCH_MAX_RESULTS))
     errors = []
     for backend in SEARCH_BACKENDS:
         try:
@@ -110,7 +120,11 @@ def search_web(query: str, max_results: int = 8):
                 max_results=limit, backend=backend,
             )
             if results:
-                return [{"title": r.get("title", ""), "url": r.get("href", ""), "snippet": r.get("body", "")} for r in results]
+                return [{
+                    "title": (r.get("title") or "")[:160],
+                    "url": r.get("href", ""),
+                    "snippet": (r.get("body") or "")[:SEARCH_SNIPPET_CHARS],
+                } for r in results[:limit]]
         except Exception as exc:
             errors.append(f"{backend}: {exc}")
     if errors:
@@ -267,17 +281,35 @@ class AgentProvider:
             except Exception as exc:  # openai.RateLimitError, APIStatusError, timeouts, etc.
                 last_exc = exc
                 status = getattr(exc, "status_code", None)
-                # Permanent errors (auth/payment/bad model/bad request) never
-                # recover with retry — fail fast so the caller falls back to the
-                # next provider immediately. Only 429/5xx/network are transient.
-                permanent = status in (400, 401, 402, 403, 404, 422)
-                transient = (not permanent) and (status in (429, 500, 502, 503, 504) or status is None)
+                msg = str(exc).lower()
+                # Some 400s are the MODEL's fault, not config: e.g. Groq validates
+                # tool-call args server-side and returns 400 'tool_use_failed' when
+                # the model emits a malformed call. That is retryable — the model
+                # may get it right next turn. Real config 400s (and 401/402/403/
+                # 404/422) are permanent and should fail fast to the next provider.
+                model_glitch = "tool_use_failed" in msg or "did not match schema" in msg or "failed_generation" in msg
+                # 413 with a per-minute token limit (Groq TPM) recovers after the
+                # window resets — treat as transient with a long-ish wait.
+                token_rate = status == 413 or ("tokens per minute" in msg) or ("tpm" in msg)
+                permanent = (status in (401, 402, 403, 404, 422)) or (status == 400 and not model_glitch)
+                transient = (not permanent) and (
+                    model_glitch or token_rate or status in (429, 500, 502, 503, 504) or status is None
+                )
                 if not transient or attempt == LLM_MAX_RETRIES - 1:
                     break
-                wait = LLM_BACKOFF_BASE * (2 ** attempt)
-                print(f"[WARN] {self.name}: erro transitório do LLM ({status or type(exc).__name__}); "
-                      f"retry {attempt + 1}/{LLM_MAX_RETRIES - 1} em {wait:.0f}s", flush=True)
-                time.sleep(wait)
+                if model_glitch:
+                    wait = 0
+                elif token_rate:
+                    wait = max(LLM_BACKOFF_BASE, 20) * (attempt + 1)  # let the per-minute window reset
+                else:
+                    wait = LLM_BACKOFF_BASE * (2 ** attempt)
+                reason = ("tool-call malformado (modelo)" if model_glitch
+                          else "limite de tokens/min" if token_rate
+                          else f"erro transitório ({status or type(exc).__name__})")
+                print(f"[WARN] {self.name}: {reason}; retry {attempt + 1}/{LLM_MAX_RETRIES - 1}"
+                      + (f" em {wait:.0f}s" if wait else ""), flush=True)
+                if wait:
+                    time.sleep(wait)
         raise ProviderError(f"{self.name}: chamada ao LLM falhou: {last_exc}") from last_exc
 
     def run(self, item, today):
@@ -316,7 +348,12 @@ class AgentProvider:
                 return offers
             for call in calls:
                 name = call.function.name
-                args = json.loads(call.function.arguments or "{}")
+                try:
+                    args = json.loads(call.function.arguments or "{}")
+                    if not isinstance(args, dict):
+                        args = {}
+                except (ValueError, TypeError):
+                    args = {}
                 if name == "search_web":
                     result = search_web(args.get("query", ""), args.get("max_results", 8))
                 elif name == "submit_offer":
@@ -330,9 +367,17 @@ class AgentProvider:
                         result = {"ok": False, "error": str(exc)}
                         print(f"[WARN] {self.name}: oferta rejeitada localmente: {exc}", flush=True)
                 else:
-                    raise ProviderError(f"{self.name}: ferramenta desconhecida: {name}")
+                    # Unknown tool (model hallucinated one): feed the error back so it
+                    # can correct on the next turn, instead of aborting the provider.
+                    result = {"ok": False, "error": f"ferramenta '{name}' não existe; use apenas search_web e submit_offer"}
+                    print(f"[WARN] {self.name}: modelo chamou ferramenta inexistente '{name}'; devolvendo erro para correção.", flush=True)
                 messages.append({"role": "tool", "tool_call_id": call.id, "name": name, "content": json.dumps(result, ensure_ascii=False)})
-        raise ProviderError(f"{self.name}: excedeu {MAX_TURNS} ciclos de ferramentas")
+        # Hit the turn ceiling. Keep whatever was already collected rather than
+        # discarding it — a chatty model that found real offers still produced value.
+        if offers:
+            print(f"[INFO] {self.name} atingiu {MAX_TURNS} ciclos; retornando {len(offers)} oferta(s) já coletada(s).", flush=True)
+            return offers
+        raise ProviderError(f"{self.name}: excedeu {MAX_TURNS} ciclos sem coletar ofertas")
 
 
 def providers():
