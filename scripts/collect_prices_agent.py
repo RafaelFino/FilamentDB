@@ -25,6 +25,11 @@ API_URL = os.getenv("FILAMENTDB_API_URL", "https://filamentdb-api.learnops.duckd
 API_SECRET = os.getenv("FILAMENTDB_API_SECRET", "")
 MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.7-flash")
+CEREBRAS_MODEL = os.getenv("CEREBRAS_MODEL", "gpt-oss-120b")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
+ZAI_MODEL = os.getenv("ZAI_MODEL", "glm-4.6")
 MAX_TURNS = int(os.getenv("PRICE_AGENT_MAX_TURNS", "30"))
 # Bounded retry for transient LLM errors (429 rate limit, 5xx). After these run
 # out, the provider raises ProviderError and the caller falls back to the next LLM.
@@ -315,13 +320,25 @@ class AgentProvider:
 
 
 def providers():
+    # Provider registry: name -> (env key, base_url, model). All are OpenAI-compatible.
+    # The actual order/selection is controlled by PRICE_AGENT_PROVIDERS in main().
+    registry = {
+        "mistral":    ("MISTRAL_API_KEY",    "https://api.mistral.ai/v1", MISTRAL_MODEL),
+        "cerebras":   ("CEREBRAS_API_KEY",   "https://api.cerebras.ai/v1", CEREBRAS_MODEL),
+        "groq":       ("GROQ_API_KEY",       "https://api.groq.com/openai/v1", GROQ_MODEL),
+        "openai":     ("OPENAI_API_KEY",     "https://api.openai.com/v1", OPENAI_MODEL),
+        "openrouter": ("OPENROUTER_API_KEY", "https://openrouter.ai/api/v1", OPENROUTER_MODEL),
+        "z":          ("Z_API_KEY",          "https://api.z.ai/api/paas/v4", ZAI_MODEL),
+        "gemini":     ("GEMINI_API_KEY",     "https://generativelanguage.googleapis.com/v1beta/openai/", GEMINI_MODEL),
+    }
     result = []
-    if os.getenv("MISTRAL_API_KEY"):
-        result.append(AgentProvider(OpenAI(base_url="https://api.mistral.ai/v1", api_key=os.environ["MISTRAL_API_KEY"], timeout=180), MISTRAL_MODEL))
-        result[-1].name = "mistral"
-    if os.getenv("GEMINI_API_KEY"):
-        result.append(AgentProvider(OpenAI(base_url="https://generativelanguage.googleapis.com/v1beta/openai/", api_key=os.environ["GEMINI_API_KEY"], timeout=180), GEMINI_MODEL))
-        result[-1].name = "gemini"
+    for name, (env_key, base_url, model) in registry.items():
+        api_key = os.getenv(env_key)
+        if not api_key:
+            continue
+        provider = AgentProvider(OpenAI(base_url=base_url, api_key=api_key, timeout=180), model)
+        provider.name = name
+        result.append(provider)
     return result
 
 
@@ -349,7 +366,7 @@ def main():
         except (ValueError, OSError) as exc:
             print(f"[WARN] Não foi possível ler snapshot existente ({exc}); recomeçando do zero.", flush=True)
             existing_offers = []
-    order = [x.strip().casefold() for x in os.getenv("PRICE_AGENT_PROVIDERS", "mistral,gemini").split(",") if x.strip()]
+    order = [x.strip().casefold() for x in os.getenv("PRICE_AGENT_PROVIDERS", "cerebras,groq,mistral,openai,openrouter,z,gemini").split(",") if x.strip()]
     available = {p.name: p for p in providers()}
     selected = [available[x] for x in order if x in available]
     if not selected:

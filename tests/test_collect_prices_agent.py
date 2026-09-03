@@ -1,3 +1,4 @@
+import os
 import sys
 import types
 import unittest
@@ -146,6 +147,44 @@ class MergeOffersTests(unittest.TestCase):
         base = [self._offer("https://x.com/a", 10), self._offer("https://x.com/b", 20)]
         merged = collector.merge_offers(base, list(base))
         self.assertEqual(len(merged), 2)
+
+
+class ProviderRegistryTests(unittest.TestCase):
+    """The registry must build one provider per configured key, with the right
+    endpoint, and skip providers whose key is absent."""
+
+    def _run_with_keys(self, keys):
+        import importlib
+        saved = {k: os.environ.get(k) for k in (
+            "MISTRAL_API_KEY", "CEREBRAS_API_KEY", "GROQ_API_KEY", "OPENAI_API_KEY",
+            "OPENROUTER_API_KEY", "Z_API_KEY", "GEMINI_API_KEY")}
+        try:
+            for k in saved:
+                os.environ.pop(k, None)
+            for k in keys:
+                os.environ[k] = "test-key"
+            importlib.reload(collector)
+            return {p.name: p.client.base_url for p in collector.providers()}
+        finally:
+            for k, v in saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+            importlib.reload(collector)
+
+    def test_all_seven_providers_build(self):
+        got = self._run_with_keys([
+            "MISTRAL_API_KEY", "CEREBRAS_API_KEY", "GROQ_API_KEY", "OPENAI_API_KEY",
+            "OPENROUTER_API_KEY", "Z_API_KEY", "GEMINI_API_KEY"])
+        self.assertEqual(set(got), {"mistral", "cerebras", "groq", "openai", "openrouter", "z", "gemini"})
+        # base_url may come back as an httpx URL with a trailing slash; normalize.
+        self.assertEqual(str(got["cerebras"]).rstrip("/"), "https://api.cerebras.ai/v1")
+        self.assertEqual(str(got["z"]).rstrip("/"), "https://api.z.ai/api/paas/v4")
+
+    def test_missing_keys_are_skipped(self):
+        got = self._run_with_keys(["CEREBRAS_API_KEY", "GEMINI_API_KEY"])
+        self.assertEqual(set(got), {"cerebras", "gemini"})
 
 
 class _RateLimit(Exception):

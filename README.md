@@ -1122,7 +1122,17 @@ Pontos importantes do contrato:
 
 #### Providers de IA e resiliência
 
-Os agentes usam a API compatível com OpenAI de cada provider. Por padrão, `mistral` e depois `gemini` como fallback (`PRICE_AGENT_PROVIDERS`). As chaves são secrets do repositório (`MISTRAL_API_KEY`, `GEMINI_API_KEY`), nunca compartilhadas com o servidor.
+Os agentes usam a API compatível com OpenAI de cada provider. A ordem de tentativa é controlada por `PRICE_AGENT_PROVIDERS` (default: `cerebras,groq,mistral,openai,openrouter,z,gemini`) — provedores com cota gratuita/diária primeiro, deixando o **Gemini pré-pago por último**. Cada provider só é montado se sua chave existir; os ausentes são ignorados silenciosamente. As chaves são secrets do repositório, nunca compartilhadas com o servidor.
+
+| Provider | Secret | Base URL | Modelo (var / default) |
+|----------|--------|----------|------------------------|
+| cerebras | `CEREBRAS_API_KEY` | `api.cerebras.ai/v1` | `CEREBRAS_PRICE_MODEL` / `gpt-oss-120b` |
+| groq | `GROQ_API_KEY` | `api.groq.com/openai/v1` | `GROQ_PRICE_MODEL` / `llama-3.3-70b-versatile` |
+| mistral | `MISTRAL_API_KEY` | `api.mistral.ai/v1` | `MISTRAL_PRICE_MODEL` / `mistral-small-latest` |
+| openai | `OPENAI_API_KEY` | `api.openai.com/v1` | `OPENAI_PRICE_MODEL` / `gpt-4o-mini` |
+| openrouter | `OPENROUTER_API_KEY` | `openrouter.ai/api/v1` | `OPENROUTER_PRICE_MODEL` / `openai/gpt-4o-mini` |
+| z | `Z_API_KEY` | `api.z.ai/api/paas/v4` | `ZAI_PRICE_MODEL` / `glm-4.6` |
+| gemini | `GEMINI_API_KEY` | `generativelanguage.googleapis.com/v1beta/openai/` | `GEMINI_PRICE_MODEL` / `gemini-3.7-flash` |
 
 Tratamento de falhas (para não perder a coleta inteira por um erro pontual):
 

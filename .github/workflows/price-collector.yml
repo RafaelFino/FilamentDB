@@ -53,13 +53,23 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          Z_API_KEY: ${{ secrets.Z_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           MISTRAL_MODEL: ${{ vars.MISTRAL_PRICE_MODEL || 'mistral-small-latest' }}
+          CEREBRAS_MODEL: ${{ vars.CEREBRAS_PRICE_MODEL || 'gpt-oss-120b' }}
+          GROQ_MODEL: ${{ vars.GROQ_PRICE_MODEL || 'llama-3.3-70b-versatile' }}
+          OPENAI_MODEL: ${{ vars.OPENAI_PRICE_MODEL || 'gpt-4o-mini' }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_PRICE_MODEL || 'openai/gpt-4o-mini' }}
+          ZAI_MODEL: ${{ vars.ZAI_PRICE_MODEL || 'glm-4.6' }}
           GEMINI_MODEL: ${{ vars.GEMINI_PRICE_MODEL || 'gemini-3.7-flash' }}
           FILAMENTDB_API_URL: ${{ vars.FILAMENTDB_API_URL || 'https://filamentdb-api.learnops.duckdns.org' }}
           FILAMENTDB_API_SECRET: ${{ secrets.FILAMENTDB_API_SECRET }}
           PRICE_AGENT_MAX_PROFILES: ${{ inputs.limit || '0' }}
-          PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'mistral,gemini' }}
+          PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'cerebras,groq,mistral,openai,openrouter,z,gemini' }}
           PRICE_AGENT_MAX_TURNS: ${{ vars.PRICE_AGENT_MAX_TURNS || '30' }}
           PRICE_AGENT_LLM_RETRIES: ${{ vars.PRICE_AGENT_LLM_RETRIES || '3' }}
           PRICE_AGENT_LLM_BACKOFF: ${{ vars.PRICE_AGENT_LLM_BACKOFF || '5' }}
