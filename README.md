@@ -1118,6 +1118,7 @@ Pontos importantes do contrato:
 - Cada item de `offers` no snapshot é uma oferta **completa e autocontida** (`filament_key`, `store`, `url`, `title`, `price`, `currency`, `quantity`, `unit_weight_g`, `price_basis`, `total_price`), exatamente o que a API `/v1/ingest/prices` espera.
 - A validação lê o catálogo em `data/filament.db` (o mesmo que o `build.py` gera). Não existe `filament.db` na raiz do projeto.
 - Se a validação falhar, nada é publicado nem commitado. Se a publicação de qualquer oferta falhar, o workflow falha e o snapshot não é tratado como completo.
+- **Reexecução no mesmo dia é idempotente**: se o snapshot do dia já existe, uma nova coleta faz *merge* com as ofertas anteriores, deduplicando por identidade (`loja|url|quantidade|peso|price_basis`) e mantendo a observação mais recente. Rodar N vezes só enriquece/atualiza o snapshot, nunca duplica nem perde ofertas. O input `replace=true` força recomeço do zero (descarta o snapshot do dia).
 
 #### Providers de IA
 

@@ -188,6 +188,41 @@ def normalize_offer(args, filament_key):
     return offer
 
 
+def _offer_dedupe_key(offer):
+    """Offer identity, mirroring the API's offer_key (store|url|qty|weight|basis).
+
+    Two offers with the same identity are the same product listing; the newer
+    one supersedes the older so re-runs update instead of duplicating.
+    """
+    return (
+        str(offer.get("store", "")).strip().casefold(),
+        str(offer.get("url", "")).strip(),
+        int(offer.get("quantity", 1) or 1),
+        round(float(offer.get("unit_weight_g", 0) or 0), 2),
+        str(offer.get("price_basis", "total")).strip().casefold(),
+    )
+
+
+def merge_offers(existing, fresh):
+    """Merge two offer lists deduplicating by offer identity.
+
+    Fresh offers win over existing ones with the same identity (a re-run picks
+    up the latest observed price/availability). Order is stable: existing first,
+    then any genuinely new offers.
+    """
+    by_key = {}
+    order = []
+    for offer in list(existing) + list(fresh):
+        try:
+            key = _offer_dedupe_key(offer)
+        except (TypeError, ValueError):
+            continue
+        if key not in by_key:
+            order.append(key)
+        by_key[key] = offer  # later (fresh) wins
+    return [by_key[k] for k in order]
+
+
 class AgentProvider:
     def __init__(self, client, model):
         self.client = client
@@ -272,8 +307,18 @@ def main():
     if not catalog:
         raise RuntimeError("Nenhum perfil PLA/PETG ativo foi encontrado")
     path = SNAPSHOT_DIR / f"{today}.json"
+    # Re-running on the same day is idempotent: instead of failing or blindly
+    # overwriting, we merge into the existing snapshot (dedupe by offer identity,
+    # fresh wins). ALLOW_SNAPSHOT_REPLACE=1 forces a clean slate (ignore existing).
+    existing_offers = []
     if path.exists() and not os.getenv("ALLOW_SNAPSHOT_REPLACE"):
-        raise RuntimeError(f"Snapshot já existe: {path}")
+        try:
+            prev = json.loads(path.read_text(encoding="utf-8"))
+            existing_offers = prev.get("offers", []) if isinstance(prev, dict) else []
+            print(f"[INFO] Snapshot do dia já existe com {len(existing_offers)} oferta(s); nova coleta fará merge idempotente.", flush=True)
+        except (ValueError, OSError) as exc:
+            print(f"[WARN] Não foi possível ler snapshot existente ({exc}); recomeçando do zero.", flush=True)
+            existing_offers = []
     order = [x.strip().casefold() for x in os.getenv("PRICE_AGENT_PROVIDERS", "mistral,gemini").split(",") if x.strip()]
     available = {p.name: p for p in providers()}
     selected = [available[x] for x in order if x in available]
@@ -299,9 +344,11 @@ def main():
         else:
             raise RuntimeError(f"Todos os agentes falharam para {item['filament_key']}: {last_error}")
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
-    payload = {"schema_version": 2, "snapshot_date": today, "collected_at": datetime.now(TZ).isoformat(), "collector": "FilamentDB API-driven AI Price Agent", "collector_version": "2.0", "scope": {"tracked_profiles": len(catalog), "sources": "API /v1/agent/instructions"}, "collection": collection, "offers": all_offers, "notes": "Snapshot é a fonte de verdade: ofertas coletadas pelos agentes, validadas offline e publicadas na API por publish_price_snapshot.py."}
+    merged_offers = merge_offers(existing_offers, all_offers)
+    payload = {"schema_version": 2, "snapshot_date": today, "collected_at": datetime.now(TZ).isoformat(), "collector": "FilamentDB API-driven AI Price Agent", "collector_version": "2.0", "scope": {"tracked_profiles": len(catalog), "sources": "API /v1/agent/instructions"}, "collection": collection, "offers": merged_offers, "notes": "Snapshot é a fonte de verdade: ofertas coletadas pelos agentes, validadas offline e publicadas na API por publish_price_snapshot.py."}
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"[OK] Snapshot escrito: {path}; ofertas={len(all_offers)}", flush=True)
+    added = len(merged_offers) - len(existing_offers)
+    print(f"[OK] Snapshot escrito: {path}; ofertas={len(merged_offers)} (novas nesta coleta: {len(all_offers)}, líquidas após merge: {added})", flush=True)
 
 if __name__ == "__main__":
     try:

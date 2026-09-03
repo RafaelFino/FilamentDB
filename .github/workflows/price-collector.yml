@@ -16,7 +16,7 @@ on:
         type: string
         default: ''
       replace:
-        description: 'Allow replacing an existing snapshot (use only for deliberate corrections).'
+        description: 'Descartar o snapshot do dia e recomeçar do zero. Padrão (false) faz merge idempotente com o snapshot existente.'
         required: false
         type: boolean
         default: false

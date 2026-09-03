@@ -111,5 +111,42 @@ class NormalizeOfferTests(unittest.TestCase):
             )
 
 
+class MergeOffersTests(unittest.TestCase):
+    def _offer(self, url, price, store="Voolt3D", qty=1, weight=1000, basis="total"):
+        return {"store": store, "url": url, "title": "t", "price": price,
+                "currency": "BRL", "quantity": qty, "unit_weight_g": weight,
+                "price_basis": basis, "total_price": price}
+
+    def test_new_offers_are_appended(self):
+        merged = collector.merge_offers(
+            [self._offer("https://x.com/a", 10)],
+            [self._offer("https://x.com/b", 20)],
+        )
+        self.assertEqual(len(merged), 2)
+
+    def test_same_identity_is_deduped_fresh_wins(self):
+        # Same store+url+qty+weight+basis => same offer; the fresh price wins.
+        merged = collector.merge_offers(
+            [self._offer("https://x.com/a", 100)],
+            [self._offer("https://x.com/a", 79.9)],
+        )
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0]["price"], 79.9)
+
+    def test_different_quantity_is_a_distinct_offer(self):
+        # A tiered offer (same URL, different quantity) is a separate listing.
+        merged = collector.merge_offers(
+            [self._offer("https://x.com/a", 100, qty=1)],
+            [self._offer("https://x.com/a", 270, qty=3)],
+        )
+        self.assertEqual(len(merged), 2)
+
+    def test_rerun_same_day_is_idempotent(self):
+        # Re-running with the exact same offers must not grow the list.
+        base = [self._offer("https://x.com/a", 10), self._offer("https://x.com/b", 20)]
+        merged = collector.merge_offers(base, list(base))
+        self.assertEqual(len(merged), 2)
+
+
 if __name__ == "__main__":
     unittest.main()
