@@ -39,6 +39,10 @@ LLM_BACKOFF_BASE = float(os.getenv("PRICE_AGENT_LLM_BACKOFF", "10"))
 LLM_TIMEOUT = int(os.getenv("PRICE_AGENT_LLM_TIMEOUT", "300"))
 # HTTP timeout for each web-search backend attempt (seconds).
 SEARCH_TIMEOUT = int(os.getenv("PRICE_AGENT_SEARCH_TIMEOUT", "45"))
+# Cap the running message history so a single request stays within tight
+# per-minute token limits (e.g. Groq free tier TPM=8000). We always keep the
+# system+user prompts and only the most recent tail of the conversation.
+HISTORY_MAX_MESSAGES = int(os.getenv("PRICE_AGENT_HISTORY_MAX_MESSAGES", "12"))
 
 class ProviderError(RuntimeError):
     pass
@@ -267,6 +271,27 @@ def merge_offers(existing, fresh):
     return [by_key[k] for k in order]
 
 
+def _msg_role(m):
+    """Role of a message that may be a dict or an OpenAI message object."""
+    return m.get("role") if isinstance(m, dict) else getattr(m, "role", None)
+
+
+def _trim_history(messages):
+    """Keep the conversation within HISTORY_MAX_MESSAGES by dropping the oldest
+    turns, always preserving the system+user prompts (first two) and never
+    leaving a leading 'tool' message orphaned from its assistant tool_calls."""
+    if len(messages) <= HISTORY_MAX_MESSAGES:
+        return messages
+    head = messages[:2]  # system + initial user
+    tail_budget = max(HISTORY_MAX_MESSAGES - len(head), 1)
+    tail = messages[-tail_budget:]
+    # A 'tool' message must directly follow the assistant message that requested
+    # it; if the tail starts with orphaned tool messages, drop them.
+    while tail and _msg_role(tail[0]) == "tool":
+        tail = tail[1:]
+    return head + tail
+
+
 class AgentProvider:
     def __init__(self, client, model):
         self.client = client
@@ -353,7 +378,9 @@ class AgentProvider:
             print(f"[WARN] {self.name}: API não retornou prompts; usando fallback local.", flush=True)
         messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
         offers = []
+        seen_keys = set()  # dedupe within this session: models often re-submit the same offer
         for turn in range(MAX_TURNS):
+            messages = _trim_history(messages)
             response = self._complete(messages, make_tools(item))
             msg = response.choices[0].message
             messages.append(msg)
@@ -370,13 +397,21 @@ class AgentProvider:
                 except (ValueError, TypeError):
                     args = {}
                 if name == "search_web":
-                    result = search_web(args.get("query", ""), args.get("max_results", 8))
+                    result = search_web(args.get("query", ""), args.get("max_results"))
                 elif name == "submit_offer":
                     try:
                         offer = normalize_offer(args, item["filament_key"])
-                        offers.append(offer)
-                        result = {"ok": True, "status": "recorded", "offer": offer}
-                        print(f"[OK] {self.name} registrou oferta: {offer['filament_key']} | {offer['store']} | R$ {offer['total_price']}", flush=True)
+                        key = _offer_dedupe_key(offer)
+                        if key in seen_keys:
+                            # Model re-submitted the same offer. Ack it (so it moves
+                            # on) but don't store a duplicate.
+                            result = {"ok": True, "status": "duplicate_ignored"}
+                            print(f"[INFO] {self.name} ignorou oferta duplicada: {offer['store']} | R$ {offer['total_price']}", flush=True)
+                        else:
+                            seen_keys.add(key)
+                            offers.append(offer)
+                            result = {"ok": True, "status": "recorded", "offer": offer}
+                            print(f"[OK] {self.name} registrou oferta: {offer['filament_key']} | {offer['store']} | R$ {offer['total_price']}", flush=True)
                     except ProviderError as exc:
                         # Do not kill the whole run for one malformed offer; tell the model to fix it.
                         result = {"ok": False, "error": str(exc)}

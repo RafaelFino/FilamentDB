@@ -187,6 +187,36 @@ class ProviderRegistryTests(unittest.TestCase):
         self.assertEqual(set(got), {"cerebras", "gemini"})
 
 
+class TrimHistoryTests(unittest.TestCase):
+    def setUp(self):
+        self._prev = collector.HISTORY_MAX_MESSAGES
+        collector.HISTORY_MAX_MESSAGES = 6
+
+    def tearDown(self):
+        collector.HISTORY_MAX_MESSAGES = self._prev
+
+    def _convo(self, pairs):
+        msgs = [{"role": "system", "content": "s"}, {"role": "user", "content": "u"}]
+        for i in range(pairs):
+            msgs.append({"role": "assistant", "content": f"a{i}"})
+            msgs.append({"role": "tool", "content": f"t{i}"})
+        return msgs
+
+    def test_short_history_untouched(self):
+        msgs = self._convo(1)  # 4 messages, under cap
+        self.assertEqual(collector._trim_history(msgs), msgs)
+
+    def test_long_history_capped_and_head_preserved(self):
+        out = collector._trim_history(self._convo(5))  # 12 messages -> cap 6
+        self.assertLessEqual(len(out), 6)
+        self.assertEqual(collector._msg_role(out[0]), "system")
+        self.assertEqual(collector._msg_role(out[1]), "user")
+
+    def test_tail_never_starts_with_orphan_tool(self):
+        out = collector._trim_history(self._convo(5))
+        self.assertNotEqual(collector._msg_role(out[2]), "tool")
+
+
 class _RateLimit(Exception):
     status_code = 429
 
