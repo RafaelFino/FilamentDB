@@ -478,13 +478,19 @@ O script roda como root (precisa de `systemctl restart`) e executa, em ordem, co
 2. **Sanidade da auth** — se `FILAMENTDB_AUTH_ENABLED` está ligada mas `FILAMENTDB_WRITERS` está vazia, alerta (ninguém poderia escrever), sem bloquear.
 3. **Backup dos bancos** — `sqlite3 .backup` (cópia consistente mesmo com o serviço ativo; fallback `cp`). Inventário primeiro (dado insubstituível). Rotação mantém os últimos `MAX_DB_BACKUPS` (30).
 4. **Limpeza + `git pull --ff-only origin main`** — remove `filament.db` (regenerável) antes do pull para garantir fast-forward limpo.
-5. **`python3 build.py`** — regenera o catálogo. Se falhar (ex.: `material-data/materials.yaml` ausente), **aborta sem reiniciar**, deixando o serviço no estado anterior em vez de subir quebrado.
-6. **Validação do banco** — `SELECT 1 FROM filament_profiles` antes de reiniciar. Barreira final contra "no such table".
-7. **`systemctl restart filamentdb.service`** + verificação `is-active`.
-8. **Dump JSON do estoque** — `GET /api/inventory/export` via `curl` (best-effort, após o serviço subir), com rotação própria. Complementa o backup binário.
-9. **Grava `build-info.env`** — só no fim: se qualquer etapa abortou, o arquivo reflete a última atualização *bem-sucedida* anterior. A UI lê via `/api/build-info`.
+5. **Instala os units systemd do repo** — `filamentdb.service` e `filamentdb-api.service` são copiados de `systemd/` para `/etc/systemd/system/` (deploy self-healing: um servidor novo recebe as units pelo próprio pull).
+6. **Normaliza o dono para `${FILAMENTDB_RUN_USER}`** (default `fino`) — `chown -R` no repositório. O deploy roda como root, mas os dois serviços e os bancos operam como esse usuário; sem isso o `git pull`/`build` deixariam tudo `root:root` e a API (`User=fino`) falharia ao escrever em `price-history.db`.
+7. **`python3 build.py`** — regenera o catálogo. Se falhar (ex.: `material-data/materials.yaml` ausente), **aborta sem reiniciar**, deixando o serviço no estado anterior em vez de subir quebrado.
+8. **Validação do banco** — `SELECT 1 FROM filament_profiles` antes de reiniciar. Barreira final contra "no such table".
+9. **Importa snapshots de preços** — `import_price_data.py` projeta `data/price-data/*.json` em `price-history.db` (idempotente).
+10. **Renormaliza o dono** — build e import rodaram como root e recriaram bancos; novo `chown -R` antes de subir os serviços.
+11. **`systemctl restart`** de ambos os serviços + verificação `is-active` e health/ready da API.
+12. **Dump JSON do estoque** — `GET /api/inventory/export` via `curl` (best-effort, após o serviço subir), com rotação própria. Complementa o backup binário.
+13. **Grava `build-info.env`** — só no fim: se qualquer etapa abortou, o arquivo reflete a última atualização *bem-sucedida* anterior. A UI lê via `/api/build-info`.
 
 A robustez do script vem de fazer backup **antes** de qualquer alteração e de nunca reiniciar com banco inválido.
+
+> **Modelo de usuário:** ambos os serviços (`filamentdb.service` e `filamentdb-api.service`) rodam como `fino` (configurável via `FILAMENTDB_RUN_USER`/`FILAMENTDB_RUN_GROUP` no `config.env`). Como escrevem nos mesmos bancos em `data/`, precisam ser o mesmo usuário — misturar root e `fino` causa `PermissionError` na ingestão de preços. Nunca rode `run.sh`, `build.py` ou `run-price-pipeline.sh` com `sudo`: isso deixa artefatos `root:root` e quebra os serviços.
 
 ---
 

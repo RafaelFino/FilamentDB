@@ -1,0 +1,21 @@
+[Unit]
+Description=FilamentDB Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=fino
+Group=fino
+WorkingDirectory=/srv/FilamentDB
+ExecStart=/srv/FilamentDB/run.sh
+Restart=always
+RestartSec=5
+EnvironmentFile=-/srv/FilamentDB/config.env
+KillSignal=SIGINT
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

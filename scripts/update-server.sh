@@ -8,6 +8,11 @@ set -euo pipefail
 
 REPO_DIR="/srv/FilamentDB"
 SERVICE="filamentdb.service"
+# Usuário/grupo dono do projeto e sob o qual AMBOS os serviços rodam. Precisa
+# bater com User=/Group= das units systemd. Configurável via config.env para
+# não fixar no código; default = fino.
+RUN_USER="${FILAMENTDB_RUN_USER:-fino}"
+RUN_GROUP="${FILAMENTDB_RUN_GROUP:-$RUN_USER}"
 LOG_PREFIX="[$(date '+%Y-%m-%d %H:%M:%S')]"
 
 log()  { echo "$LOG_PREFIX $*"; }
@@ -29,6 +34,10 @@ if [ -f "${REPO_DIR}/config.env" ]; then
 else
     log "AVISO: ${REPO_DIR}/config.env não existe — usando defaults do código."
 fi
+
+# Re-resolve após carregar config.env (pode definir FILAMENTDB_RUN_USER).
+RUN_USER="${FILAMENTDB_RUN_USER:-fino}"
+RUN_GROUP="${FILAMENTDB_RUN_GROUP:-$RUN_USER}"
 
 case "${FILAMENTDB_AUTH_ENABLED:-0}" in
     1|true|yes|on|TRUE|YES|ON)
@@ -116,6 +125,30 @@ else
     exit 1
 fi
 
+# Install/update the web app unit from the repo too (self-healing).
+WEB_UNIT_SOURCE="${REPO_DIR}/systemd/${SERVICE}"
+WEB_UNIT_TARGET="/etc/systemd/system/${SERVICE}"
+if [ -f "$WEB_UNIT_SOURCE" ]; then
+    install -m 0644 "$WEB_UNIT_SOURCE" "$WEB_UNIT_TARGET"
+    systemctl daemon-reload
+    systemctl enable "$SERVICE" >/dev/null
+    log "Unit ${SERVICE} instalada/atualizada e habilitada."
+else
+    log "AVISO: ${WEB_UNIT_SOURCE} não encontrado; mantendo unit existente de ${SERVICE}."
+fi
+
+# Ownership canônico: o deploy roda como root (cron), mas build.py, os bancos e
+# AMBOS os serviços operam como ${RUN_USER}. Sem este chown, o git pull/build
+# como root deixaria os arquivos root:root e a API (User=fino) falharia ao
+# escrever em price-history.db (causa raiz do PermissionError). Idempotente.
+if id "$RUN_USER" >/dev/null 2>&1; then
+    chown -R "${RUN_USER}:${RUN_GROUP}" "$REPO_DIR"
+    log "Ownership normalizado: ${RUN_USER}:${RUN_GROUP} em ${REPO_DIR}."
+else
+    err "Usuário ${RUN_USER} não existe. Ajuste FILAMENTDB_RUN_USER em config.env. Abortando para não deixar permissões inconsistentes."
+    exit 1
+fi
+
 log "Executando build..."
 if ! python3 build.py 2>&1 | sed 's/^/  /'; then
     err "build.py falhou. Serviço NÃO será reiniciado."
@@ -136,6 +169,12 @@ if ! python3 scripts/import_price_data.py 2>&1 | sed 's/^/  /'; then
     exit 1
 fi
 log "Snapshots de preços importados e validados."
+
+# build.py e import_price_data.py rodaram como root e recriaram/tocaram os
+# bancos (DROP+CREATE do filament.db, escrita em price-history.db). Renormaliza
+# o dono para ${RUN_USER} antes de subir os serviços, senão a API não escreve.
+chown -R "${RUN_USER}:${RUN_GROUP}" "$REPO_DIR"
+log "Ownership renormalizado pós-build: ${RUN_USER}:${RUN_GROUP}."
 
 log "Reiniciando ${SERVICE}..."
 systemctl restart "$SERVICE" 2>&1
