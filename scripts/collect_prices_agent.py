@@ -296,10 +296,17 @@ class AgentProvider:
                 # may get it right next turn. Real config 400s (and 401/402/403/
                 # 404/422) are permanent and should fail fast to the next provider.
                 model_glitch = "tool_use_failed" in msg or "did not match schema" in msg or "failed_generation" in msg
+                # Some providers report "no balance/credits" with a 429 (e.g. Z.ai
+                # code 1113 "Insufficient balance ... recharge"). That never
+                # recovers with retry — treat as permanent regardless of status.
+                no_balance = any(s in msg for s in (
+                    "insufficient balance", "insufficient credits", "no resource package",
+                    "please recharge", "quota", "payment required",
+                ))
                 # 413 with a per-minute token limit (Groq TPM) recovers after the
                 # window resets — treat as transient with a long-ish wait.
-                token_rate = status == 413 or ("tokens per minute" in msg) or ("tpm" in msg)
-                permanent = (status in (401, 402, 403, 404, 422)) or (status == 400 and not model_glitch)
+                token_rate = (not no_balance) and (status == 413 or "tokens per minute" in msg or "tpm" in msg)
+                permanent = no_balance or (status in (401, 402, 403, 404, 422)) or (status == 400 and not model_glitch)
                 transient = (not permanent) and (
                     model_glitch or token_rate or status in (429, 500, 502, 503, 504) or status is None
                 )

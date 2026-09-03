@@ -231,6 +231,21 @@ class LlmRetryAndFallbackTests(unittest.TestCase):
             p._complete([{"role": "user", "content": "x"}], [])
         self.assertEqual(calls["n"], 1)  # exactly one attempt, no retry
 
+    def test_insufficient_balance_429_is_permanent(self):
+        # Z.ai reports "no balance" as HTTP 429 (code 1113). It must NOT be
+        # treated as a transient rate limit — no retry, fail straight to fallback.
+        class _Balance(Exception):
+            status_code = 429
+        calls = {"n": 0}
+        def no_balance(**kwargs):
+            calls["n"] += 1
+            raise _Balance("Error 429: Insufficient balance or no resource package. Please recharge.")
+        p = collector.AgentProvider(self._client(no_balance), "glm")
+        p.name = "z"
+        with self.assertRaises(collector.ProviderError):
+            p._complete([{"role": "user", "content": "x"}], [])
+        self.assertEqual(calls["n"], 1)
+
     def test_retry_then_success(self):
         # First call 429, second succeeds → _complete returns the response.
         import types
