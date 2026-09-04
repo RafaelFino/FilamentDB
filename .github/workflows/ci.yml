@@ -1,0 +1,160 @@
+name: CI
+
+# CI determinístico do pipeline de preços + catálogo.
+#
+# Duas camadas, deliberadamente separadas:
+#
+#  1. `test` (em todo push/PR na main): exercita a solução end-to-end SEM rede,
+#     SEM chaves de LLM e SEM tocar produção — build do catálogo, suíte de
+#     testes (incl. o e2e offline coleta→validação→ingestão→persistência),
+#     validação dos snapshots versionados e import num banco descartável.
+#     Rápido e confiável; é o guarda-costas contra regressões como o currency
+#     inválido que derrubou o deploy.
+#
+#  2. `price-smoke` (manual/agendado, NÃO por commit): roda o coletor real com
+#     os LLMs, mas com amostra mínima e SEM publicar (o coletor só grava o
+#     snapshot; a publicação é etapa separada). Confirma a coleta ponta a ponta
+#     sem escrever em price-history.db de produção.
+#
+# O coletor real a cada commit seria caro, lento (timeout de 180min), não
+# determinístico (LLM/busca web) e escreveria em produção — por isso fica fora
+# do gatilho de push.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      run_price_smoke:
+        description: 'Rodar também o smoke real do coletor (usa chaves de LLM).'
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    # Smoke real do coletor, semanal (segunda 03:00 UTC). O job de teste roda a
+    # cada push; este cron existe só para o price-smoke.
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Testes e pipeline (offline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest
+
+      - name: Build catalog database
+        run: python build.py --only-db
+
+      - name: Run test suite
+        run: python -m pytest tests/ -v
+
+      - name: Validate versioned price snapshots
+        # Garante que todos os snapshots commitados passam nas regras atuais
+        # (identidade, R$/kg com piso, currency=BRL, disponibilidade, URL, etc.).
+        run: |
+          shopt -s nullglob
+          snapshots=(data/price-data/*.json)
+          if [ ${#snapshots[@]} -eq 0 ]; then
+            echo "Nenhum snapshot versionado para validar."
+          else
+            for f in "${snapshots[@]}"; do
+              echo "== $f =="
+              python scripts/validate_price_snapshot.py "$f"
+            done
+          fi
+
+      - name: Import snapshots into a throwaway history DB
+        # Confirma o import end-to-end (incl. câmbio/normalização) num banco
+        # descartável, sem tocar produção. Pega regressões no import.
+        env:
+          DB_PATH: ${{ runner.temp }}/filament.db
+          FILAMENTDB_USD_BRL_FALLBACK: '5.00'
+        run: |
+          cp data/filament.db "$DB_PATH"
+          python scripts/import_price_data.py
+
+  price-smoke:
+    name: Smoke real do coletor (amostra, sem publicar)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Só roda manualmente (com o input marcado) ou no cron semanal — nunca a
+    # cada commit.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.run_price_smoke) ||
+      github.event_name == 'schedule'
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install collector dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt openai ddgs
+
+      - name: Build catalog database
+        run: python build.py --only-db
+
+      - name: Collect a tiny sample with real LLMs (no publish)
+        # O coletor apenas grava o snapshot local; a publicação para a API é uma
+        # etapa separada que NÃO executamos aqui. Logo, isto não escreve em
+        # price-history.db de produção. Amostra mínima para não estourar cotas.
+        env:
+          PYTHONUNBUFFERED: '1'
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          Z_API_KEY: ${{ secrets.Z_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MISTRAL_MODEL: ${{ vars.MISTRAL_PRICE_MODEL || 'mistral-small-latest' }}
+          GROQ_MODEL: ${{ vars.GROQ_PRICE_MODEL || 'openai/gpt-oss-20b' }}
+          # Sem FILAMENTDB_API_SECRET: o coletor cai no prompt local (fallback) e
+          # não consegue publicar — exatamente o comportamento dry-run que queremos.
+          PRICE_AGENT_MAX_PROFILES: '2'
+          PRICE_AGENT_PROVIDERS: ${{ vars.PRICE_AGENT_PROVIDERS || 'groq,mistral' }}
+          PRICE_AGENT_MAX_TURNS: '10'
+          PRICE_AGENT_LLM_RETRIES: '2'
+          PRICE_AGENT_SEARCH_BACKENDS: 'bing,brave,duckduckgo'
+        run: python scripts/collect_prices_agent.py
+
+      - name: Validate the collected sample snapshot
+        run: |
+          latest=$(ls -1 data/price-data/*.json | tail -1)
+          echo "Validando amostra coletada: $latest"
+          python scripts/validate_price_snapshot.py "$latest"
+
+      - name: Upload sample snapshot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: price-smoke-snapshot
+          path: data/price-data/*.json
+          if-no-files-found: ignore

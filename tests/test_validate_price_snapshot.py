@@ -38,6 +38,7 @@ def _base_offer(**overrides):
         "unit_weight_g": 1000,
         "price_basis": "total",
         "total_price": 89.90,
+        "available": True,
     }
     offer.update(overrides)
     return offer
@@ -104,6 +105,55 @@ class ValidatePriceSnapshotTests(unittest.TestCase):
         del snapshot["collected_at"]
         with self.assertRaises(ValueError):
             _run_validator(snapshot)
+
+    # --- Novas regras: oferta válida, câmbio, geografia, R$/kg ---------------
+
+    def test_rejects_unavailable_offer(self):
+        offer = _base_offer(available=False)
+        with self.assertRaises(ValueError):
+            _run_validator(self._snapshot([offer]))
+
+    def test_rejects_missing_availability(self):
+        offer = _base_offer()
+        del offer["available"]
+        with self.assertRaises(ValueError):
+            _run_validator(self._snapshot([offer]))
+
+    def test_accepts_availability_as_text(self):
+        # 'em estoque' é normalizado para disponível.
+        _run_validator(self._snapshot([_base_offer(available="em estoque")]))
+
+    def test_rejects_non_brl_currency(self):
+        offer = _base_offer(currency="USD")
+        with self.assertRaises(ValueError):
+            _run_validator(self._snapshot([offer]))
+
+    def test_rejects_international_offer(self):
+        offer = _base_offer(international=True)
+        with self.assertRaises(ValueError):
+            _run_validator(self._snapshot([offer]))
+
+    def test_rejects_not_deliverable_to_sao_paulo(self):
+        offer = _base_offer(deliverable_to_sao_paulo=False)
+        with self.assertRaises(ValueError):
+            _run_validator(self._snapshot([offer]))
+
+    def test_rejects_listing_url(self):
+        offer = _base_offer(url="https://www.mercadolivre.com.br/loja/voolt3d?recos_listing=true")
+        with self.assertRaises(ValueError):
+            _run_validator(self._snapshot([offer]))
+
+    def test_rejects_price_per_kg_below_floor(self):
+        # R$40/kg < piso R$50/kg.
+        offer = _base_offer(price=40.0, total_price=40.0)
+        with self.assertRaises(ValueError):
+            _run_validator(self._snapshot([offer]))
+
+    def test_rejects_missing_price_basis(self):
+        offer = _base_offer()
+        del offer["price_basis"]
+        with self.assertRaises(ValueError):
+            _run_validator(self._snapshot([offer]))
 
 
 if __name__ == "__main__":

@@ -106,6 +106,8 @@ class _FakeCompletions:
                 "unit_weight_g": 1000,
                 "price_basis": "total",
                 "color_name": "Preto",
+                "availability": "em estoque",
+                "deliverable_to_sao_paulo": True,
             })
             return _FakeResponse(_FakeMessage(tool_calls=[_FakeToolCall("c1", "submit_offer", args)]))
         return _FakeResponse(_FakeMessage(tool_calls=None, content="done"))
