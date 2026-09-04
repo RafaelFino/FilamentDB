@@ -11,8 +11,21 @@
 #   ./scripts/seed_inventory.sh https://meu-servidor:5000
 #   ./scripts/seed_inventory.sh --reset              # apaga o estoque antes de inserir
 #
+# Autorização:
+#   Quando a API roda com FILAMENTDB_AUTH_ENABLED=1 (fail-closed), a escrita
+#   exige o segredo compartilhado do proxy e uma identidade na allowlist. Este
+#   script lê essas credenciais do config.env do projeto e injeta os headers:
+#     - X-Proxy-Secret: <FILAMENTDB_PROXY_SECRET>   (passa o gate untrusted_origin)
+#     - <FILAMENTDB_IDENTITY_HEADER>: <writer>       (passa o gate not_a_writer)
+#   A identidade usada é SEED_IDENTITY, se definida; senão o 1º e-mail de
+#   FILAMENTDB_WRITERS. Sem PROXY_SECRET configurado, nenhum header é enviado
+#   (comportamento idêntico ao anterior, útil em dev/local com auth desligada).
+#
 # Variáveis de ambiente:
-#   BASE_URL   URL base da API (default: http://localhost:5000)
+#   BASE_URL       URL base da API (default: http://localhost:5000)
+#   CONFIG_ENV     Caminho do config.env (default: <repo>/config.env)
+#   SEED_IDENTITY  E-mail/usuário a enviar no header de identidade (sobrepõe o
+#                  1º de FILAMENTDB_WRITERS)
 #
 set -euo pipefail
 
@@ -42,8 +55,54 @@ command -v curl >/dev/null 2>&1 || error "curl não encontrado. Instale o curl."
 
 info "Alvo: ${BASE_URL}"
 
+# ── Carrega credenciais de auth do config.env ────────────────────────────────
+# O config.env é KEY=VALUE (mesmo formato lido por src/config.py). Só extraímos
+# as chaves de auth — sem `source` para não herdar/expandir o arquivo inteiro
+# nem quebrar com valores que contenham espaços/aspas.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+CONFIG_ENV="${CONFIG_ENV:-${REPO_DIR}/config.env}"
+
+# read_config <KEY>: lê o valor de uma chave do config.env, removendo aspas.
+# Retorna vazio se o arquivo ou a chave não existirem. A precedência dá ao
+# ambiente prioridade sobre o arquivo (igual ao src/config.py).
+read_config() {
+    local key="$1" val=""
+    if [ -f "$CONFIG_ENV" ]; then
+        # última ocorrência vence; ignora comentários; tira `export ` e aspas.
+        val=$(grep -E "^[[:space:]]*(export[[:space:]]+)?${key}=" "$CONFIG_ENV" 2>/dev/null \
+              | sed -E "s/^[[:space:]]*(export[[:space:]]+)?${key}=//; s/^[\"']//; s/[\"']$//" \
+              | tail -n1)
+    fi
+    printf '%s' "$val"
+}
+
+# Ambiente > config.env (mantém a mesma precedência do carregador Python).
+PROXY_SECRET="${FILAMENTDB_PROXY_SECRET:-$(read_config FILAMENTDB_PROXY_SECRET)}"
+IDENTITY_HEADER="${FILAMENTDB_IDENTITY_HEADER:-$(read_config FILAMENTDB_IDENTITY_HEADER)}"
+IDENTITY_HEADER="${IDENTITY_HEADER:-Remote-Email}"
+WRITERS="${FILAMENTDB_WRITERS:-$(read_config FILAMENTDB_WRITERS)}"
+# Identidade a enviar: SEED_IDENTITY explícito, senão o 1º e-mail de WRITERS.
+IDENTITY="${SEED_IDENTITY:-${WRITERS%%,*}}"
+
+# Monta os headers de auth uma única vez. Vazio quando não há PROXY_SECRET —
+# nesse caso o script se comporta exatamente como antes (dev/local sem auth).
+AUTH_HEADERS=()
+if [ -n "$PROXY_SECRET" ]; then
+    AUTH_HEADERS+=(-H "X-Proxy-Secret: ${PROXY_SECRET}")
+    if [ -n "$IDENTITY" ]; then
+        AUTH_HEADERS+=(-H "${IDENTITY_HEADER}: ${IDENTITY}")
+        info "Auth: enviando X-Proxy-Secret + ${IDENTITY_HEADER}=${IDENTITY}"
+    else
+        warn "PROXY_SECRET presente, mas sem identidade (SEED_IDENTITY/FILAMENTDB_WRITERS vazios)."
+        warn "Escrita pode falhar com 'not_a_writer'. Defina SEED_IDENTITY=<email-writer>."
+    fi
+else
+    info "Auth: nenhum PROXY_SECRET no config.env — não enviando headers (modo aberto/dev)."
+fi
+
 # ── Checa se a API está no ar ──
-if ! curl -fsS --max-time 5 "${BASE_URL}/health" >/dev/null 2>&1; then
+if ! curl -fsS --max-time 5 "${AUTH_HEADERS[@]}" "${BASE_URL}/health" >/dev/null 2>&1; then
     error "API não respondeu em ${BASE_URL}/health. O servidor está rodando?"
 fi
 info "API respondeu em /health"
@@ -64,6 +123,7 @@ JSON
     http_code=$(curl -s -o /tmp/seed_resp.$$ -w '%{http_code}' \
         -X POST "${BASE_URL}/api/inventory" \
         -H 'Content-Type: application/json' \
+        "${AUTH_HEADERS[@]}" \
         --data "${payload}" || echo "000")
 
     if [ "$http_code" = "201" ]; then
@@ -80,9 +140,9 @@ JSON
 # ── Reset opcional: apaga todos os itens atuais ──
 if [ "$RESET" = "1" ]; then
     warn "Removendo estoque atual (--reset)..."
-    ids=$(curl -fsS "${BASE_URL}/api/inventory/items" | grep -o '"id"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*' || true)
+    ids=$(curl -fsS "${AUTH_HEADERS[@]}" "${BASE_URL}/api/inventory/items" | grep -o '"id"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*' || true)
     for id in $ids; do
-        curl -s -o /dev/null -X DELETE "${BASE_URL}/api/inventory/${id}"
+        curl -s -o /dev/null "${AUTH_HEADERS[@]}" -X DELETE "${BASE_URL}/api/inventory/${id}"
     done
     info "Estoque limpo."
 fi
@@ -137,7 +197,7 @@ info "Concluído: ${OK} inseridos, ${FAIL} falhas."
 
 # ── Resumo ──
 info "Resumo do estoque:"
-curl -fsS "${BASE_URL}/api/inventory" \
+curl -fsS "${AUTH_HEADERS[@]}" "${BASE_URL}/api/inventory" \
     | python3 -c 'import sys,json; s=json.load(sys.stdin)["summary"]; print("  materiais=%s itens=%s rolos=%s | CFS=%s/%s spool=%s/%s abertos=%s" % (s["materials"],s["total_items"],s["total_spools"],s["cfs_used"],s["cfs_max"],s["spool_used"],s["spool_max"],s["open_count"]))' \
     2>/dev/null || warn "Não foi possível formatar o resumo (python3 ausente?)."
 
