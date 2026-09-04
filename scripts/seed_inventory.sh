@@ -48,15 +48,16 @@ if ! curl -fsS --max-time 5 "${BASE_URL}/health" >/dev/null 2>&1; then
 fi
 info "API respondeu em /health"
 
-# ── POST helper: post_item <material> <manufacturer> <color> <hex> <finish> <spools> <status> ──
+# ── POST helper: post_item <material> <manufacturer> <color> <hex> <finish> <spools> <status> [weight_g] ──
+# weight_g é opcional; se omitido, assume 1000 (rolo padrão de 1 kg).
 post_item() {
-    local material="$1" manufacturer="$2" color="$3" hex="$4" finish="$5" spools="$6" status="$7"
+    local material="$1" manufacturer="$2" color="$3" hex="$4" finish="$5" spools="$6" status="$7" weight="${8:-1000}"
     local finish_json="null"
     [ -n "$finish" ] && finish_json="\"${finish}\""
 
     local payload
     payload=$(cat <<JSON
-{"material":"${material}","manufacturer":"${manufacturer}","color_name":"${color}","hex_color":"${hex}","finish":${finish_json},"spools":${spools},"status":"${status}"}
+{"material":"${material}","manufacturer":"${manufacturer}","color_name":"${color}","hex_color":"${hex}","finish":${finish_json},"weight_g":${weight},"spools":${spools},"status":"${status}"}
 JSON
 )
     local http_code
@@ -66,7 +67,7 @@ JSON
         --data "${payload}" || echo "000")
 
     if [ "$http_code" = "201" ]; then
-        printf "  ${GREEN}OK${NC}  %-9s %-7s %-9s %-18s x%s\n" "$status" "$material" "$manufacturer" "$color" "$spools"
+        printf "  ${GREEN}OK${NC}  %-9s %-7s %-9s %-18s x%s %sg\n" "$status" "$material" "$manufacturer" "$color" "$spools" "$weight"
         OK=$((OK+1))
     else
         local msg; msg=$(cat /tmp/seed_resp.$$ 2>/dev/null || true)
@@ -123,6 +124,13 @@ post_item "PLA"    "Sunlu"    "Preto"           "#101010" "HF Matte"  3 "in_stoc
 post_item "PETG"   "Sunlu"    "Preto"           "#101010" "HF Matte"  1 "in_stock"
 post_item "PETG"   "Sunlu"    "Laranja"         "#E8720C" "HF Fosco"  1 "in_stock"
 post_item "PLA"    "Voolt3D"  "Branco"          "#F4F4F2" "Velvet"    3 "in_stock"
+
+# ── Compras recentes ──
+post_item "PETG"   "Creality" "Verde"           "#2E7D32" "Hyper"     2 "in_stock"
+post_item "PETG"   "Creality" "Verde"           "#2E7D32" "CR-PETG"   1 "in_stock"
+post_item "PETG"   "Creality" "Preto"           "#101010" "CR-PETG"   2 "in_stock"
+post_item "PLA"    "Sunlu"    "Branco"          "#F4F4F2" "Matte"     1 "in_stock" 500
+post_item "PLA"    "Sunlu"    "Preto"           "#101010" "Matte"     1 "in_stock" 500
 
 echo ""
 info "Concluído: ${OK} inseridos, ${FAIL} falhas."
