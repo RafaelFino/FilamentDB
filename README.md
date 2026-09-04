@@ -16,6 +16,7 @@ O FilamentDB tem dois lados complementares:
 - [Controle de estoque](#controle-de-estoque)
 - [Autenticação, autorização e o Pangolin na frente](#autenticação-autorização-e-o-pangolin-na-frente)
 - [API HTTP](#api-http)
+- [Inteligência de preços (coleta AI + auditoria)](#inteligência-de-preços-coleta-ai--auditoria)
 - [Diagramas de sequência](#diagramas-de-sequência)
 - [Configuração (`config.env`)](#configuração-configenv)
 - [Deploy com `update-server.sh`](#deploy-com-update-serversh)
@@ -348,6 +349,73 @@ Todas as rotas de leitura são abertas. As rotas marcadas com 🔒 exigem `write
 
 ---
 
+## Inteligência de preços (coleta AI + auditoria)
+
+O FilamentDB acompanha o preço de mercado dos filamentos monitorados (`tracking=1`) como uma camada separada do catálogo. A coleta é feita por agentes de IA no GitHub Actions (fora do servidor), validada offline e publicada por uma API de ingestão isolada. **O preço de referência é sempre R$/kg de uma oferta válida.** Ver também `PRICE_AGENT.md`, `PRICE-DATA.md`, `API-INGEST.md` e a auditoria em `PRICE-AUDIT.md`.
+
+```mermaid
+flowchart LR
+    CAT[(catálogo tracking=1)] --> AG[Agentes de IA + busca web]
+    AG --> NORM[normalize_offer<br/>câmbio, geografia, disponibilidade]
+    NORM --> SNAP[snapshot data/price-data/YYYY-MM-DD.json]
+    SNAP --> VAL[validate_price_snapshot.py]
+    VAL --> API[POST /v1/ingest/prices]
+    API --> PH[(price-history.db)]
+    PH --> UI[Dashboard de preços]
+```
+
+### Preço de referência: sempre R$/kg de oferta válida
+
+O R$/kg é calculado sobre o **peso total** da oferta, nunca sobre o preço unitário:
+
+```
+peso_total = quantity × unit_weight_g
+R$/kg      = total_price ÷ peso_total × 1000
+```
+
+`price_basis` (`unit` para preço por rolo, `total` para o pacote inteiro) é **obrigatório e explícito** — adivinhar por texto era uma das causas de R$/kg distorcido (ex.: preço unitário de atacado dividido pelo peso do lote inteiro).
+
+Uma oferta só entra como **preço de referência** quando é *válida*: está **disponível** para venda **e** é **entregável em São Paulo/SP**. Ofertas indisponíveis, não entregáveis ou internacionais podem ser registradas para histórico, mas não viram o preço de referência.
+
+### Câmbio USD→BRL (`src/currency.py`)
+
+Ofertas em moeda estrangeira são convertidas para BRL antes de entrar no snapshot, usando a cotação USD-BRL da [AwesomeAPI](https://economia.awesomeapi.com.br/last/USD-BRL) (campo `bid`), com cache por processo e fallback via `FILAMENTDB_USD_BRL_FALLBACK`. A origem e a taxa ficam registradas em metadados (`fx_rate`, `fx_source`, `original_currency`, `original_price_value`) para auditoria. Um dos piores bugs observados era o agente captar um preço de `amazon.com` (USD) e gravá-lo como se fosse BRL.
+
+### Regras de oferta válida (`src/offer_rules.py`)
+
+Fonte única de heurísticas compartilhada por coletor, API de ingestão e validador:
+
+| Regra | Comportamento |
+|-------|---------------|
+| **Moeda por domínio** | `amazon.com`/`aliexpress.com`/etc. → USD; `.co.uk` → GBP; `.de` → EUR. Corrige preço estrangeiro rotulado como BRL. |
+| **Site internacional** | `international=true` + `price_pending_shipping_taxes=true` (preço sem frete/impostos de importação). **Não** é preço de referência. |
+| **Entrega em SP** | `deliverable_to_sao_paulo`; ofertas que não entregam em São Paulo não contam como referência. |
+| **Disponibilidade** | `parse_availability` normaliza `em estoque`/`sem estoque`/bool/`1-0`. Só oferta disponível conta. |
+| **URL de produto** | Rejeita busca/categoria/vitrine (`/loja/`, `recos_listing=true`, etc.) — exige a página do produto. |
+
+### Validação do snapshot (`scripts/validate_price_snapshot.py`)
+
+Antes de publicar, o snapshot passa por barreiras que impedem preço maluco de entrar:
+
+- **sanity check de R$/kg por material** com **piso global de R$50/kg** (PLA/PETG/ABS/ASA até 400/450/500, TPU 60–700, `*-CF` 120–900);
+- `currency=BRL` e `price_basis` explícito obrigatórios;
+- `available=true` (normalizado) obrigatório;
+- rejeita oferta internacional / não entregável em SP;
+- rejeita URL de listagem/busca.
+
+Se a validação falha, nada é publicado; se a publicação falha, o snapshot não é commitado.
+
+### Alertas de variação na interface
+
+No dashboard de preços, cada oferta mostra a variação frente à coleta anterior. Uma variação **acima de 20%** (em módulo) vira um **alerta destacado**: **verde** quando é queda, **vermelho** quando é alta. Abaixo de 20%, apenas a indicação discreta (seta ↓/↑).
+
+### Limitações conhecidas
+
+- O pipeline ainda **confia no preço reportado pelo agente** — as barreiras acima pegam os casos absurdos, mas não um erro "plausível" de ±20%. Próximo passo recomendado: verificar o preço na página antes de aceitar (`price_verified`).
+- Vitrine de marca com slug ambíguo (ex.: `loja3dhouse.com.br/3d-lab`) não é detectada como listagem sem risco de falso-positivo.
+
+---
+
 ## Diagramas de sequência
 
 ### Simulação de uma combinação processo × filamento
@@ -456,6 +524,7 @@ cp config.env.example config.env
 | `FILAMENTDB_IDENTITY_HEADER` | `Remote-Email` | Header de identidade injetado pelo Pangolin |
 | `FILAMENTDB_PROXY_SECRET` | *(vazio)* | Segredo compartilhado proxy↔Flask (defesa contra header forjado) |
 | `FILAMENTDB_DEV_OPEN` | `0` | Libera escrita em dev mesmo com auth ligada — **nunca em produção** |
+| `FILAMENTDB_USD_BRL_FALLBACK` | *(vazio)* | Cotação USD-BRL de fallback quando a AwesomeAPI está indisponível (ver inteligência de preços) |
 
 ---
 
