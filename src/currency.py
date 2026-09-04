@@ -117,6 +117,13 @@ def is_usd(currency: str | None) -> bool:
     return str(currency or "").strip().upper() in {"USD", "US$", "$", "DOLAR", "DÓLAR"}
 
 
+def is_supported_currency(currency: str | None) -> bool:
+    """True se a moeda é uma que sabemos converter (BRL ou USD). Vazio conta como
+    BRL. Serve para o import distinguir 'moeda estrangeira legítima' de 'lixo no
+    campo currency' (ex.: um ASIN da Amazon gravado por engano pelo agente)."""
+    return is_brl(currency) or is_usd(currency)
+
+
 def to_brl(value, currency: str | None) -> tuple[float | None, dict]:
     """Converte `value` para BRL segundo `currency`.
 

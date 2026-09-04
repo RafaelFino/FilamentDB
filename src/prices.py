@@ -157,18 +157,31 @@ def _upsert_snapshot_offer(conn, x, cat, collected, source_default):
     # é sempre BRL, então convertemos USD->BRL na importação em vez de gravar moeda
     # estrangeira que distorceria o R$/kg. Snapshots do coletor atual já vêm em BRL.
     if not currency.is_brl(currency_code):
-        try:
-            price,fx=currency.to_brl(price,currency_code)
-            total,_=currency.to_brl(total,currency_code)
-            if original_price is not None:
-                original_price=round(float(original_price)*fx["fx_rate"],2)
-            if shipping is not None:
-                shipping=round(float(shipping)*fx["fx_rate"],2)
-            fx_note=f"[fx] {fx['original_currency']}->BRL @ {fx['fx_rate']} ({fx['fx_source']})"
-            notes=f"{notes} {fx_note}".strip() if notes else fx_note
+        if not currency.is_supported_currency(currency_code):
+            # O campo currency veio com lixo (ex.: um ASIN da Amazon gravado por
+            # engano pelo agente, como 'B09H2SGZZP'). Não é uma moeda estrangeira
+            # legítima — não dá para converter e não deve derrubar o import inteiro.
+            # Tratamos como BRL (o valor observado quase sempre já é em reais numa
+            # loja .com.br) e registramos o descarte em notes para auditoria.
+            bad_note=f"[fx] moeda inválida ignorada: {currency_code!r} (tratada como BRL)"
+            notes=f"{notes} {bad_note}".strip() if notes else bad_note
             currency_code="BRL"
-        except currency.CurrencyError as exc:
-            raise ValueError(f"Oferta em {currency_code} sem câmbio disponível: {exc}") from exc
+        else:
+            try:
+                price,fx=currency.to_brl(price,currency_code)
+                total,_=currency.to_brl(total,currency_code)
+                if original_price is not None:
+                    original_price=round(float(original_price)*fx["fx_rate"],2)
+                if shipping is not None:
+                    shipping=round(float(shipping)*fx["fx_rate"],2)
+                fx_note=f"[fx] {fx['original_currency']}->BRL @ {fx['fx_rate']} ({fx['fx_source']})"
+                notes=f"{notes} {fx_note}".strip() if notes else fx_note
+                currency_code="BRL"
+            except currency.CurrencyError as exc:
+                # Câmbio indisponível (ex.: AwesomeAPI fora do ar e sem fallback):
+                # não trava o deploy — registra e mantém o valor como veio.
+                warn_note=f"[fx] câmbio indisponível para {currency_code}: {exc}"
+                notes=f"{notes} {warn_note}".strip() if notes else warn_note
     exists=conn.execute("SELECT 1 FROM price_snapshots WHERE offer_id=? AND collected_at=?",(oid,collected)).fetchone()
     if not exists:
         conn.execute("INSERT INTO price_snapshots(offer_id,collected_at,price,original_price,shipping,total_price,currency,available,coupon,source,notes) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(oid,collected,price,original_price,shipping,total,currency_code,x.get("available"),x.get("coupon"),x.get("source") or source_default,notes))
@@ -235,7 +248,15 @@ def import_price_data():
             else: imported += n
         except Exception as exc:
             errors += 1
-            c.execute("INSERT INTO collection_runs(started_at,finished_at,source,status,notes,snapshot_file) VALUES(CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?,?,?,?)",("price-agent","error",str(exc),path.name))
+            # Registra a falha sem violar UNIQUE(snapshot_file): se já há um run
+            # para este arquivo, atualiza-o em vez de inserir um duplicado (que
+            # mascararia o erro real com um IntegrityError).
+            c.rollback()
+            row = c.execute("SELECT id FROM collection_runs WHERE snapshot_file=?", (path.name,)).fetchone()
+            if row:
+                c.execute("UPDATE collection_runs SET finished_at=CURRENT_TIMESTAMP, status=?, notes=? WHERE snapshot_file=?", ("error", str(exc), path.name))
+            else:
+                c.execute("INSERT INTO collection_runs(started_at,finished_at,source,status,notes,snapshot_file) VALUES(CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?,?,?,?)", ("price-agent", "error", str(exc), path.name))
             c.commit()
     c.close()
     return {"files":len(files),"imported_offers":imported,"skipped":skipped,"errors":errors}
