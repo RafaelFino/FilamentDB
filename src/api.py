@@ -12,6 +12,8 @@ from urllib.parse import urlparse
 from flask import Blueprint, Flask, jsonify, request
 
 from src import config, database, prices
+from src import currency as currency_fx
+from src import offer_rules
 
 bp = Blueprint("public_api", __name__, url_prefix="/v1")
 MAX_BODY_BYTES = 32 * 1024
@@ -182,7 +184,15 @@ def _validate_offer(data):
         raise ValueError("unit_weight_g must be a number")
     basis = _basis(data.get("price_basis"), "total")
     currency = _currency(data.get("currency"), "BRL")
-    available = _boolean(data.get("available"), None)
+    # Moeda por domínio: se a URL é internacional (ex.: amazon.com em USD) e a
+    # moeda declarada ficou em BRL/default, confia no domínio para não gravar um
+    # preço estrangeiro como se fosse real.
+    domain_currency = offer_rules.currency_for_domain(url)
+    if domain_currency and currency == "BRL" and not offer_rules.is_brazilian_domain(url):
+        currency = domain_currency
+    # Disponibilidade normalizada pela regra compartilhada (aceita 'em estoque',
+    # 'sem estoque', bool, 1/0). Mantém consistência com coletor e validador.
+    available = offer_rules.parse_availability(data.get("available"))
     marketplace = _boolean(data.get("marketplace"), False)
 
     total_price = data.get("total_price")
@@ -190,6 +200,25 @@ def _validate_offer(data):
         total_price = price * quantity if basis == "unit" else price
     else:
         total_price = _number({"value": total_price}, "value", 0.01, 10_000_000)
+
+    original_price_in = (_clean_number(data.get("original_price")) if data.get("original_price") is not None else None)
+    shipping_in = (_clean_number(data.get("shipping")) if data.get("shipping") is not None else None)
+
+    # O preço de referência é sempre BRL. Se uma oferta chega aqui em USD (coletor
+    # antigo, cliente externo), convertemos com a cotação USD-BRL antes de persistir
+    # em vez de gravar um valor em moeda estrangeira que corromperia o R$/kg.
+    fx = {}
+    if not currency_fx.is_brl(currency):
+        try:
+            price, fx = currency_fx.to_brl(price, currency)
+            total_price, _ = currency_fx.to_brl(total_price, currency)
+            if original_price_in is not None:
+                original_price_in = round(original_price_in * fx["fx_rate"], 2)
+            if shipping_in is not None:
+                shipping_in = round(shipping_in * fx["fx_rate"], 2)
+        except currency_fx.CurrencyError as exc:
+            raise ValueError(f"currency {currency} could not be converted to BRL: {exc}") from exc
+        currency = "BRL"
 
     collected_at = data.get("collected_at")
     if collected_at is None:
@@ -202,7 +231,7 @@ def _validate_offer(data):
         except ValueError as exc:
             raise ValueError("collected_at must be ISO-8601") from exc
 
-    return {
+    result = {
         "filament_key": key,
         "store": store,
         "domain": parsed.netloc.lower(),
@@ -210,8 +239,8 @@ def _validate_offer(data):
         "url": url,
         "title": _required_string(data, "title", 500),
         "price": price,
-        "original_price": (_clean_number(data.get("original_price")) if data.get("original_price") is not None else None),
-        "shipping": (_clean_number(data.get("shipping")) if data.get("shipping") is not None else None),
+        "original_price": original_price_in,
+        "shipping": shipping_in,
         "currency": currency,
         "available": available,
         "coupon": _optional_string(data, "coupon", 500),
@@ -225,7 +254,23 @@ def _validate_offer(data):
         "source": _optional_string(data, "source", 120) or "api",
         "notes": _optional_string(data, "notes", 2000),
         "collected_at": collected_at,
-    }, None
+        "available": available,
+        "deliverable_to_sao_paulo": _boolean(data.get("deliverable_to_sao_paulo"), None),
+    }
+    # Classificação de geografia (internacional / pendente de frete+impostos /
+    # entrega em SP) a partir do domínio, sem sobrescrever o que já veio.
+    result = offer_rules.classify_offer_geography(result)
+    # Auditoria da conversão de câmbio: sem coluna dedicada no schema, anexamos ao
+    # notes para que a origem em USD e a taxa usada fiquem rastreáveis.
+    notes_extra = []
+    if fx:
+        notes_extra.append(f"[fx] {fx['original_currency']}->BRL @ {fx['fx_rate']} ({fx['fx_source']})")
+    if result.get("international"):
+        notes_extra.append("[intl] preço sem frete/impostos de importação")
+    if notes_extra:
+        joined = " ".join(notes_extra)
+        result["notes"] = f"{result['notes']} {joined}".strip() if result["notes"] else joined
+    return result, None
 
 
 @bp.get("/health")
@@ -290,15 +335,16 @@ def agent_instructions():
     allowed_domains = sorted({s["domain"].lower() for s in sources if s.get("domain")})
     input_schema = {
         "type": "object",
-        "required": ["filament_key", "store", "url", "title", "price", "unit_weight_g"],
+        "required": ["filament_key", "store", "url", "title", "price", "unit_weight_g", "available"],
         "properties": {
             "filament_key": {"type": "string"}, "store": {"type": "string"},
-            "url": {"type": "string", "format": "uri", "description": "Direct product/offer URL; HTTP(S) only."},
+            "url": {"type": "string", "format": "uri", "description": "Direct product page URL only; never a search/category/store listing."},
             "title": {"type": "string"}, "price": {"type": ["number", "string"]},
             "original_price": {"type": ["number", "string", "null"]},
             "shipping": {"type": ["number", "string", "null"]},
             "currency": {"type": ["string", "null"], "default": "BRL"},
-            "available": {"type": ["boolean", "string", "number", "null"]},
+            "available": {"type": ["boolean", "string", "number", "null"], "description": "Availability shown on the page ('em estoque'/'sem estoque'). Only available offers count as reference price."},
+            "deliverable_to_sao_paulo": {"type": ["boolean", "null"], "description": "True only if the store delivers to São Paulo/SP. Many international sellers do not."},
             "marketplace": {"type": ["boolean", "string", "number", "null"]},
             "quantity": {"type": ["integer", "number", "string"]},
             "unit_weight_g": {"type": ["number", "string"]},
@@ -324,6 +370,9 @@ def agent_instructions():
         "Para kits, quantity é o número de rolos e total_price é o preço total do kit.",
         "Para preço por unidade, price_basis=unit e total_price=price*quantity.",
         "Não fabrique disponibilidade, vendedor, SKU, preço, cupom ou URL.",
+        "Só considere oferta válida a que está disponível para venda E entrega em São Paulo/SP. Registre available e deliverable_to_sao_paulo conforme a página.",
+        "Preço de referência é sempre em BRL. Para sites internacionais (ex.: amazon.com em USD), informe a moeda real; o preço será convertido e marcado como sujeito a frete e impostos de importação.",
+        "A URL deve ser a página específica do produto, nunca uma busca, categoria ou vitrine de loja.",
         "Se não houver oferta confiável, não publique uma oferta.",
     ]
     system_prompt = (

@@ -18,6 +18,11 @@ from zoneinfo import ZoneInfo
 from openai import OpenAI
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from src import currency  # noqa: E402
+from src import offer_rules  # noqa: E402
+
 CATALOG_DB = ROOT / "data" / "filament.db"
 SNAPSHOT_DIR = ROOT / "data" / "price-data"
 TZ = ZoneInfo("America/Sao_Paulo")
@@ -147,7 +152,16 @@ def search_web(query: str, max_results: int = None):
 def make_tools(item):
     return [
         {"type": "function", "function": {"name": "search_web", "description": "Search the web for current filament offers.", "parameters": {"type": "object", "properties": {"query": {"type": "string"}, "max_results": {"type": "integer"}}, "required": ["query"]}}},
-        {"type": "function", "function": {"name": "submit_offer", "description": "Record a real, verified offer for the current filament_key. The offer is accumulated into the daily snapshot; it is validated and published afterwards. Always include unit_weight_g (grams per roll) and quantity (number of rolls). Use price_basis='unit' when price is per roll, 'total' when it is the whole package.", "parameters": {"type": "object", "properties": {"filament_key": {"type": "string"}, "store": {"type": "string"}, "url": {"type": "string"}, "title": {"type": "string"}, "price": {"type": "number"}, "original_price": {"type": ["number", "null"]}, "shipping": {"type": ["number", "null"]}, "total_price": {"type": ["number", "null"]}, "currency": {"type": "string"}, "availability": {"type": ["string", "null"]}, "quantity": {"type": ["number", "null"]}, "unit_weight_g": {"type": ["number", "null"]}, "price_basis": {"type": ["string", "null"]}, "seller": {"type": ["string", "null"]}, "external_id": {"type": ["string", "null"]}}, "required": ["filament_key", "store", "url", "title", "price", "currency"]}}}
+        {"type": "function", "function": {"name": "submit_offer", "description": (
+            "Record a real, verified offer for the current filament_key, taken directly from the product page you opened. "
+            "NEVER invent price, availability, SKU or URL. Only submit an offer whose price you actually saw on the page. "
+            "The url MUST be the specific product page, not a search/category/store listing. "
+            "Always include unit_weight_g (grams per roll) and quantity (number of rolls). "
+            "Use price_basis='unit' when price is per roll, 'total' when it is the whole package. "
+            "Set currency to the currency shown on the page (BRL, USD, etc.) — do not assume BRL for international sites like amazon.com. "
+            "Set availability to what the page shows ('em estoque'/'sem estoque'). "
+            "Set deliverable_to_sao_paulo=true only if the store delivers to São Paulo/SP (many international sellers do not)."
+        ), "parameters": {"type": "object", "properties": {"filament_key": {"type": "string"}, "store": {"type": "string"}, "url": {"type": "string"}, "title": {"type": "string"}, "price": {"type": "number"}, "original_price": {"type": ["number", "null"]}, "shipping": {"type": ["number", "null"]}, "total_price": {"type": ["number", "null"]}, "currency": {"type": "string"}, "availability": {"type": ["string", "null"]}, "deliverable_to_sao_paulo": {"type": ["boolean", "null"]}, "quantity": {"type": ["number", "null"]}, "unit_weight_g": {"type": ["number", "null"]}, "price_basis": {"type": ["string", "null"]}, "seller": {"type": ["string", "null"]}, "external_id": {"type": ["string", "null"]}}, "required": ["filament_key", "store", "url", "title", "price", "currency", "availability"]}}}
     ]
 
 
@@ -204,8 +218,35 @@ def normalize_offer(args, filament_key):
     url = str(args.get("url") or "").strip()
     if not url.startswith(("http://", "https://")):
         raise ProviderError(f"submit_offer com URL inválida: {url!r}")
+    # URL precisa ser uma página de produto verificável, não busca/listagem/vitrine.
+    if offer_rules.is_listing_url(url):
+        raise ProviderError(f"submit_offer com URL de listagem/busca (use a página do produto): {url!r}")
 
-    currency = str(args.get("currency") or "BRL").strip().upper() or "BRL"
+    original_currency = str(args.get("currency") or "").strip().upper()
+    # Detecção de moeda por domínio: um dos piores bugs observados é o modelo
+    # captar um preço de site internacional (ex.: amazon.com em USD) e declará-lo
+    # como BRL. Se o domínio é internacional e a moeda declarada é BRL/vazia,
+    # confiamos no domínio para inferir a moeda real e converter corretamente.
+    domain_currency = offer_rules.currency_for_domain(url)
+    if domain_currency and (not original_currency or original_currency == "BRL"):
+        original_currency = domain_currency
+    if not original_currency:
+        original_currency = "BRL"
+
+    # Regra de projeto: o preço de referência é sempre BRL (e no fim R$/kg).
+    # Ofertas em USD são convertidas com a cotação USD-BRL da AwesomeAPI antes de
+    # entrarem no snapshot, que é a fonte de verdade e deve ser auto-contido.
+    # Preservamos os valores originais em metadados fx_* para auditoria.
+    fx_meta = {}
+    if not currency.is_brl(original_currency):
+        try:
+            price_brl, fx_meta = currency.to_brl(price, original_currency)
+            total_brl, _ = currency.to_brl(total_price, original_currency)
+        except currency.CurrencyError as exc:
+            raise ProviderError(f"submit_offer em {original_currency} sem câmbio disponível: {exc}") from exc
+        original_price_value = round(price, 2)
+        price = price_brl
+        total_price = total_brl
 
     offer = {
         "filament_key": filament_key,
@@ -213,7 +254,7 @@ def normalize_offer(args, filament_key):
         "url": url,
         "title": str(args.get("title") or "").strip(),
         "price": round(price, 2),
-        "currency": currency,
+        "currency": "BRL",
         "quantity": quantity,
         "unit_weight_g": round(unit_weight_g, 2),
         "price_basis": basis,
@@ -224,15 +265,43 @@ def normalize_offer(args, filament_key):
     if not offer["title"]:
         raise ProviderError("submit_offer sem title")
 
-    # Optional fields preserved when present.
-    for src, dst in (("original_price", "original_price"), ("shipping", "shipping"), ("seller", "seller"), ("color_name", "color_name"), ("external_id", "external_id"), ("coupon", "coupon")):
-        val = args.get(src)
-        if val is not None and str(val).strip() != "":
-            offer[dst] = _to_number(val) if src in ("original_price", "shipping") else str(val).strip()
-    avail = args.get("availability", args.get("available"))
-    if avail is not None:
-        offer["available"] = avail
+    # Optional fields preserved when present. original_price/shipping em moeda
+    # estrangeira também são convertidos para BRL para manter o snapshot coerente.
+    for field, dst in (("original_price", "original_price"), ("shipping", "shipping"), ("seller", "seller"), ("color_name", "color_name"), ("external_id", "external_id"), ("coupon", "coupon")):
+        val = args.get(field)
+        if val is None or str(val).strip() == "":
+            continue
+        if field in ("original_price", "shipping"):
+            num = _to_number(val)
+            if num is not None and fx_meta:
+                num = round(num * fx_meta["fx_rate"], 2)
+            offer[dst] = num
+        else:
+            offer[dst] = str(val).strip()
+    # Disponibilidade: interpretada em bool (True/False/None). Só ofertas
+    # disponíveis contam como preço de referência (ver offer_rules).
+    avail = offer_rules.parse_availability(args.get("availability", args.get("available")))
+    offer["available"] = avail
+
+    # Entrega em São Paulo: o modelo pode observar isso na página; preservamos
+    # quando declarado, senão a classificação por domínio decide o default.
+    deliverable = args.get("deliverable_to_sao_paulo", args.get("delivers_to_sao_paulo"))
+    if deliverable is not None:
+        offer["deliverable_to_sao_paulo"] = offer_rules.parse_availability(deliverable)
+
     offer["source"] = str(args.get("store") or "agentic").strip()
+
+    # Auditoria da conversão de câmbio (só quando houve conversão de fato).
+    if fx_meta:
+        offer["original_currency"] = fx_meta["original_currency"]
+        offer["original_price_value"] = original_price_value
+        offer["fx_rate"] = fx_meta["fx_rate"]
+        offer["fx_source"] = fx_meta["fx_source"]
+
+    # Classificação de geografia: internacional / pendente de frete+impostos /
+    # entregável em SP. Preenche defaults a partir do domínio sem sobrescrever o
+    # que a oferta já declarou.
+    offer = offer_rules.classify_offer_geography(offer)
     return offer
 
 

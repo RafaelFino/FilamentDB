@@ -3,7 +3,7 @@ from __future__ import annotations
 import json, sqlite3, unicodedata, re
 from pathlib import Path
 from statistics import median
-from src import database, config
+from src import database, config, currency
 ROOT=Path(__file__).resolve().parent.parent
 PRICE_DB_PATH=config.database_path("price-history.db")
 SCHEMA_PATH=ROOT/"data"/"price-history.schema.sql"
@@ -144,9 +144,34 @@ def _upsert_snapshot_offer(conn, x, cat, collected, source_default):
     shipping=x.get("shipping")
     supplied_total=x.get("total_price")
     total=float(supplied_total) if supplied_total is not None else _normalized_total_price(price,quantity,basis)
+    currency_code=str(x.get("currency","BRL") or "BRL").strip().upper()
+    # Moeda por domínio: URL internacional (amazon.com etc.) com moeda BRL/ausente
+    # é quase sempre um preço estrangeiro rotulado errado; confia no domínio.
+    from src import offer_rules as _rules
+    _dom_cur=_rules.currency_for_domain(url)
+    if _dom_cur and currency_code in ("", "BRL") and not _rules.is_brazilian_domain(url):
+        currency_code=_dom_cur
+    original_price=x.get("original_price")
+    notes=x.get("notes")
+    # Defesa em profundidade para snapshots legados/externos: o preço de referência
+    # é sempre BRL, então convertemos USD->BRL na importação em vez de gravar moeda
+    # estrangeira que distorceria o R$/kg. Snapshots do coletor atual já vêm em BRL.
+    if not currency.is_brl(currency_code):
+        try:
+            price,fx=currency.to_brl(price,currency_code)
+            total,_=currency.to_brl(total,currency_code)
+            if original_price is not None:
+                original_price=round(float(original_price)*fx["fx_rate"],2)
+            if shipping is not None:
+                shipping=round(float(shipping)*fx["fx_rate"],2)
+            fx_note=f"[fx] {fx['original_currency']}->BRL @ {fx['fx_rate']} ({fx['fx_source']})"
+            notes=f"{notes} {fx_note}".strip() if notes else fx_note
+            currency_code="BRL"
+        except currency.CurrencyError as exc:
+            raise ValueError(f"Oferta em {currency_code} sem câmbio disponível: {exc}") from exc
     exists=conn.execute("SELECT 1 FROM price_snapshots WHERE offer_id=? AND collected_at=?",(oid,collected)).fetchone()
     if not exists:
-        conn.execute("INSERT INTO price_snapshots(offer_id,collected_at,price,original_price,shipping,total_price,currency,available,coupon,source,notes) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(oid,collected,price,x.get("original_price"),shipping,total,x.get("currency","BRL"),x.get("available"),x.get("coupon"),x.get("source") or source_default,x.get("notes")))
+        conn.execute("INSERT INTO price_snapshots(offer_id,collected_at,price,original_price,shipping,total_price,currency,available,coupon,source,notes) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(oid,collected,price,original_price,shipping,total,currency_code,x.get("available"),x.get("coupon"),x.get("source") or source_default,notes))
     return True
 
 def _import_snapshot(conn, path):

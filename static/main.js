@@ -1863,7 +1863,23 @@ function renderPriceOffer(offer) {
     const color = offer.variant_color ? `<div class="price-color">Cor: ${priceEsc(offer.variant_color)}</div>` : '';
     const volume = offer.is_volume_offer ? `<span class="price-volume">${qty}× ${Number(offer.unit_weight_g || 1000).toLocaleString('pt-BR')}g</span>` : '';
     const unit = offer.price_per_kg != null ? `<div class="price-unit">${priceMoney(offer.price_per_kg)}/kg</div>` : '';
-    const change = offer.price_change_pct != null ? `<div class="price-change ${offer.price_change_pct < 0 ? 'down' : 'up'}">${offer.price_change_pct < 0 ? '↓' : '↑'} ${Math.abs(offer.price_change_pct).toFixed(1)}% desde a coleta anterior</div>` : '';
+    let change = '';
+    if (offer.price_change_pct != null) {
+        const pct = offer.price_change_pct;
+        const down = pct < 0;
+        const dir = down ? 'down' : 'up';
+        const arrow = down ? '↓' : '↑';
+        // Variação acima de 20% (em módulo) vira alerta destacado: verde se for
+        // queda (bom pra quem compra), vermelho se for alta.
+        const isAlert = Math.abs(pct) > 20;
+        const cls = isAlert ? `price-change ${dir} alert` : `price-change ${dir}`;
+        const prefix = isAlert ? '⚠️ ' : '';
+        const label = isAlert
+            ? `${prefix}${arrow} ${Math.abs(pct).toFixed(1)}% ${down ? 'de queda' : 'de alta'} desde a coleta anterior`
+            : `${arrow} ${Math.abs(pct).toFixed(1)}% desde a coleta anterior`;
+        const alertAttr = isAlert ? ' role="alert"' : '';
+        change = `<div class="${cls}"${alertAttr}>${label}</div>`;
+    }
     const isWholesale = qty > 1 || offer.price_basis === 'unit';
     const priceMain = isWholesale && offer.price != null ? `${priceMoney(offer.price)}/rolo` : priceMoney(total);
     const priceSub = isWholesale ? `<div class="price-unit">${priceMoney(total)} total${shipping}</div>` : shipping;
