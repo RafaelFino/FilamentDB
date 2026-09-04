@@ -11,8 +11,15 @@ if "openai" not in sys.modules:
     try:
         import openai  # noqa: F401
     except ModuleNotFoundError:
+        # Fake OpenAI client that accepts the same kwargs the real one does
+        # (base_url/api_key/timeout) and exposes base_url — providers() builds it
+        # and the registry test inspects client.base_url. `object` won't do: it
+        # rejects kwargs, which fails in CI where openai isn't installed.
+        class _StubOpenAI:
+            def __init__(self, *args, base_url=None, api_key=None, timeout=None, **kwargs):
+                self.base_url = base_url
         stub = types.ModuleType("openai")
-        stub.OpenAI = object
+        stub.OpenAI = _StubOpenAI
         sys.modules["openai"] = stub
 
 import scripts.collect_prices_agent as collector

@@ -26,8 +26,11 @@ if "openai" not in sys.modules:
     try:
         import openai  # noqa: F401
     except ModuleNotFoundError:
+        class _StubOpenAI:
+            def __init__(self, *args, base_url=None, api_key=None, timeout=None, **kwargs):
+                self.base_url = base_url
         stub = types.ModuleType("openai")
-        stub.OpenAI = object
+        stub.OpenAI = _StubOpenAI
         sys.modules["openai"] = stub
 
 
