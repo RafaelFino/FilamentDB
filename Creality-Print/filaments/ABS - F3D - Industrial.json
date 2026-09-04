@@ -1,0 +1,53 @@
+{
+    "base_id": "GFSA04",
+    "filament_flow_ratio": [
+        "1.0"
+    ],
+    "filament_max_volumetric_speed": [
+        "10.0"
+    ],
+    "filament_settings_id": [
+        "ABS - F3D - Industrial"
+    ],
+    "filament_vendor": [
+        "F3D"
+    ],
+    "filament_type": [
+        "ABS"
+    ],
+    "filament_density": [
+        "1.24"
+    ],
+    "filament_diameter": [
+        "1.75"
+    ],
+    "from": "User",
+    "hot_plate_temp": [
+        "100"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "105"
+    ],
+    "inherits": "ABS @Creality K2 0.4 nozzle",
+    "is_custom_defined": "0",
+    "name": "ABS - F3D - Industrial",
+    "nozzle_temperature": [
+        "250"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "250"
+    ],
+    "nozzle_temperature_range_low": [
+        "240"
+    ],
+    "nozzle_temperature_range_high": [
+        "265"
+    ],
+    "textured_plate_temp": [
+        "100"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "105"
+    ],
+    "version": "26.4.28.18"
+}
