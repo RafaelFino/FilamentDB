@@ -1979,23 +1979,23 @@ const invShowUsed    = document.getElementById('inv-show-used');
 
 // Form fields
 const invF = {
-    material:     document.getElementById('inv-material'),
-    manufacturer: document.getElementById('inv-manufacturer'),
-    colorName:    document.getElementById('inv-color-name'),
-    hex:          document.getElementById('inv-hex'),
-    hexPicker:    document.getElementById('inv-hex-picker'),
-    finish:       document.getElementById('inv-finish'),
-    weight:       document.getElementById('inv-weight'),
+    // Form somente-catálogo: material/fabricante/cor/hex/finish/peso vêm da
+    // variante escolhida no catálogo (não há mais inputs livres). Só restam
+    // campos de estoque editáveis pelo usuário.
     spools:       document.getElementById('inv-spools'),
     status:       document.getElementById('inv-status'),
     notes:        document.getElementById('inv-notes'),
 };
 
-// Catalog selects (pre-fill from window.treeData)
+// Catalog selects (fonte única de material/fabricante/cor).
 const invCatMfr     = document.getElementById('inv-cat-manufacturer');
 const invCatMat     = document.getElementById('inv-cat-material');
 const invCatVariant = document.getElementById('inv-cat-variant');
 const invCatPreview = document.getElementById('inv-cat-preview');
+
+// Variante escolhida no catálogo (snapshot para o submit). null = nada escolhido.
+// Guarda os campos denormalizados + variant_id/sku que serão persistidos.
+let invSelected = null;
 
 let invEditingId = null;   // null = criando, número = editando
 let invLoaded = false;
@@ -2359,29 +2359,40 @@ function renderInvCard(item) {
     const isEmpty = item.status === 'empty';
     const notes = item.notes ? `<div class="inv-card-notes">${escapeHtml(item.notes)}</div>` : '';
 
+    // Modelo físico: cada rolo é uma linha (spools=1). Cards do estoque fechado
+    // agrupam N rolos idênticos num representative; o próprio item.id é um rolo
+    // físico real (a menor id do grupo), e entry_ids lista todos os ids do grupo.
+    // As ações que agem sobre UM rolo (mover, usei, editar, excluir) usam item.id
+    // (um rolo físico), então nunca arrastam o grupo inteiro. Cards de
+    // CFS/spool/drybox/open/empty já são 1 rolo (sem entry_ids).
+    const entryIds = Array.isArray(item.entry_ids) ? item.entry_ids : null;
+    const rollId = item.id;
+    const count = entryIds ? entryIds.length : (item.spools || 1);
+
     // Botões "mover para" — só destinos diferentes do atual, e só se não estiver vazio.
+    // Move SEMPRE 1 rolo (rollId), mesmo em cards agrupados.
     let moveButtons = '';
     if (!isEmpty) {
         moveButtons = MOVE_TARGETS
             .filter(t => t.status !== item.status)
-            .map(t => `<button type="button" class="btn-move" data-inv-move="${item.id}" data-target="${t.status}" title="Mover para ${t.label}">${t.icon} ${t.label}</button>`)
+            .map(t => `<button type="button" class="btn-move" data-inv-move="${rollId}" data-target="${t.status}" title="Mover 1 rolo para ${t.label}">${t.icon} ${t.label}</button>`)
             .join('');
     }
 
-    // Ações de ciclo de vida
+    // Ações de ciclo de vida (agem sobre 1 rolo físico do grupo)
     let lifecycle = '';
     if (isEmpty) {
         // Recuperação de erro: devolver ao estoque
         lifecycle = `
-            <button type="button" class="btn btn-secondary" data-inv-restore="${item.id}" title="Marquei como usado por engano — voltar ao estoque">↩ Recuperar</button>
-            <button type="button" class="btn btn-ghost" data-inv-edit="${item.id}">Editar</button>
-            <button type="button" class="btn btn-ghost" data-inv-del="${item.id}">Excluir</button>`;
+            <button type="button" class="btn btn-secondary" data-inv-restore="${rollId}" title="Marquei como usado por engano — voltar ao estoque">↩ Recuperar</button>
+            <button type="button" class="btn btn-ghost" data-inv-edit="${rollId}">Editar</button>
+            <button type="button" class="btn btn-ghost" data-inv-del="${rollId}">Excluir</button>`;
     } else {
         lifecycle = `
-            <button type="button" class="btn btn-secondary" data-inv-use="${item.id}" title="Usei um rolo (marca como vazio quando zerar)">− Usei</button>
-            <button type="button" class="btn btn-ghost" data-inv-add-spool="${item.id}" title="Comprei mais um rolo">+ Rolo</button>
-            <button type="button" class="btn btn-ghost" data-inv-edit="${item.id}">Editar</button>
-            <button type="button" class="btn btn-ghost" data-inv-del="${item.id}">Excluir</button>`;
+            <button type="button" class="btn btn-secondary" data-inv-use="${rollId}" title="Usei um rolo (marca esse rolo como vazio)">− Usei</button>
+            <button type="button" class="btn btn-ghost" data-inv-add-spool="${rollId}" title="Comprei mais um rolo">+ Rolo</button>
+            <button type="button" class="btn btn-ghost" data-inv-edit="${rollId}">Editar</button>
+            <button type="button" class="btn btn-ghost" data-inv-del="${rollId}">Excluir</button>`;
     }
 
     return `
@@ -2398,7 +2409,7 @@ function renderInvCard(item) {
         </div>
         <div class="inv-card-badges">
             <span class="inv-status ${item.status}">${STATUS_LABEL[item.status] || item.status}</span>
-            <span class="inv-spools"><strong>${item.spools}</strong> rolo(s)</span>
+            <span class="inv-spools"><strong>${count}</strong> rolo(s)</span>
         </div>
         ${notes}
         ${moveButtons ? `<div class="inv-move-row"><span class="inv-move-lbl">Mover:</span>${moveButtons}</div>` : ''}
@@ -2474,10 +2485,10 @@ async function invRestore(id) {
 }
 
 async function invAddSpool(id) {
-    const item = await (await fetch(`/api/inventory/${id}`)).json();
-    const res = await fetch(`/api/inventory/${id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spools: (item.spools || 0) + 1 }),
+    // 1 linha = 1 rolo: "+ Rolo" cria uma NOVA linha física (uid próprio) em
+    // estoque, espelhando este item. O backend cuida disso no endpoint dedicado.
+    const res = await fetch(`/api/inventory/${id}/add-spool`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
     });
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -2506,13 +2517,7 @@ function invCloseForm() {
 }
 
 function invClearForm() {
-    invF.material.value = '';
-    invF.manufacturer.value = '';
-    invF.colorName.value = '';
-    invF.hex.value = '';
-    invF.hexPicker.value = '#00e5ff';
-    invF.finish.value = '';
-    invF.weight.value = '1000';
+    invSelected = null;
     invF.spools.value = '1';
     invF.status.value = 'in_stock';
     invF.notes.value = '';
@@ -2522,39 +2527,93 @@ function invClearForm() {
     if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
 }
 
+// Localiza no catálogo (treeData) a variante que corresponde a um item de
+// estoque salvo, casando primeiro por variant_id/sku e, como fallback, por
+// (fabricante, material, cor). Retorna {mfr, mat, pi, vi, variant} ou null.
+function findCatalogVariant(item) {
+    const mfrs = Object.keys(treeData || {});
+    let fallback = null;
+    for (const mfr of mfrs) {
+        const mats = treeData[mfr]?.materials || {};
+        for (const mat of Object.keys(mats)) {
+            const profiles = mats[mat].profiles || [];
+            for (let pi = 0; pi < profiles.length; pi++) {
+                const vars = profiles[pi].variants || [];
+                for (let vi = 0; vi < vars.length; vi++) {
+                    const v = vars[vi];
+                    if (item.variant_id != null && v.id === item.variant_id) {
+                        return { mfr, mat, pi, vi, variant: v };
+                    }
+                    if (item.sku && v.sku && v.sku === item.sku) {
+                        return { mfr, mat, pi, vi, variant: v };
+                    }
+                    if (!fallback
+                        && mfr === item.manufacturer && mat === item.material
+                        && (v.color_name || '') === (item.color_name || '')) {
+                        fallback = { mfr, mat, pi, vi, variant: v };
+                    }
+                }
+            }
+        }
+    }
+    return fallback;
+}
+
+// Programaticamente seleciona uma variante do catálogo nos selects encadeados,
+// disparando a cadeia de change para preencher preview + invSelected.
+function selectCatalogVariant(match) {
+    if (!match) return false;
+    invCatMfr.value = match.mfr;
+    invCatMfr.dispatchEvent(new Event('change'));
+    invCatMat.value = match.mat;
+    invCatMat.dispatchEvent(new Event('change'));
+    invCatVariant.value = `${match.pi}:${match.vi}`;
+    invCatVariant.dispatchEvent(new Event('change'));
+    return true;
+}
+
 function invStartEdit(id) {
     fetch(`/api/inventory/${id}`).then(r => r.json()).then(item => {
         invEditingId = id;
-        invF.material.value = item.material || '';
-        invF.manufacturer.value = item.manufacturer || '';
-        invF.colorName.value = item.color_name || '';
-        invF.hex.value = item.hex_color || '';
-        if (item.hex_color) invF.hexPicker.value = item.hex_color;
-        invF.finish.value = item.finish || '';
-        invF.weight.value = item.weight_g ?? 1000;
         invF.spools.value = item.spools ?? 1;
         invF.status.value = item.status || 'in_stock';
         invF.notes.value = item.notes || '';
+        // Repopula os selects de catálogo a partir do item salvo. Se o produto
+        // não existir mais no catálogo (ex.: foi removido do filament-data),
+        // avisa e ainda assim permite ajustar estoque/status.
+        const match = findCatalogVariant(item);
+        if (!selectCatalogVariant(match)) {
+            invSelected = null;
+            if (invCatPreview) {
+                invCatPreview.style.display = 'flex';
+                invCatPreview.innerHTML =
+                    `<span class="txt"><strong>${escapeHtml(item.material || '')} ${escapeHtml(item.color_name || '')}</strong>`
+                    + `<span>${escapeHtml(item.manufacturer || '')} — não encontrado no catálogo atual</span></span>`;
+            }
+        }
         invOpenForm(true);
     });
 }
 
 async function invSave() {
+    // Form somente-catálogo: sem uma variante escolhida não há o que salvar.
+    if (!invSelected) {
+        alert('Escolha um filamento do catálogo (fabricante → material → cor).');
+        return;
+    }
     const payload = {
-        material:     invF.material.value.trim(),
-        manufacturer: invF.manufacturer.value.trim(),
-        color_name:   invF.colorName.value.trim(),
-        hex_color:    invF.hex.value.trim() || null,
-        finish:       invF.finish.value.trim() || null,
-        weight_g:     parseInt(invF.weight.value) || 1000,
-        spools:       parseInt(invF.spools.value) || 0,
+        material:     invSelected.material,
+        manufacturer: invSelected.manufacturer,
+        color_name:   invSelected.color_name,
+        hex_color:    invSelected.hex_color,
+        finish:       invSelected.finish,
+        weight_g:     invSelected.weight_g,
+        variant_id:   invSelected.variant_id,
+        sku:          invSelected.sku,
+        spools:       parseInt(invF.spools.value) || 1,
         status:       invF.status.value,
         notes:        invF.notes.value.trim() || null,
     };
-    if (!payload.material || !payload.manufacturer || !payload.color_name) {
-        alert('Material, fabricante e cor são obrigatórios.');
-        return;
-    }
 
     // Alerta de material misto ao cadastrar/editar direto no CFS (não bloqueia).
     if (payload.status === 'cfs') {
@@ -2596,12 +2655,6 @@ invCancelBtn?.addEventListener('click', invCloseForm);
 invSaveBtn?.addEventListener('click', invSave);
 invShowUsed?.addEventListener('change', loadInventory);
 
-// Keep hex text <-> picker in sync
-invF.hexPicker?.addEventListener('input', () => { invF.hex.value = invF.hexPicker.value; });
-invF.hex?.addEventListener('input', () => {
-    if (/^#[0-9a-fA-F]{6}$/.test(invF.hex.value)) invF.hexPicker.value = invF.hex.value;
-});
-
 // ─── Catalog pre-fill (window.treeData) ──────────────────────────────────────
 function populateCatalogManufacturers() {
     if (!invCatMfr) return;
@@ -2637,25 +2690,32 @@ invCatMat?.addEventListener('change', () => {
     if (!opts) opts = '<option value="" disabled>Sem variantes no catálogo</option>';
     invCatVariant.innerHTML += opts;
     invCatVariant.disabled = false;
-    // Pre-fill material + manufacturer even if no variant chosen yet
-    invF.material.value = mat;
-    invF.manufacturer.value = mfr;
+    // Trocar de material invalida a variante escolhida anteriormente.
+    invSelected = null;
+    if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
 });
 
 invCatVariant?.addEventListener('change', () => {
     const mfr = invCatMfr.value, mat = invCatMat.value, sel = invCatVariant.value;
-    if (!sel) return;
+    if (!sel) { invSelected = null; return; }
     const [pi, vi] = sel.split(':').map(Number);
     const profile = treeData[mfr]?.materials?.[mat]?.profiles?.[pi];
     const varnt = profile?.variants?.[vi];
-    if (!varnt) return;
-    invF.material.value = mat;
-    invF.manufacturer.value = mfr;
-    invF.colorName.value = varnt.color_name || '';
-    invF.hex.value = varnt.hex_color || '';
-    if (varnt.hex_color) invF.hexPicker.value = varnt.hex_color;
-    invF.finish.value = varnt.finish || '';
-    invF.weight.value = varnt.weight_g || 1000;
+    if (!varnt) { invSelected = null; return; }
+
+    // Snapshot da variante escolhida — é o que o submit persiste. Guardamos os
+    // campos denormalizados (para exibir no card sem depender do catálogo) mais
+    // variant_id/sku (para reconciliar com o catálogo depois).
+    invSelected = {
+        material:     mat,
+        manufacturer: mfr,
+        color_name:   varnt.color_name || '',
+        hex_color:    varnt.hex_color || null,
+        finish:       varnt.finish || null,
+        weight_g:     varnt.weight_g || 1000,
+        variant_id:   varnt.id ?? null,
+        sku:          varnt.sku || null,
+    };
 
     // Preview visual da cor escolhida no catálogo
     if (invCatPreview) {

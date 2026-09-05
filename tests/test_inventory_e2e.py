@@ -75,11 +75,47 @@ class InventoryE2ETests(unittest.TestCase):
         self.assertEqual(self.client.delete(f"/api/inventory/{item_id}").status_code, 200)
         self.assertEqual(self.client.get(f"/api/inventory/{item_id}").status_code, 404)
 
-    def test_use_decrements_spools(self):
-        item_id = self._add(spools=3).get_json()["id"]
+    def test_add_multiple_spools_creates_one_row_per_roll(self):
+        # Modelo: 1 linha = 1 rolo. Pedir 3 rolos cria 3 linhas físicas (spools=1
+        # cada), com uids distintos.
+        resp = self._add(spools=3)
+        self.assertEqual(resp.status_code, 201, resp.get_data(as_text=True))
+        items = self.client.get("/api/inventory/items").get_json()
+        self.assertEqual(len(items), 3)
+        self.assertTrue(all(i["spools"] == 1 for i in items))
+        self.assertEqual(len({i["uid"] for i in items}), 3)
+
+    def test_use_empties_single_roll(self):
+        # "Usei" marca aquele rolo (a linha) como vazio; cada linha é 1 rolo.
+        item_id = self._add(spools=1).get_json()["id"]
         resp = self.client.post(f"/api/inventory/{item_id}/use", json={"amount": 1})
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.get_json()["spools"], 2)
+        self.assertEqual(resp.get_json()["spools"], 0)
+        self.assertEqual(resp.get_json()["status"], "empty")
+
+    def test_move_one_roll_does_not_drag_the_group(self):
+        # Regressão do bug central: mover 1 rolo de um grupo de 3 leva apenas 1
+        # para o CFS; os outros 2 permanecem em estoque.
+        self._add(spools=3)
+        items = self.client.get("/api/inventory/items").get_json()
+        self.assertEqual(len(items), 3)
+        target = items[0]["id"]
+        resp = self.client.patch(f"/api/inventory/{target}", json={"status": "cfs"})
+        self.assertEqual(resp.status_code, 200, resp.get_data(as_text=True))
+        grouped = self.client.get("/api/inventory").get_json()
+        self.assertEqual(grouped["printer"]["cfs"]["used"], 1)
+        sealed_total = sum(
+            c["spools"] for m in grouped["sealed"]["materials"] for c in m["items"]
+        )
+        self.assertEqual(sealed_total, 2)
+
+    def test_add_spool_creates_new_physical_line(self):
+        item_id = self._add(spools=1).get_json()["id"]
+        resp = self.client.post(f"/api/inventory/{item_id}/add-spool")
+        self.assertEqual(resp.status_code, 201, resp.get_data(as_text=True))
+        items = self.client.get("/api/inventory/items").get_json()
+        self.assertEqual(len(items), 2)
+        self.assertEqual(len({i["uid"] for i in items}), 2)
 
     def test_cfs_limit_enforced(self):
         # CFS holds at most 4 physical slots. Filling 4 is fine; the 5th fails 409.
@@ -127,6 +163,37 @@ class InventoryE2ETests(unittest.TestCase):
         self.client.post("/api/inventory/import", json=exported)
         self.client.post("/api/inventory/import", json=exported)
         self.assertEqual(len(self.client.get("/api/inventory/items").get_json()), 1)
+
+    def test_migration_splits_legacy_multi_spool_rows(self):
+        # Bancos antigos podiam ter uma linha com spools=N. A migração deve
+        # quebrá-la em N linhas de 1 rolo (uid próprio) e ser idempotente.
+        import uuid
+        inv = self.inventory
+        inv.init_db()
+        conn = inv.get_connection()
+        conn.execute(
+            """INSERT INTO inventory_items(uid, material, manufacturer, color_name,
+                   weight_g, spools, status, created_at, updated_at)
+               VALUES (?, 'PETG', 'Sunlu', 'Verde', 1000, 3, 'in_stock', 'x', 'x')""",
+            (str(uuid.uuid4()),),
+        )
+        # Zera a flag para forçar a migração a rodar de novo.
+        conn.execute("DELETE FROM _inv_meta WHERE key = 'split_spools_v1'")
+        conn.commit()
+        conn.close()
+
+        inv._initialized_path = None
+        inv.init_db(force=True)
+        verde = [i for i in inv.list_items() if i["color_name"] == "Verde"]
+        self.assertEqual(len(verde), 3)
+        self.assertTrue(all(i["spools"] == 1 for i in verde))
+        self.assertEqual(len({i["uid"] for i in verde}), 3)
+
+        # Idempotência: rodar de novo não cria mais linhas.
+        inv._initialized_path = None
+        inv.init_db(force=True)
+        verde2 = [i for i in inv.list_items() if i["color_name"] == "Verde"]
+        self.assertEqual(len(verde2), 3)
 
 
 if __name__ == "__main__":

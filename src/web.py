@@ -305,13 +305,22 @@ def register_routes(app):
     @app.post("/api/inventory/<int:item_id>/use")
     @auth.require_writer
     def use_inventory_item(item_id):
-        """Marca uso: decrementa `amount` rolos (default 1)."""
+        """Marca uso de um rolo: como 1 linha = 1 rolo, esvazia a linha (empty)."""
         data = request.get_json(silent=True) or {}
         amount = int(data.get("amount", 1) or 1)
         item = inventory.use_item(item_id, amount)
         if item is None:
             return jsonify({"error": "item not found"}), 404
         return jsonify(item)
+
+    @app.post("/api/inventory/<int:item_id>/add-spool")
+    @auth.require_writer
+    def add_spool_inventory_item(item_id):
+        """Comprei mais um rolo: cria uma nova linha física (1 rolo) em estoque."""
+        item = inventory.add_spool(item_id)
+        if item is None:
+            return jsonify({"error": "item not found"}), 404
+        return jsonify(item), 201
 
     @app.delete("/api/inventory/<int:item_id>")
     @auth.require_writer

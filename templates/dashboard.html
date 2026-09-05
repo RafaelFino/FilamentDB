@@ -1271,7 +1271,8 @@
             <div id="inv-form-panel" class="inv-form-panel" style="display:none;">
                 <div class="info-block-header" id="inv-form-title">Adicionar filamento ao estoque</div>
                 <div class="inv-form-body">
-                    <!-- Caminho principal: escolher do catálogo (filament-db) -->
+                    <!-- Somente catálogo: o estoque só aceita filamentos que existem
+                         no nosso catálogo. Escolha fabricante → material → cor. -->
                     <div class="inv-catalog-box">
                         <div class="inv-catalog-box-title">🗂️ Escolher do catálogo</div>
                         <div class="inv-catalog-selects">
@@ -1280,41 +1281,14 @@
                             <select id="inv-cat-variant" class="sim-select" disabled><option value="">Cor...</option></select>
                         </div>
                         <div class="inv-catalog-preview" id="inv-cat-preview" style="display:none;"></div>
-                        <p class="inv-form-hint">Selecione fabricante → material → cor. Os detalhes abaixo são preenchidos automaticamente. Não achou? Preencha manualmente.</p>
+                        <p class="inv-form-hint">Selecione fabricante → material → cor. Só é possível cadastrar filamentos do catálogo. Falta algum produto? Adicione ao catálogo (filament-data) e rode o build.</p>
                     </div>
 
-                    <div class="inv-form-section-lbl">Detalhes</div>
+                    <div class="inv-form-section-lbl">Estoque</div>
                     <div class="inv-form-grid">
                         <label class="inv-field">
-                            <span>Material *</span>
-                            <input type="text" id="inv-material" class="inv-input" placeholder="PLA, PETG..." />
-                        </label>
-                        <label class="inv-field">
-                            <span>Fabricante *</span>
-                            <input type="text" id="inv-manufacturer" class="inv-input" placeholder="Voolt3D, Sunlu..." />
-                        </label>
-                        <label class="inv-field">
-                            <span>Cor *</span>
-                            <input type="text" id="inv-color-name" class="inv-input" placeholder="Preto, Azul..." />
-                        </label>
-                        <label class="inv-field inv-field-color">
-                            <span>Cor (hex)</span>
-                            <div class="inv-color-row">
-                                <input type="color" id="inv-hex-picker" value="#00e5ff" />
-                                <input type="text" id="inv-hex" class="inv-input" placeholder="#RRGGBB" />
-                            </div>
-                        </label>
-                        <label class="inv-field">
-                            <span>Acabamento</span>
-                            <input type="text" id="inv-finish" class="inv-input" placeholder="Matte, Silk, Velvet..." />
-                        </label>
-                        <label class="inv-field">
-                            <span>Peso (g)</span>
-                            <input type="number" id="inv-weight" class="inv-input" value="1000" min="0" step="50" />
-                        </label>
-                        <label class="inv-field">
                             <span>Rolos</span>
-                            <input type="number" id="inv-spools" class="inv-input" value="1" min="0" step="1" />
+                            <input type="number" id="inv-spools" class="inv-input" value="1" min="1" step="1" />
                         </label>
                         <label class="inv-field">
                             <span>Local / Status</span>
@@ -1350,6 +1324,6 @@
 
 <script>window.treeData = {{ tree | tojson }};</script>
 <script>window.processTreeData = {{ process_tree | tojson }};</script>
-<script src="{{ url_for('static', filename='main.js') }}?v=34"></script>
+<script src="{{ url_for('static', filename='main.js') }}?v=35"></script>
 </body>
 </html>

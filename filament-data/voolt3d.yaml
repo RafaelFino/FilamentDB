@@ -42,6 +42,19 @@ lines:
   - Marrom Cappuccino
   - Cinza Grafite
   - Verde Macaron
+- name: Macaron Line
+  description: PLA em tons pastel (macaron) com acabamento fosco suave
+  positioning: aesthetic
+  difficulty: 38
+  target_use: visual_quality
+  tier: premium
+  tracking: true
+  category: aesthetic
+  finish: matte
+  notes: Cores pastel macaron, acabamento fosco delicado para peças decorativas
+  color_options:
+  - Amarelo Macarron
+  - Lilás Macarron
 - name: V-Silk Line
   description: PLA com acabamento sedoso/metálico
   positioning: aesthetic
@@ -101,6 +114,7 @@ materials:
     - line: Velvet Line
       commercial_name: PLA Velvet
       profile_name: Voolt3D PLA Velvet
+      export: true
       nozzle:
         initial: 220
         min: 190
@@ -271,6 +285,17 @@ materials:
         color_name: Verde Macaron
         hex: '#A8D8A8'
         rgb: [168, 216, 168]
+        finish: Velvet
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
+      - sku: VLT-PLV-ORG-1K
+        color_name: Laranja
+        hex: '#E8720C'
+        rgb: [232, 114, 12]
         finish: Velvet
         diameter_mm: 1.75
         weight_g: 1000
@@ -469,6 +494,7 @@ materials:
     - line: V-Silk Line
       commercial_name: PLA V-Silk
       profile_name: Voolt3D PLA V-Silk
+      export: true
       nozzle:
         initial: 220
         min: 210
@@ -512,11 +538,56 @@ materials:
         recommended_use: Decorative models
         notes: Acabamento metalizado prata/inox
         status: Active
+    - line: Macaron Line
+      commercial_name: PLA Macaron
+      profile_name: Voolt3D PLA Macaron
+      nozzle:
+        initial: 215
+        min: 205
+        max: 225
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.02
+      max_volumetric_speed: 18
+      density: 1.24
+      recommendation: >
+        PLA em tons pastel (macaron) com acabamento fosco suave. Foco estético para peças
+        decorativas em cores delicadas. É PLA — sem calor nem esforço mecânico.
+        Quando escolher: enfeites, presentes, peças à mostra em paleta pastel.
+      color: Natural
+      surface_finish: Matte
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: VLT-PLM-YLM-1K
+        color_name: Amarelo Macarron
+        hex: '#F3E37C'
+        rgb: [243, 227, 124]
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
+      - sku: VLT-PLM-LLM-1K
+        color_name: Lilás Macarron
+        hex: '#C9A8E0'
+        rgb: [201, 168, 224]
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: Decorative models
+        status: Active
   PETG:
     profiles:
     - line: Engineering Line
       commercial_name: PETG HF
       profile_name: Voolt3D PETG HF
+      export: true
       notes: High Fluidity - linha PETG otimizada para fluxo alto
       nozzle:
         initial: 245
@@ -848,6 +919,41 @@ materials:
         dry_temp: 80
         dry_hours: 6.0
         recommended_use: Engineering
+        status: Active
+  PLA-CF:
+    profiles:
+    - line: Engineering Line
+      commercial_name: PLA-CF
+      profile_name: Voolt3D PLA CF
+      nozzle:
+        initial: 225
+        min: 215
+        max: 235
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 0.97
+      max_volumetric_speed: 10
+      density: 1.24
+      recommendation: >
+        PLA reforçado com fibra de carbono: mais rígido e com acabamento fosco, porém frágil
+        (a fibra reduz alongamento). Abrasivo — exige bico endurecido (hardened). MVS baixo (10).
+        Quando escolher: peças que precisam de rigidez e aparência técnica sem carga de impacto.
+      color: Black
+      surface_finish: Matte
+      drying_temperature: 55
+      drying_time: 8.0
+      variants:
+      - sku: VLT-PCF-BLK-1K
+        color_name: Preto
+        hex: '#111111'
+        rgb: [17, 17, 17]
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 55
+        dry_hours: 8.0
+        recommended_use: Rigid technical parts
         status: Active
   TPU:
     profiles:

@@ -345,6 +345,7 @@ materials:
     - line: PLA+ Line
       commercial_name: PLA+
       profile_name: Elegoo PLA+
+      export: true
       nozzle:
         initial: 220
         min: 190
@@ -683,3 +684,9 @@ materials:
       recommendation: Flexível padrão, baixa velocidade obrigatória
       color: Natural
       surface_finish: Flexible
+      variants:
+      - color_name: Black
+        hex: "#101010"
+        finish: Flexible
+        weight_g: 1000
+        status: Active

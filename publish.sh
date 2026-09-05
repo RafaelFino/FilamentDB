@@ -2,17 +2,16 @@
 #
 # publish.sh — Publica perfis do FilamentDB para ~/filament-db/.
 #
-# Por padrão exporta apenas os fabricantes habilitados (Voolt3D, Creality,
-# Sunlu, F3D, Elegoo). Use --add para incluir fabricantes extras ou --all
-# para exportar todos.
+# A curadoria de exportação é POR PRODUTO: cada perfil decide se é exportado
+# via a flag `export: true` no YAML (coluna export_enabled no banco). Por padrão
+# o publish exporta exatamente os produtos marcados. Use --all para exportar
+# TODOS os perfis ativos (ignora a flag), útil para inspeção.
 #
 # Uso:
-#   ./publish.sh                           # build + publish (fabricantes padrão)
-#   ./publish.sh --add "Bambu Lab"         # inclui Bambu Lab além dos padrão
-#   ./publish.sh --add 3DLab --add GTMax   # inclui múltiplos extras
-#   ./publish.sh --all                     # exporta TODOS os fabricantes
-#   ./publish.sh --list                    # lista fabricantes disponíveis
-#   ./publish.sh --no-build                # pula o build.py
+#   ./publish.sh              # build + publish (produtos curados com export:true)
+#   ./publish.sh --all        # exporta TODOS os perfis ativos (ignora a curadoria)
+#   ./publish.sh --list       # lista produtos habilitados para exportação
+#   ./publish.sh --no-build   # pula o build.py
 
 set -euo pipefail
 
@@ -33,15 +32,20 @@ SOURCE_FILAMENTS="${SCRIPT_DIR}/Creality-Print/filaments"
 SOURCE_PROCESS="${SCRIPT_DIR}/Creality-Print/process"
 SOURCE_ORCA_FILAMENTS="${SCRIPT_DIR}/OrcaSlicer/filament"
 SOURCE_ORCA_PROCESS="${SCRIPT_DIR}/OrcaSlicer/process"
-DB_PATH="${SCRIPT_DIR}/filament.db"
+# DB gerado pelo build.py (via config.env → DB_PATH; default data/filament.db).
+DB_PATH="${DB_PATH:-${SCRIPT_DIR}/data/filament.db}"
+
+# Interpretador Python: prefere o venv do projeto, cai no python3 do sistema.
+if [[ -x "${SCRIPT_DIR}/.venv/bin/python" ]]; then
+    PYTHON="${SCRIPT_DIR}/.venv/bin/python"
+else
+    PYTHON="python3"
+fi
 
 FILAMENT_DEST="${FILAMENT_DEST:-${HOME}/filament-db/creality-print/filament}"
 PROCESS_DEST="${PROCESS_DEST:-${HOME}/filament-db/creality-print/process}"
 ORCA_FILAMENT_DEST="${ORCA_FILAMENT_DEST:-${HOME}/filament-db/orca/filament}"
 ORCA_PROCESS_DEST="${ORCA_PROCESS_DEST:-${HOME}/filament-db/orca/process}"
-
-# Fabricantes padrão (sempre exportados)
-DEFAULT_MANUFACTURERS=("Voolt3D" "Creality" "Sunlu" "F3D" "Elegoo")
 
 # --- Cores -------------------------------------------------------------------
 
@@ -61,7 +65,6 @@ error() { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
 RUN_BUILD=true
 EXPORT_ALL=false
 SHOW_LIST=false
-EXTRA_MANUFACTURERS=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --no-build)
@@ -76,29 +79,21 @@ while [[ $# -gt 0 ]]; do
             SHOW_LIST=true
             shift
             ;;
-        --add)
-            if [[ -z "${2:-}" ]]; then
-                error "--add requer um nome de fabricante"
-            fi
-            EXTRA_MANUFACTURERS+=("$2")
-            shift 2
-            ;;
         --help|-h)
             echo "Uso: $0 [opções]"
             echo ""
             echo "Opções:"
-            echo "  --no-build          Pula o build.py, usa export existente"
-            echo "  --add <fabricante>   Inclui fabricante extra (pode repetir)"
-            echo "  --all               Exporta TODOS os fabricantes do banco"
-            echo "  --list              Lista fabricantes disponíveis e sai"
-            echo "  --help              Mostra esta ajuda"
+            echo "  --no-build   Pula o build.py, usa export existente"
+            echo "  --all        Exporta TODOS os perfis ativos (ignora a curadoria export:true)"
+            echo "  --list       Lista os produtos habilitados para exportação e sai"
+            echo "  --help       Mostra esta ajuda"
             echo ""
-            echo "Fabricantes padrão: ${DEFAULT_MANUFACTURERS[*]}"
+            echo "Curadoria: por produto, via flag 'export: true' nos filament-data/*.yaml."
             echo ""
             echo "Exemplos:"
-            echo "  $0                              # build + publish local"
-            echo "  $0 --add \"Bambu Lab\" --add 3DLab"
-            echo "  $0 --all --no-build"
+            echo "  $0              # build + publish local (produtos curados)"
+            echo "  $0 --all        # exporta tudo (inspeção)"
+            echo "  $0 --no-build   # publica o export existente"
             exit 0
             ;;
         *)
@@ -114,28 +109,24 @@ if [[ "$SHOW_LIST" == true ]]; then
         error "Banco não encontrado: $DB_PATH (rode build.py primeiro)"
     fi
 
-    echo -e "${BOLD}Fabricantes disponíveis no banco:${NC}"
+    echo -e "${BOLD}Produtos habilitados para exportação (export: true):${NC}"
     echo ""
 
-    # Query fabricantes com contagem de perfis
+    # Perfis marcados com export_enabled=1 (a curadoria por produto).
     sqlite3 "$DB_PATH" "
-        SELECT m.name, COUNT(fp.id)
-        FROM manufacturers m
-        JOIN filament_profiles fp ON fp.manufacturer_id = m.id
-        WHERE fp.active = 1
-        GROUP BY m.name
-        ORDER BY m.name;
-    " | while IFS='|' read -r name count; do
-        # Marcar os padrão
-        if printf '%s\n' "${DEFAULT_MANUFACTURERS[@]}" | grep -qx "$name"; then
-            echo -e "  ${GREEN}●${NC} ${name} (${count} perfis) ${CYAN}[padrão]${NC}"
-        else
-            echo -e "  ○ ${name} (${count} perfis)"
-        fi
+        SELECT mf.name || '  ·  ' || m.name || '  ·  ' || COALESCE(fp.line, fp.commercial_name)
+        FROM filament_profiles fp
+        JOIN manufacturers mf ON mf.id = fp.manufacturer_id
+        JOIN materials m ON m.id = fp.material_id
+        WHERE fp.active = 1 AND fp.export_enabled = 1
+        ORDER BY mf.name, m.name;
+    " | while IFS= read -r line; do
+        echo -e "  ${GREEN}●${NC} ${line}"
     done
 
     echo ""
-    echo -e "Use ${BOLD}--add \"Nome\"${NC} para incluir extras ou ${BOLD}--all${NC} para todos."
+    echo -e "Marque/desmarque com 'export: true' nos ${BOLD}filament-data/*.yaml${NC}."
+    echo -e "Use ${BOLD}--all${NC} para exportar todos os perfis ativos (ignora a curadoria)."
     exit 0
 fi
 
@@ -144,19 +135,13 @@ fi
 if [[ "$RUN_BUILD" == true ]]; then
     info "Executando build.py..."
 
-    # Se há extras ou --all, passa a lista de fabricantes ao build
+    # --all força a exportação de todos os perfis ativos (ignora export:true).
+    # Sem --all, o build usa a curadoria por produto (comportamento padrão).
     if [[ "$EXPORT_ALL" == true ]]; then
-        MANUFACTURERS_ENV="__ALL__"
-    elif [[ ${#EXTRA_MANUFACTURERS[@]} -gt 0 ]]; then
-        # Junta padrão + extras
-        ALL_MFRS=("${DEFAULT_MANUFACTURERS[@]}" "${EXTRA_MANUFACTURERS[@]}")
-        MANUFACTURERS_ENV=$(printf '%s,' "${ALL_MFRS[@]}")
-        MANUFACTURERS_ENV="${MANUFACTURERS_ENV%,}"  # remove trailing comma
+        EXPORT_OVERRIDE="__ALL__" "$PYTHON" "${SCRIPT_DIR}/build.py"
     else
-        MANUFACTURERS_ENV=""
+        "$PYTHON" "${SCRIPT_DIR}/build.py"
     fi
-
-    EXPORT_MANUFACTURERS_OVERRIDE="$MANUFACTURERS_ENV" python3 "${SCRIPT_DIR}/build.py"
     echo ""
 fi
 
@@ -273,10 +258,8 @@ info "  Filamentos: ${ORCA_FILAMENT_COUNT} perfis em ${ORCA_FILAMENT_DEST}"
 info "  Processos:  ${ORCA_PROCESS_COUNT} perfis em ${ORCA_PROCESS_DEST}"
 
 if [[ "$EXPORT_ALL" == true ]]; then
-    info "Fabricantes: TODOS"
-elif [[ ${#EXTRA_MANUFACTURERS[@]} -gt 0 ]]; then
-    info "Fabricantes: ${DEFAULT_MANUFACTURERS[*]} + ${EXTRA_MANUFACTURERS[*]}"
+    info "Curadoria: TODOS os perfis ativos (--all, ignora export:true)"
 else
-    info "Fabricantes: ${DEFAULT_MANUFACTURERS[*]}"
+    info "Curadoria: por produto (export: true) — ${FILAMENT_COUNT} produtos"
 fi
 echo ""

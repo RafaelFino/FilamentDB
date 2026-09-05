@@ -207,6 +207,7 @@ def create_schema():
         drying_time REAL,
         notes TEXT,
         tracking INTEGER DEFAULT 0,
+        export_enabled INTEGER DEFAULT 0,
         active INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -479,6 +480,17 @@ def seed_filaments():
         model = profile.get("line") or profile["commercial_name"]
         filament_key = make_filament_key(material_name, manufacturer_name, model)
         existing_id = PRESERVED_PROFILE_IDS.get(filament_key)
+        # Só reutiliza o id preservado se ele ainda estiver livre no novo banco.
+        # Quando novos perfis são adicionados aos YAMLs, o autoincrement pode ter
+        # ocupado um id que um perfil preservado esperava — misturar id explícito
+        # com autoincrement causava colisão de PK e um INSERT OR IGNORE silencioso
+        # (perfil sumia do banco). Nesse caso, deixamos o autoincrement decidir.
+        if existing_id is not None:
+            taken = cur.execute(
+                "SELECT 1 FROM filament_profiles WHERE id = ?", (existing_id,)
+            ).fetchone()
+            if taken:
+                existing_id = None
         columns = "id, " if existing_id is not None else ""
         id_value = (existing_id,) if existing_id is not None else ()
         cur.execute(f"""
@@ -490,8 +502,8 @@ def seed_filaments():
                 line_target_use, line_tier, line_category, line_finish, line_skill_level,
                 line_color_options, color, surface_finish,
                 recommendation, diameter, density, drying_temperature, drying_time,
-                notes, tracking, active)
-            VALUES ({"?, " if existing_id is not None else ""}?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                notes, tracking, export_enabled, active)
+            VALUES ({"?, " if existing_id is not None else ""}?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, id_value + (
             manufacturer_id, material_id, filament_key,
             profile["commercial_name"], profile["profile_name"],
@@ -514,7 +526,9 @@ def seed_filaments():
             profile.get("recommendation"), profile.get("diameter"),
             profile.get("density"), profile.get("drying_temperature"),
             profile.get("drying_time"), profile.get("notes", ""),
-            profile.get("tracking", 0), profile.get("active", 1),
+            profile.get("tracking", 0),
+            int(bool(profile.get("export", False))),
+            profile.get("active", 1),
         ))
         # filament_key is the stable natural identity of a profile. Multiple source
         # records may describe the same material/manufacturer/line; merge them into
@@ -535,7 +549,8 @@ def seed_filaments():
                     dry_temp, dry_hours, recommended_use, notes, status)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                profile_id, variant.get("sku"), variant.get("color_name"),
+                profile_id, variant.get("sku"),
+                variant.get("color_name") or variant.get("color"),
                 variant.get("hex"),
                 rgb[0] if rgb and len(rgb) >= 3 else None,
                 rgb[1] if rgb and len(rgb) >= 3 else None,
@@ -884,15 +899,26 @@ def seed_processes():
 
 NOZZLE_BASE = "Hyper PLA @Creality K2 0.4 nozzle"
 
-# Fabricantes habilitados para exportaÃ§Ã£o Creality Print
-# Pode ser sobrescrito via variÃ¡vel de ambiente EXPORT_MANUFACTURERS_OVERRIDE
-_mfr_override = os.environ.get("EXPORT_MANUFACTURERS_OVERRIDE", "")
-if _mfr_override == "__ALL__":
-    EXPORT_MANUFACTURERS = None  # None = exporta todos
-elif _mfr_override:
-    EXPORT_MANUFACTURERS = set(m.strip() for m in _mfr_override.split(","))
-else:
-    EXPORT_MANUFACTURERS = {"Voolt3D", "Creality", "Sunlu"}
+# Curadoria de exportação para os slicers.
+#
+# A exportação NÃO é mais por fabricante. Cada perfil de filamento decide se é
+# exportado via a flag `export: true` no YAML (coluna `export_enabled` no banco).
+# Isso mantém a fonte de verdade junto do produto e evita listas paralelas.
+#
+# Override por variável de ambiente `EXPORT_OVERRIDE`:
+#   __ALL__  -> exporta todos os perfis ativos (ignora a flag)
+#   vazio    -> comportamento padrão: só perfis com export_enabled = 1
+_export_override = os.environ.get("EXPORT_OVERRIDE", "")
+EXPORT_ALL = _export_override == "__ALL__"
+
+
+def _export_allowed(export_enabled):
+    """Decide se um perfil deve ser exportado para os slicers.
+
+    Regra: exporta se a flag `export_enabled` estiver ligada no catálogo,
+    ou se o override `EXPORT_OVERRIDE=__ALL__` estiver ativo.
+    """
+    return EXPORT_ALL or bool(export_enabled)
 
 
 def export_filaments():
@@ -911,7 +937,8 @@ def export_filaments():
         SELECT
             mf.name as brand, m.name as material, fp.profile_name,
             fp.nozzle_temp_initial, fp.nozzle_temp_min, fp.nozzle_temp_max,
-            fp.bed_temp, fp.flow_ratio, fp.max_volumetric_speed, fp.inherits
+            fp.bed_temp, fp.flow_ratio, fp.max_volumetric_speed, fp.inherits,
+            fp.export_enabled
         FROM filament_profiles fp
         JOIN manufacturers mf ON mf.id = fp.manufacturer_id
         JOIN materials m ON m.id = fp.material_id
@@ -922,10 +949,11 @@ def export_filaments():
 
     exported = 0
     for row in rows:
-        brand, material, profile_name, n_init, n_min, n_max, bed, flow, mvs, inherits = row
+        brand, material, profile_name, n_init, n_min, n_max, bed, flow, mvs, inherits, export_enabled = row
 
-        # Filtrar apenas fabricantes habilitados (None = todos)
-        if EXPORT_MANUFACTURERS is not None and brand not in EXPORT_MANUFACTURERS:
+        # Curadoria por produto: só exporta perfis marcados com export: true no YAML
+        # (ou tudo, se EXPORT_OVERRIDE=__ALL__).
+        if not _export_allowed(export_enabled):
             continue
 
         payload = {
@@ -965,7 +993,7 @@ def export_filaments():
 
         exported += 1
 
-    filter_desc = "todos" if EXPORT_MANUFACTURERS is None else ', '.join(sorted(EXPORT_MANUFACTURERS))
+    filter_desc = "todos (override)" if EXPORT_ALL else "export: true"
     info(f"Exportados: {exported} perfis de filamento (de {len(rows)} no banco, filtro: {filter_desc})")
 
 
@@ -1142,7 +1170,8 @@ def export_orca_filaments():
         SELECT
             mf.name as brand, m.name as material, fp.profile_name,
             fp.nozzle_temp_initial, fp.nozzle_temp_min, fp.nozzle_temp_max,
-            fp.bed_temp, fp.flow_ratio, fp.max_volumetric_speed
+            fp.bed_temp, fp.flow_ratio, fp.max_volumetric_speed,
+            fp.export_enabled
         FROM filament_profiles fp
         JOIN manufacturers mf ON mf.id = fp.manufacturer_id
         JOIN materials m ON m.id = fp.material_id
@@ -1153,9 +1182,9 @@ def export_orca_filaments():
 
     exported = 0
     for row in rows:
-        brand, material, profile_name, n_init, n_min, n_max, bed, flow, mvs = row
+        brand, material, profile_name, n_init, n_min, n_max, bed, flow, mvs, export_enabled = row
 
-        if EXPORT_MANUFACTURERS is not None and brand not in EXPORT_MANUFACTURERS:
+        if not _export_allowed(export_enabled):
             continue
 
         # Orca profile name includes @K2 suffix for printer compatibility
@@ -1196,7 +1225,7 @@ def export_orca_filaments():
 
         exported += 1
 
-    filter_desc = "todos" if EXPORT_MANUFACTURERS is None else ', '.join(sorted(EXPORT_MANUFACTURERS))
+    filter_desc = "todos (override)" if EXPORT_ALL else "export: true"
     info(f"Exportados: {exported} perfis de filamento Orca (filtro: {filter_desc})")
 
 

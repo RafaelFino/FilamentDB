@@ -92,6 +92,18 @@ lines:
   - Gold
   - Copper
   - Rainbow
+- name: PLA Matte Line
+  description: PLA com acabamento fosco uniforme, esconde linhas de camada
+  positioning: aesthetic
+  difficulty: 40
+  target_use: visual_quality
+  tier: standard
+  category: aesthetic
+  finish: matte
+  notes: Acabamento matte suave, bom para peças à mostra sem brilho
+  color_options:
+  - White
+  - Black
 - name: PETG Line
   description: Functional PETG for mechanical parts
   positioning: functional
@@ -205,6 +217,7 @@ materials:
     - line: High Speed Line
       commercial_name: PLA High Speed
       profile_name: Sunlu PLA High Speed
+      export: true
       nozzle:
         initial: 220
         min: 210
@@ -341,6 +354,38 @@ materials:
         fraca que PLA comum (silk sacrifica adesão) — evite peças que sofram esforço.
       color: Natural
       surface_finish: Silky
+    - line: PLA Matte Line
+      commercial_name: PLA Matte
+      profile_name: Sunlu PLA Matte
+      nozzle:
+        initial: 210
+        min: 195
+        max: 225
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.01
+      max_volumetric_speed: 14
+      density: 1.24
+      recommendation: >
+        PLA fosco da Sunlu: acabamento matte uniforme que disfarça linhas de camada, sem brilho.
+        Fácil de imprimir como PLA comum. Quando escolher: peças à mostra que pedem visual discreto
+        e homogêneo. É PLA — sem calor nem esforço mecânico.
+      color: White
+      surface_finish: Matte
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - color_name: White
+        hex: "#F4F4F2"
+        finish: Matte
+        weight_g: 1000
+        status: Active
+      - color_name: Black
+        hex: "#101010"
+        finish: Matte
+        weight_g: 1000
+        status: Active
   PETG:
     profiles:
     - line: PETG Line
@@ -365,6 +410,7 @@ materials:
     - line: PETG High Speed Matte Line
       commercial_name: PETG High Speed Matte
       profile_name: Sunlu PETG HS
+      export: true
       notes: >
         PETG de alto fluxo com acabamento matte. MFR 4.4 g/10min — fluxo muito superior
         ao PETG padrão. Sensível à umidade: secar a 50°C, manter <20% RH.

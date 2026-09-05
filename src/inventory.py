@@ -220,6 +220,51 @@ def init_db(force=False):
                 (str(uuid.uuid4()), r[0]),
             )
 
+        # ─── Migração: 1 linha = 1 rolo ───────────────────────────────────
+        # Modelo antigo: uma linha podia ter spools=N (N rolos agregados numa
+        # linha só). Isso causava o bug de "mover leva todos os rolos juntos".
+        # Modelo novo: cada rolo é uma linha física independente (spools=1).
+        # Quebramos as linhas antigas com spools>1 em N linhas de 1, gerando
+        # uid novo para as extras. Idempotente via flag em _inv_meta.
+        cur.execute(
+            "CREATE TABLE IF NOT EXISTS _inv_meta (key TEXT PRIMARY KEY, value TEXT);"
+        )
+        done = cur.execute(
+            "SELECT value FROM _inv_meta WHERE key = 'split_spools_v1'"
+        ).fetchone()
+        if not done:
+            multi = cur.execute(
+                "SELECT * FROM inventory_items WHERE spools > 1"
+            ).fetchall()
+            for row in multi:
+                extra = int(row["spools"]) - 1
+                # A linha original passa a valer 1 rolo.
+                cur.execute(
+                    "UPDATE inventory_items SET spools = 1, updated_at = ? WHERE id = ?",
+                    (_now(), row["id"]),
+                )
+                # As demais viram novas linhas físicas (uid próprio).
+                for _ in range(extra):
+                    cur.execute(
+                        """
+                        INSERT INTO inventory_items(
+                            uid, material, manufacturer, color_name, hex_color,
+                            finish, weight_g, spools, status, variant_id, sku,
+                            notes, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            str(uuid.uuid4()), row["material"], row["manufacturer"],
+                            row["color_name"], row["hex_color"], row["finish"],
+                            row["weight_g"], row["status"], row["variant_id"],
+                            row["sku"], row["notes"], row["created_at"], _now(),
+                        ),
+                    )
+            cur.execute(
+                "INSERT INTO _inv_meta(key, value) VALUES ('split_spools_v1', ?)",
+                (_now(),),
+            )
+
         cur.execute("CREATE INDEX IF NOT EXISTS idx_inv_material ON inventory_items(material);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_inv_status ON inventory_items(status);")
         # uid é único: garante que o upsert do import não crie duplicatas e que
@@ -285,38 +330,49 @@ def add_item(data):
     spools = int(data.get("spools", 1) or 0)
     status = _normalize_status(data.get("status"))
     now = _now()
-    # uid pode vir do payload (ex.: reimportação de um item existente); se não
-    # vier, geramos um novo. Sempre único por item físico.
-    item_uid = (data.get("uid") or "").strip() or str(uuid.uuid4())
 
     limit = STATUS_LIMITS.get(status)
     if limit is not None and slots_used(status) + spools > limit:
         raise LocationFullError(status, limit)
 
+    # Modelo físico: 1 linha = 1 rolo. Um pedido de N rolos vira N linhas
+    # independentes, cada uma com uid próprio (identidade física única). Isso é
+    # o que permite mover/usar um rolo por vez sem arrastar os demais.
+    #
+    # O uid do payload (reimportação de um item existente) só faz sentido para
+    # UM rolo — se vier junto com spools>1, ele é usado na primeira linha e as
+    # demais recebem uid novo.
+    payload_uid = (data.get("uid") or "").strip() or None
+    weight_g = int(data.get("weight_g", 1000) or 1000)
+
     init_db()
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute(
-        """
-        INSERT INTO inventory_items(
-            uid, material, manufacturer, color_name, hex_color, finish,
-            weight_g, spools, status, variant_id, sku, notes,
-            created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            item_uid, material, manufacturer, color_name,
-            data.get("hex_color"), data.get("finish"),
-            int(data.get("weight_g", 1000) or 1000),
-            spools, status,
-            data.get("variant_id"), data.get("sku"),
-            data.get("notes"), now, now,
-        ),
-    )
-    item_id = cur.lastrowid
+    first_id = None
+    count = max(1, spools)  # spools<=0 ainda cria 1 rolo (comportamento anterior)
+    for i in range(count):
+        item_uid = payload_uid if (i == 0 and payload_uid) else str(uuid.uuid4())
+        cur.execute(
+            """
+            INSERT INTO inventory_items(
+                uid, material, manufacturer, color_name, hex_color, finish,
+                weight_g, spools, status, variant_id, sku, notes,
+                created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                item_uid, material, manufacturer, color_name,
+                data.get("hex_color"), data.get("finish"),
+                weight_g, 1, status,
+                data.get("variant_id"), data.get("sku"),
+                data.get("notes"), now, now,
+            ),
+        )
+        if first_id is None:
+            first_id = cur.lastrowid
     conn.commit()
     conn.close()
-    return get_item(item_id)
+    return get_item(first_id)
 
 
 # Campos que o usuário pode atualizar diretamente
@@ -367,17 +423,45 @@ def update_item(item_id, data):
 
 def use_item(item_id, amount=1):
     """
-    Marca uso: decrementa `amount` rolos (mínimo 0). Se zerar, marca como usado (empty).
+    Marca uso de UM rolo: como cada linha é exatamente 1 rolo (spools=1), usar
+    esse item significa marcá-lo como vazio (empty). O parâmetro `amount` é
+    mantido por compatibilidade de API, mas um item representa um único rolo —
+    qualquer amount >= 1 esvazia a linha.
+
     Usado pelo botão "usei" na interface.
     """
     existing = get_item(item_id)
     if existing is None:
         return None
-    new_spools = max(0, int(existing["spools"]) - int(amount))
-    patch = {"spools": new_spools}
-    if new_spools == 0:
-        patch["status"] = STATUS_EMPTY
-    return update_item(item_id, patch)
+    if int(amount) <= 0:
+        return existing
+    return update_item(item_id, {"spools": 0, "status": STATUS_EMPTY})
+
+
+def add_spool(item_id):
+    """
+    "Comprei mais um rolo" deste mesmo filamento.
+
+    Como 1 linha = 1 rolo, adicionar um rolo cria uma NOVA linha física (uid
+    próprio) espelhando o item de referência, sempre em estoque (in_stock) e
+    com spools=1. Devolve o item recém-criado.
+    """
+    existing = get_item(item_id)
+    if existing is None:
+        return None
+    return add_item({
+        "material": existing["material"],
+        "manufacturer": existing["manufacturer"],
+        "color_name": existing["color_name"],
+        "hex_color": existing.get("hex_color"),
+        "finish": existing.get("finish"),
+        "weight_g": existing.get("weight_g"),
+        "variant_id": existing.get("variant_id"),
+        "sku": existing.get("sku"),
+        "notes": existing.get("notes"),
+        "spools": 1,
+        "status": STATUS_IN_STOCK,
+    })
 
 
 def delete_item(item_id):

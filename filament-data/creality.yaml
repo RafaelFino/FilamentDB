@@ -125,6 +125,7 @@ materials:
     - line: Hyper Series
       commercial_name: Hyper PLA
       profile_name: Creality Hyper PLA
+      export: true
       notes: >
         Specs oficiais confirmadas: nozzle 190-230°C, bed 25-60°C, speed 40-600mm/s,
         density 1.24 g/cm³, tensile 52.99 MPa, elongation 6.3%, tolerância ±0.02mm.
@@ -285,6 +286,7 @@ materials:
     - line: CR PETG Line
       commercial_name: CR PETG
       profile_name: Creality CR PETG
+      export: true
       nozzle:
         initial: 245
         min: 235
@@ -332,9 +334,24 @@ materials:
         dry_hours: 8.0
         recommended_use: Mechanical parts
         status: Active
+      - sku: CRPETG-GRN-1K
+        color_name: Green
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
     - line: Hyper PETG Line
       commercial_name: Hyper PETG
       profile_name: Creality Hyper PETG
+      export: true
       nozzle:
         initial: 250
         min: 240
@@ -375,6 +392,34 @@ materials:
         - 17
         - 17
         - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: HPETG-BLU-1K
+        color_name: Blue
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        recommended_use: Mechanical parts
+        status: Active
+      - sku: HPETG-GRN-1K
+        color_name: Green
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
         finish: Semi-Gloss
         diameter_mm: 1.75
         weight_g: 1000

@@ -88,15 +88,33 @@ O `speed_multiplier` no material é 1.0 por padrão — a diferença entre mater
 - **ABS, TPU, PLA-CF, PETG-CF**: Apenas em **0.20mm Standard**. Não gerar outros layer heights ou profile types para esses materiais.
 - **PLA e PETG**: Disponíveis em todos os profile types e layer heights definidos no combinations.json.
 
-## Fabricantes para Exportação
+## Produtos para Exportação
 
-Apenas exportar perfis de filamento dos seguintes fabricantes:
+A exportação para os slicers é **curada por produto**, não por fabricante. Cada
+perfil de filamento decide se é exportado via a flag `export: true` no YAML
+(propagada para a coluna `export_enabled` no banco pelo build). Isso mantém a
+curadoria junto da fonte de verdade e evita listas paralelas hardcoded.
 
-- Voolt3D
-- Sunlu
-- Creality
+Produtos atualmente habilitados para exportação (os em uso real):
 
-Os demais fabricantes ficam no banco (filament-data/) para referência mas não são exportados para Creality-Print/.
+- Voolt3D PLA Velvet
+- Voolt3D PLA V-Silk
+- Voolt3D PETG HF
+- Sunlu PLA High Speed
+- Sunlu PETG HS (High Speed Matte)
+- Creality Hyper PLA
+- Creality CR PETG
+- Creality Hyper PETG
+- Elegoo PLA+
+
+Todos os demais perfis (mesmo dos fabricantes acima) ficam no banco
+(filament-data/) para referência, comparação e price tracking, mas **não** são
+exportados para Creality-Print/ nem OrcaSlicer/.
+
+Para habilitar/desabilitar um produto: adicione ou remova `export: true` no
+profile correspondente em `filament-data/*.yaml` e rode o build. O override
+`EXPORT_OVERRIDE=__ALL__` (variável de ambiente) força a exportação de todos os
+perfis ativos, ignorando a flag — útil para inspeção pontual.
 
 ## Publicação Local
 
