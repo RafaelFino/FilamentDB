@@ -1,0 +1,99 @@
+{
+  "schema_version": 2,
+  "snapshot_date": "2026-09-22",
+  "collected_at": "2026-09-22T11:27:35.078317-03:00",
+  "collector": "FilamentDB API-driven AI Price Agent",
+  "collector_version": "2.0",
+  "scope": {
+    "tracked_profiles": 27,
+    "sources": "API /v1/agent/instructions"
+  },
+  "collection": [
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "found",
+      "offers_found": 1,
+      "notes": "Pesquisa agentic via groq."
+    },
+    {
+      "filament_key": "petg|creality|cr petg line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "error",
+      "offers_found": 0,
+      "notes": "Todos os agentes falharam: gemini: chamada ao LLM falhou: Error code: 402 - [{'error': {'code': 402, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}]"
+    },
+    {
+      "filament_key": "petg|creality|hyper petg line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "error",
+      "offers_found": 0,
+      "notes": "Todos os agentes falharam: groq: excedeu 30 ciclos sem coletar ofertas"
+    },
+    {
+      "filament_key": "petg|f3d|industrial line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "not_found",
+      "offers_found": 0,
+      "notes": "Pesquisa agentic via groq."
+    },
+    {
+      "filament_key": "petg|national 3d|petg line",
+      "color": "Black",
+      "store": "agentic",
+      "status": "error",
+      "offers_found": 0,
+      "notes": "Todos os agentes falharam: groq: excedeu 30 ciclos sem coletar ofertas"
+    },
+    {
+      "filament_key": "petg|sunlu|petg high speed matte line",
+      "color": "Black",
+      "store": "agentic",
+      "status": "not_found",
+      "offers_found": 0,
+      "notes": "Pesquisa agentic via groq."
+    },
+    {
+      "filament_key": "petg|voolt3d|engineering line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "not_found",
+      "offers_found": 0,
+      "notes": "Pesquisa agentic via groq."
+    },
+    {
+      "filament_key": "petg|esun|petg hs line",
+      "color": "Green",
+      "store": "agentic",
+      "status": "error",
+      "offers_found": 0,
+      "notes": "Todos os agentes falharam: groq: chamada ao LLM falhou: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01m186s046eehtpkcrc6q808zw` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199068, Requested 2156. Please try again in 8m48.767999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}"
+    }
+  ],
+  "offers": [
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "Amazon.com.br",
+      "url": "https://www.amazon.com.br/Filamento-3DLAB-75mm-Impressão-Cinza/dp/B0BLRZB8Y5",
+      "title": "Filamento Pla 3DLAB | 1,75mm | 1kg | Impressão 3d (Cinza)",
+      "price": 83.0,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 83.0,
+      "shipping": 0.0,
+      "seller": "Amazon.com.br",
+      "available": true,
+      "source": "Amazon.com.br",
+      "international": false,
+      "price_pending_shipping_taxes": false,
+      "deliverable_to_sao_paulo": true
+    }
+  ],
+  "notes": "Snapshot é a fonte de verdade: ofertas coletadas pelos agentes, validadas offline e publicadas na API por publish_price_snapshot.py."
+}
