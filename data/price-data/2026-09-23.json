@@ -1,0 +1,69 @@
+{
+  "schema_version": 2,
+  "snapshot_date": "2026-09-23",
+  "collected_at": "2026-09-23T09:26:21.852809-03:00",
+  "collector": "FilamentDB API-driven AI Price Agent",
+  "collector_version": "2.0",
+  "scope": {
+    "tracked_profiles": 27,
+    "sources": "API /v1/agent/instructions"
+  },
+  "collection": [
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "found",
+      "offers_found": 2,
+      "notes": "Pesquisa agentic via groq."
+    },
+    {
+      "filament_key": "petg|creality|cr petg line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "error",
+      "offers_found": 0,
+      "notes": "Todos os agentes falharam: gemini: chamada ao LLM falhou: Error code: 402 - [{'error': {'code': 402, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}]"
+    }
+  ],
+  "offers": [
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "Mercado Livre",
+      "url": "https://www.mercadolivre.com.br/filamento-petg-preto-3dlab--175mm--1kg--impressao-3d/up/MLBU756346246",
+      "title": "Filamento PETG Preto 3dlab 1,75mm 1kg",
+      "price": 159.9,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 159.9,
+      "seller": "3D House",
+      "external_id": "MLBU756346246",
+      "available": true,
+      "deliverable_to_sao_paulo": true,
+      "source": "Mercado Livre",
+      "international": false,
+      "price_pending_shipping_taxes": false
+    },
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "3DLab Brasil",
+      "url": "https://3dlab.com.br/produto/filamento-petg-preto/",
+      "title": "Filamento PETG Preto 3DLAB | 1,75mm | 1Kg | Impressão 3D",
+      "price": 149.9,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 149.9,
+      "seller": "3D Lab",
+      "available": true,
+      "deliverable_to_sao_paulo": true,
+      "source": "3DLab Brasil",
+      "international": false,
+      "price_pending_shipping_taxes": false
+    }
+  ],
+  "notes": "Snapshot é a fonte de verdade: ofertas coletadas pelos agentes, validadas offline e publicadas na API por publish_price_snapshot.py."
+}
