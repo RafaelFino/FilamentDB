@@ -1,0 +1,104 @@
+{
+  "schema_version": 2,
+  "snapshot_date": "2026-10-02",
+  "collected_at": "2026-10-02T12:11:47.204625-03:00",
+  "collector": "FilamentDB API-driven AI Price Agent",
+  "collector_version": "2.0",
+  "scope": {
+    "tracked_profiles": 27,
+    "sources": "API /v1/agent/instructions"
+  },
+  "collection": [
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "found",
+      "offers_found": 2,
+      "notes": "Pesquisa agentic via groq."
+    },
+    {
+      "filament_key": "petg|creality|cr petg line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "error",
+      "offers_found": 0,
+      "notes": "Todos os agentes falharam: gemini: chamada ao LLM falhou: Error code: 402 - [{'error': {'code': 402, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}]"
+    },
+    {
+      "filament_key": "petg|creality|hyper petg line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "error",
+      "offers_found": 0,
+      "notes": "Todos os agentes falharam: groq: excedeu 30 ciclos sem coletar ofertas"
+    },
+    {
+      "filament_key": "petg|f3d|industrial line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "not_found",
+      "offers_found": 0,
+      "notes": "Pesquisa agentic via groq."
+    },
+    {
+      "filament_key": "petg|national 3d|petg line",
+      "color": "Black",
+      "store": "agentic",
+      "status": "not_found",
+      "offers_found": 0,
+      "notes": "Pesquisa agentic via groq."
+    },
+    {
+      "filament_key": "petg|sunlu|petg high speed matte line",
+      "color": "Black",
+      "store": "agentic",
+      "status": "error",
+      "offers_found": 0,
+      "notes": "Todos os agentes falharam: groq: chamada ao LLM falhou: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01m186s046eehtpkcrc6q808zw` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199265, Requested 1296. Please try again in 4m2.352s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}"
+    }
+  ],
+  "offers": [
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "3D Lab",
+      "url": "https://3dlab.com.br/produto/filamento-petg-preto/",
+      "title": "Filamento PETG Preto Eclipse 1kg 1.75mm 3D Lab",
+      "price": 149.9,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 149.9,
+      "shipping": 0.0,
+      "seller": "3D Lab",
+      "external_id": "3DLAB001",
+      "available": true,
+      "deliverable_to_sao_paulo": true,
+      "source": "3D Lab",
+      "international": false,
+      "price_pending_shipping_taxes": false
+    },
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "3D Lab",
+      "url": "https://3dlab.com.br/produto/filamento-petg-branco/",
+      "title": "Filamento PETG Branco Aurora 1kg 1.75mm 3D Lab",
+      "price": 159.9,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 159.9,
+      "shipping": 0.0,
+      "seller": "3D Lab",
+      "external_id": "3DLAB002",
+      "available": true,
+      "deliverable_to_sao_paulo": true,
+      "source": "3D Lab",
+      "international": false,
+      "price_pending_shipping_taxes": false
+    }
+  ],
+  "notes": "Snapshot é a fonte de verdade: ofertas coletadas pelos agentes, validadas offline e publicadas na API por publish_price_snapshot.py."
+}
