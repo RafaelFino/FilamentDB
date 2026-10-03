@@ -1,0 +1,33 @@
+{
+    "id": "k2",
+    "display_name": "Creality K2",
+    "nozzle": "0.4",
+    "orca_name_suffix": "K2",
+    "name_template": "{layer}mm {type} @{display_name} {nozzle} nozzle - {material}",
+    "limits": {
+        "max_extrusion_speed": 600,
+        "max_travel_speed": 800,
+        "max_acceleration": 20000
+    },
+    "slicers": {
+        "orca": {
+            "enabled": true,
+            "compatible_printers": ["Creality K2 0.4 nozzle"],
+            "process_inherits_by_layer": [
+                { "max": 0.10, "inherits": "0.08mm SuperDetail @Creality K2 0.4 nozzle" },
+                { "max": 0.14, "inherits": "0.12mm Detail @Creality K2 0.4 nozzle" },
+                { "max": 0.18, "inherits": "0.16mm Optimal @Creality K2 0.4 nozzle" },
+                { "max": 0.22, "inherits": "0.20mm Standard @Creality K2 0.4 nozzle" },
+                { "max": 0.26, "inherits": "0.24mm Draft @Creality K2 0.4 nozzle" },
+                { "max": 99.0, "inherits": "0.28mm SuperDraft @Creality K2 0.4 nozzle" }
+            ]
+        },
+        "creality_print": {
+            "enabled": true,
+            "process_inherits_by_layer": [
+                { "max": 0.28, "inherits": "{layer}mm Standard @Creality K2 0.4 nozzle" },
+                { "max": 99.0, "inherits": "0.28mm Standard @Creality K2 0.4 nozzle" }
+            ]
+        }
+    }
+}

@@ -1,6 +1,6 @@
 # FilamentDB
 
-Sistema de gestão de perfis de impressão 3D e controle de estoque de filamentos, focado na **Creality K2** (CoreXY, Direct Drive, nozzle 0.4mm) com **Creality Print 7.0** e **Orca Slicer**.
+Sistema de gestão de perfis de impressão 3D e controle de estoque de filamentos, focado na **Creality K2** (CoreXY, Direct Drive, nozzle 0.4mm) com **Creality Print 7.0** e **Orca Slicer**. O pipeline é **multi-device**: além da K2, gera perfis para outras impressoras (ex.: Elegoo Centauri Carbon 2, Orca-only) a partir da mesma base — ver [Devices](#devices-múltiplos-alvos-de-impressão).
 
 O FilamentDB tem dois lados complementares:
 
@@ -691,6 +691,35 @@ Para 0.20mm layer height e 0.45mm line width:
 | CR-PLA genérico | 12 mm³/s | **133 mm/s** |
 
 Se o processo pede 600mm/s mas o filamento aguenta 277mm/s, o slicer reduz automaticamente. Filamentos premium aproveitam o máximo que conseguem, filamentos budget são protegidos sem penalizar os demais.
+
+## Devices (múltiplos alvos de impressão)
+
+O **device** é uma dimensão de configuração do pipeline, ao lado de material, profile type e layer height. Cada impressora é descrita por um JSON declarativo em `process-base/devices/<id>.json`, que encapsula o que é específico da máquina: caps físicos (velocidade/aceleração), cadeia de herança do slicer, `compatible_printers` e sufixo de nome. Assim o mesmo conjunto de bases gera perfis para várias impressoras sem duplicação.
+
+```
+device × profile_type × layer_height × material
+```
+
+Os caps de velocidade/aceleração vêm do device (não mais hardcoded no `build.py`). O cap volumétrico (MVS) continua exclusivo do filamento. `combinations.json` aceita `devices` por combinação e `default_devices` no topo (default `["k2"]`, preservando o comportamento legado).
+
+Devices atuais:
+
+| Device | id | Caps (extr/travel/accel) | Slicers |
+|--------|----|--------------------------|---------|
+| Creality K2 | `k2` | 600 / 800 / 20000 | Orca + Creality Print |
+| Elegoo Centauri Carbon 2 | `cc2` | 500 / 500 / 20000 | **Orca-only** |
+
+A CC2 é **Orca-only** (`creality_print.enabled = false`) — o Creality Print não a suporta. O nome exato do perfil de máquina CC2 no OrcaSlicer alvo **deve ser confirmado na instalação** antes de usar os perfis: ele alimenta `compatible_printers` e os `inherits`, e a herança falha silenciosamente no slicer se o nome não bater.
+
+### Adicionar um novo device
+
+1. **Criar o JSON** em `process-base/devices/<id>.json` com `id`, `display_name`, `nozzle`, `orca_name_suffix`, `name_template`, `limits` (caps físicos) e `slicers`:
+   - `slicers.orca`: `enabled`, `compatible_printers` (**nome exato do perfil de máquina no slicer alvo**), `process_inherits_by_layer` (lista `{max, inherits}`).
+   - `slicers.creality_print`: `enabled` (`false` se o slicer não suporta a máquina) e, se habilitado, sua própria `process_inherits_by_layer`.
+2. **Confirmar o nome da máquina** no slicer de destino (dropdown de impressora) e usá-lo em `compatible_printers` e nos `inherits` — não adivinhar.
+3. **Referenciar em `combinations.json`**: adicionar o `id` ao array `devices` das combinações desejadas (ou a `default_devices`).
+4. **Build**: `python build.py` (ou `.venv/bin/python build.py`). O build valida que todo device referenciado tem arquivo e falha explícito se faltar.
+5. **Publicar**: `./publish.sh`. O K2 fica no layout legado (`~/filament-db/orca/{filament,process}`); devices adicionais vão para subpastas por id (`~/filament-db/orca/<id>/{filament,process}`).
 
 ## Hierarquia de Perfis de Processo
 

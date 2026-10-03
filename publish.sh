@@ -46,6 +46,8 @@ FILAMENT_DEST="${FILAMENT_DEST:-${HOME}/filament-db/creality-print/filament}"
 PROCESS_DEST="${PROCESS_DEST:-${HOME}/filament-db/creality-print/process}"
 ORCA_FILAMENT_DEST="${ORCA_FILAMENT_DEST:-${HOME}/filament-db/orca/filament}"
 ORCA_PROCESS_DEST="${ORCA_PROCESS_DEST:-${HOME}/filament-db/orca/process}"
+# Raiz da publicação Orca (devices adicionais ficam em subpastas por id aqui).
+ORCA_DEST_ROOT="${ORCA_DEST_ROOT:-${HOME}/filament-db/orca}"
 
 # --- Cores -------------------------------------------------------------------
 
@@ -175,12 +177,12 @@ if [[ "$existing_files" -gt 0 ]]; then
 
     info "Backup dos perfis atuais → ${BACKUP_FILE}"
 
-    # Cria zip preservando estrutura de diretórios relativa a ~/filament-db/
+    # Cria zip preservando estrutura de diretórios relativa a ~/filament-db/.
+    # Inclui a árvore orca/ inteira (K2 na raiz + subpastas de device como cc2/).
     (cd "${HOME}/filament-db" && zip -qr "$BACKUP_FILE" \
         creality-print/filament/ \
         creality-print/process/ \
-        orca/filament/ \
-        orca/process/ \
+        orca/ \
         2>/dev/null) || true
 
     if [[ -f "$BACKUP_FILE" ]]; then
@@ -209,6 +211,14 @@ find "$FILAMENT_DEST" -maxdepth 1 -type f \( -name "*.json" -o -name "*.info" \)
 find "$PROCESS_DEST" -maxdepth 1 -type f \( -name "*.json" -o -name "*.info" \) -delete
 find "$ORCA_FILAMENT_DEST" -maxdepth 1 -type f -name "*.json" -delete
 find "$ORCA_PROCESS_DEST" -maxdepth 1 -type f -name "*.json" -delete
+# Subpastas de device adicionais (ex.: orca/cc2/{filament,process}) — remove .json
+# de qualquer device já publicado para refletir exatamente o export atual.
+if [[ -d "$ORCA_DEST_ROOT" ]]; then
+    find "$ORCA_DEST_ROOT" -mindepth 2 -type f -name "*.json" \
+        -path "$ORCA_DEST_ROOT/*/filament/*" -delete 2>/dev/null || true
+    find "$ORCA_DEST_ROOT" -mindepth 2 -type f -name "*.json" \
+        -path "$ORCA_DEST_ROOT/*/process/*" -delete 2>/dev/null || true
+fi
 
 # --- Copia filamentos --------------------------------------------------------
 
@@ -244,6 +254,34 @@ info "  Destino: $ORCA_PROCESS_DEST"
 cp -f "$SOURCE_ORCA_PROCESS"/*.json "$ORCA_PROCESS_DEST/" 2>/dev/null || true
 ORCA_PROCESS_COUNT=$(find "$ORCA_PROCESS_DEST" -maxdepth 1 -name "*.json" -type f | wc -l)
 
+# --- Devices Orca adicionais (subpastas por id, ex.: cc2) --------------------
+# O K2 fica no layout legado (raiz). Devices extras exportados pelo build.py em
+# OrcaSlicer/{filament,process}/<id>/ são publicados em orca/<id>/{filament,process}/.
+ORCA_DEVICE_SUMMARY=""
+ORCA_DEVICE_SEEN=""
+for sub in "$SOURCE_ORCA_PROCESS"/*/ "$SOURCE_ORCA_FILAMENTS"/*/; do
+    [[ -d "$sub" ]] || continue
+    dev_id=$(basename "$sub")
+    # Evita processar duas vezes o mesmo device (aparece em process e filament).
+    case " $ORCA_DEVICE_SEEN " in *" $dev_id "*) continue ;; esac
+    ORCA_DEVICE_SEEN="${ORCA_DEVICE_SEEN} ${dev_id}"
+
+    dev_fil_src="${SOURCE_ORCA_FILAMENTS}/${dev_id}"
+    dev_prc_src="${SOURCE_ORCA_PROCESS}/${dev_id}"
+    dev_fil_dest="${ORCA_DEST_ROOT}/${dev_id}/filament"
+    dev_prc_dest="${ORCA_DEST_ROOT}/${dev_id}/process"
+    mkdir -p "$dev_fil_dest" "$dev_prc_dest"
+
+    echo ""
+    info "Publicando device Orca '${dev_id}'..."
+    [[ -d "$dev_fil_src" ]] && cp -f "$dev_fil_src"/*.json "$dev_fil_dest/" 2>/dev/null || true
+    [[ -d "$dev_prc_src" ]] && cp -f "$dev_prc_src"/*.json "$dev_prc_dest/" 2>/dev/null || true
+    dev_fil_count=$(find "$dev_fil_dest" -maxdepth 1 -name "*.json" -type f | wc -l)
+    dev_prc_count=$(find "$dev_prc_dest" -maxdepth 1 -name "*.json" -type f | wc -l)
+    info "  ${dev_id}: ${dev_fil_count} filamentos, ${dev_prc_count} processos em ${ORCA_DEST_ROOT}/${dev_id}/"
+    ORCA_DEVICE_SUMMARY="${ORCA_DEVICE_SUMMARY} ${dev_id}:${dev_fil_count}f/${dev_prc_count}p"
+done
+
 # --- Resumo ------------------------------------------------------------------
 
 echo ""
@@ -253,9 +291,15 @@ echo "==========================================="
 info "Creality Print:"
 info "  Filamentos: ${FILAMENT_COUNT} perfis em ${FILAMENT_DEST}"
 info "  Processos:  ${PROCESS_COUNT} perfis em ${PROCESS_DEST}"
-info "Orca Slicer:"
+info "Orca Slicer (K2):"
 info "  Filamentos: ${ORCA_FILAMENT_COUNT} perfis em ${ORCA_FILAMENT_DEST}"
 info "  Processos:  ${ORCA_PROCESS_COUNT} perfis em ${ORCA_PROCESS_DEST}"
+if [[ -n "$ORCA_DEVICE_SUMMARY" ]]; then
+    info "Orca Slicer (devices adicionais):"
+    for entry in $ORCA_DEVICE_SUMMARY; do
+        info "  ${entry} (filamentos/processos) em ${ORCA_DEST_ROOT}/${entry%%:*}/"
+    done
+fi
 
 if [[ "$EXPORT_ALL" == true ]]; then
     info "Curadoria: TODOS os perfis ativos (--all, ignora export:true)"

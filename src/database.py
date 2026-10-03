@@ -30,7 +30,7 @@ def rows_to_dicts(rows):
 def list_manufacturers():
     conn = get_db_connection()
     rows = conn.execute(
-        "SELECT id, name, country, website, notes FROM manufacturers ORDER BY name"
+        "SELECT id, name, country, website, notes FROM manufacturers ORDER BY name COLLATE NOCASE"
     ).fetchall()
     conn.close()
     return rows_to_dicts(rows)
@@ -39,7 +39,7 @@ def list_manufacturers():
 def list_materials():
     conn = get_db_connection()
     rows = conn.execute(
-        "SELECT id, name, description, average_cost, difficulty, strength, flexibility, temperature_resistance, uv_resistance, food_safe, indoor, outdoor, abrasive, requires_enclosure, recommended_nozzle_temp, recommended_bed_temp, notes FROM materials ORDER BY name"
+        "SELECT id, name, description, average_cost, difficulty, strength, flexibility, temperature_resistance, uv_resistance, food_safe, indoor, outdoor, abrasive, requires_enclosure, recommended_nozzle_temp, recommended_bed_temp, notes FROM materials ORDER BY name COLLATE NOCASE"
     ).fetchall()
     conn.close()
     return rows_to_dicts(rows)
@@ -466,7 +466,7 @@ def build_tree():
         FROM filament_profiles fp
         JOIN manufacturers mf ON mf.id = fp.manufacturer_id
         JOIN materials     m  ON m.id  = fp.material_id
-        ORDER BY mf.name, m.name, fp.commercial_name, fp.profile_name
+        ORDER BY mf.name COLLATE NOCASE, m.name COLLATE NOCASE, fp.commercial_name, fp.profile_name
         """
     ).fetchall()
 
@@ -576,7 +576,20 @@ def build_tree():
             "orca_download_url":        f"/download/orca/filament/{manufacturer}/{material}",
         })
 
-    return tree
+    # Reordena a saída de forma defensiva (não depende só da ordem de inserção
+    # do SQL), espelhando build_process_tree(): fabricantes em ordem alfabética
+    # case-insensitive e os materiais internos por nome case-insensitive.
+    def _ci(name):
+        return (name or "").lower()
+
+    ordered: dict = {}
+    for manufacturer in sorted(tree.keys(), key=_ci):
+        node = tree[manufacturer]
+        node["materials"] = dict(
+            sorted(node["materials"].items(), key=lambda item: _ci(item[0]))
+        )
+        ordered[manufacturer] = node
+    return ordered
 
 
 def build_process_tree():

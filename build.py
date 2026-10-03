@@ -46,6 +46,7 @@ EXPORT_FILAMENTS_DIR = ROOT_DIR / "Creality-Print" / "filaments"
 EXPORT_PROCESS_DIR = ROOT_DIR / "Creality-Print" / "process"
 EXPORT_ORCA_FILAMENTS_DIR = ROOT_DIR / "OrcaSlicer" / "filament"
 EXPORT_ORCA_PROCESS_DIR = ROOT_DIR / "OrcaSlicer" / "process"
+DEVICES_DIR = PROCESS_BASE_DIR / "devices"
 
 PRESERVED_PROFILE_IDS = {}
 
@@ -240,6 +241,7 @@ def create_schema():
     CREATE TABLE process_profiles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         material_id INTEGER NOT NULL,
+        device_id TEXT NOT NULL DEFAULT 'k2',
         profile_name TEXT NOT NULL UNIQUE,
         profile_type TEXT NOT NULL,
         layer_height REAL,
@@ -680,11 +682,115 @@ FLOAT_COLUMNS = {
 }
 
 
-def generate_process_profile(profile_type, layer_height, material_name):
+# =============================================================================
+# DEVICES (printer targets)
+# =============================================================================
+
+# Caps físicos default: valores da K2 (600/800/20000). Aplicados quando um
+# device não declara explicitamente `limits` ou algum dos campos dentro dele.
+# Documentado em .kiro/steering/filamentdb-rules.md.
+DEVICE_DEFAULT_LIMITS = {
+    "max_extrusion_speed": 600,
+    "max_travel_speed": 800,
+    "max_acceleration": 20000,
+}
+DEVICE_DEFAULT_NAME_TEMPLATE = "{layer}mm {type} @{display_name} {nozzle} nozzle - {material}"
+
+_DEVICE_CACHE = {}
+
+
+def load_device(device_id):
+    """Carrega e valida a definição de um device de process-base/devices/<id>.json.
+
+    Valida o schema mínimo (id, display_name) e preenche defaults documentados
+    (caps da K2 quando ausentes, name_template canônico, nozzle 0.4). Falha com
+    erro explícito citando o id quando o arquivo não existe ou está malformado.
+    """
+    if device_id in _DEVICE_CACHE:
+        return _DEVICE_CACHE[device_id]
+
+    path = DEVICES_DIR / f"{device_id}.json"
+    if not path.exists():
+        error(f"Device '{device_id}' não encontrado: esperado arquivo em {path}. "
+              f"Verifique a referência em combinations.json e crie o JSON do device.")
+    try:
+        device = load_json(path)
+    except (json.JSONDecodeError, OSError) as exc:
+        error(f"Device '{device_id}' em {path} está malformado: {exc}")
+
+    # Schema mínimo obrigatório.
+    for field in ("id", "display_name"):
+        if not device.get(field):
+            error(f"Device '{device_id}' ({path}) sem campo obrigatório '{field}'.")
+    if device["id"] != device_id:
+        error(f"Device em {path} tem id '{device['id']}' != nome do arquivo '{device_id}'.")
+
+    # Defaults documentados.
+    device.setdefault("nozzle", "0.4")
+    device.setdefault("orca_name_suffix", device_id.upper())
+    device.setdefault("name_template", DEVICE_DEFAULT_NAME_TEMPLATE)
+
+    limits = {**DEVICE_DEFAULT_LIMITS, **(device.get("limits") or {})}
+    device["limits"] = limits
+
+    device.setdefault("slicers", {})
+    device["slicers"].setdefault("orca", {"enabled": False})
+    device["slicers"].setdefault("creality_print", {"enabled": False})
+
+    _DEVICE_CACHE[device_id] = device
+    return device
+
+
+def resolve_inherits(inherits_by_layer, layer_height, display_name=None, profile_type=None):
+    """Resolve o `inherits` para um layer height a partir da lista por device.
+
+    Percorre `process_inherits_by_layer` (lista de {max, inherits}) e escolhe a
+    primeira entrada cujo `max` >= layer_height. Suporta placeholders no valor
+    de `inherits` ({layer}, {type}) para templates como o do Creality Print.
+    """
+    lh = float(layer_height) if layer_height is not None else 0.2
+    chosen = None
+    for entry in inherits_by_layer:
+        if lh <= float(entry["max"]):
+            chosen = entry["inherits"]
+            break
+    if chosen is None and inherits_by_layer:
+        chosen = inherits_by_layer[-1]["inherits"]
+    if chosen is None:
+        return None
+    layer_str = f"{float(layer_height):.2f}".rstrip("0").rstrip(".") if layer_height is not None else ""
+    # Preserva o formato original do layer height (ex. "0.20") quando string.
+    layer_fmt = str(layer_height) if layer_height is not None else ""
+    return chosen.format(
+        layer=layer_fmt,
+        type=(profile_type.capitalize() if profile_type else ""),
+        display_name=(display_name or ""),
+    )
+
+
+def load_devices_for_combinations(combinations):
+    """Carrega todos os devices referenciados em combinations.json.
+
+    Valida que todo id citado em qualquer `devices` (ou em `default_devices`)
+    tem arquivo correspondente; falha com erro explícito citando o id ausente.
+    Retorna o default_devices resolvido.
+    """
+    default_devices = combinations.get("default_devices", ["k2"])
+    referenced = set(default_devices)
+    for combo in combinations["combinations"]:
+        for dev_id in combo.get("devices", []):
+            referenced.add(dev_id)
+    # load_device já falha explicitamente se o arquivo não existir.
+    for dev_id in sorted(referenced):
+        load_device(dev_id)
+    return default_devices
+
+
+def generate_process_profile(profile_type, layer_height, material_name, device):
     """Gera um perfil de processo combinando base + layer_height + profile_type + material.
 
-    As velocidades sÃ£o definidas com base nas capacidades da impressora (K2) e do
-    profile_type. O limite volumÃ©trico real Ã© aplicado pelo Creality Print em runtime,
+    As velocidades sÃ£o definidas com base nas capacidades da impressora (device) e do
+    profile_type. O limite volumÃ©trico real Ã© aplicado pelo slicer em runtime,
     baseado no filament_max_volumetric_speed do perfil de filamento selecionado.
     """
     base = load_json(PROCESS_BASE_DIR / "base.json")
@@ -713,6 +819,14 @@ def generate_process_profile(profile_type, layer_height, material_name):
                 if layer_val > profile_val:
                     profile[field] = layer_data[field]
 
+    # Caps físicos derivados do device (não mais hardcoded). O MVS continua
+    # responsabilidade exclusiva do perfil de filamento — nenhum cap volumétrico
+    # entra no processo.
+    limits = device["limits"]
+    extrusion_cap = float(limits["max_extrusion_speed"])
+    travel_cap = float(limits["max_travel_speed"])
+    accel_cap = float(limits["max_acceleration"])
+
     # Apply material speeds with profile_type multipliers
     mult = PROFILE_MULTIPLIERS.get(profile_type, {"speed": 1.0, "accel": 1.0})
     material_mult = material_data.get("speed_multiplier", 1.0)
@@ -726,12 +840,11 @@ def generate_process_profile(profile_type, layer_height, material_name):
             else:
                 speed_mult = mult["speed"]
             raw_speed = float(material_data[field]) * speed_mult * material_mult
-            # Cap at machine maximum (800 mm/s for travel, 600 mm/s for extrusion)
-            # K2 spec: 600 mm/s max print speed, 800 mm/s travel
+            # Cap at machine maximum (vem do device: travel vs extrusão)
             if field == "travel_speed":
-                raw_speed = min(raw_speed, 800.0)
+                raw_speed = min(raw_speed, travel_cap)
             else:
-                raw_speed = min(raw_speed, 600.0)
+                raw_speed = min(raw_speed, extrusion_cap)
             # Layer height can define a speed cap (e.g. lower initial_layer_speed
             # for thin layers to improve bed adhesion)
             if field in layer_data:
@@ -742,18 +855,30 @@ def generate_process_profile(profile_type, layer_height, material_name):
     for field in ACCEL_FIELDS:
         if field in material_data:
             raw_accel = float(material_data[field]) * mult["accel"] * material_accel_mult
-            # Cap acceleration at machine maximum (20000 mm/sÂ²)
-            profile[field] = str(min(raw_accel, 20000.0))
+            # Cap acceleration at machine maximum (vem do device)
+            profile[field] = str(min(raw_accel, accel_cap))
 
-    nozzle = "0.4"
-    profile["name"] = f"{layer_height}mm {profile_type.capitalize()} @Creality K2 {nozzle} nozzle - {material_name}"
+    profile["name"] = device["name_template"].format(
+        layer=layer_height,
+        type=profile_type.capitalize(),
+        display_name=device["display_name"],
+        nozzle=device["nozzle"],
+        material=material_name,
+    )
     profile["print_settings_id"] = profile["name"]
 
-    # Creality Print built-in profiles for K2 0.4 nozzle only go up to 0.28mm.
-    # For layer heights above 0.28, inherit from the highest available built-in.
-    MAX_BUILTIN_LAYER_HEIGHT = "0.28"
-    inherits_height = layer_height if float(layer_height) <= float(MAX_BUILTIN_LAYER_HEIGHT) else MAX_BUILTIN_LAYER_HEIGHT
-    profile["inherits"] = f"{inherits_height}mm Standard @Creality K2 {nozzle} nozzle"
+    # inherits do Creality Print: resolvido pela cadeia do device por layer
+    # height. Quando o device não tem Creality Print habilitado, o campo fica
+    # None (o export CP é pulado para esse device).
+    cp_cfg = device["slicers"].get("creality_print", {})
+    cp_chain = cp_cfg.get("process_inherits_by_layer")
+    if cp_cfg.get("enabled") and cp_chain:
+        profile["inherits"] = resolve_inherits(
+            cp_chain, layer_height,
+            display_name=device["display_name"], profile_type=profile_type,
+        )
+    else:
+        profile["inherits"] = None
 
     return profile
 
@@ -818,7 +943,7 @@ def seed_processes():
     conn.commit()
 
     columns = [
-        "material_id", "profile_name", "profile_type", "layer_height", "initial_layer_height",
+        "material_id", "device_id", "profile_name", "profile_type", "layer_height", "initial_layer_height",
         "inner_wall_speed", "outer_wall_speed", "sparse_infill_speed", "internal_solid_infill_speed",
         "top_surface_speed", "initial_layer_speed", "travel_speed", "support_speed", "gap_infill_speed",
         "default_acceleration", "inner_wall_acceleration", "outer_wall_acceleration", "top_surface_acceleration",
@@ -842,51 +967,57 @@ def seed_processes():
     # JSON field name -> DB column name mapping
     json_to_col = {"initial_layer_print_height": "initial_layer_height"}
 
+    default_devices = load_devices_for_combinations(combinations)
+
     inserted = 0
     for combo in combinations["combinations"]:
         profile_type = combo["profile_type"]
-        for layer_height in combo["layer_heights"]:
-            for material in combo["materials"]:
-                profile_data = generate_process_profile(profile_type, layer_height, material)
+        combo_devices = combo.get("devices", default_devices)
+        for device_id in combo_devices:
+            device = load_device(device_id)
+            for layer_height in combo["layer_heights"]:
+                for material in combo["materials"]:
+                    profile_data = generate_process_profile(profile_type, layer_height, material, device)
 
-                cur.execute("SELECT id FROM materials WHERE name = ?", (material,))
-                material_row = cur.fetchone()
-                if not material_row:
-                    warn(f"Material {material} nao encontrado, pulando")
-                    continue
-
-                row = {
-                    "material_id": material_row[0],
-                    "profile_name": profile_data["name"],
-                    "profile_type": profile_type,
-                    "layer_height": float(layer_height),
-                    "printer_model": "Creality K2 Combo",
-                    "nozzle_size": 0.4,
-                    "base_id": profile_data.get("base_id", "GP004"),
-                    "inherits": profile_data.get("inherits"),
-                    "version": profile_data.get("version", "26.4.28.18"),
-                    "description": f"Perfil {profile_type} para {material} - K2 0.4mm",
-                    "notes": f"Gerado via heranca: {profile_type}/{layer_height}/{material}",
-                    "active": 1,
-                }
-
-                # Map all other fields
-                for json_key, value in profile_data.items():
-                    col = json_to_col.get(json_key, json_key)
-                    if col in row:
+                    cur.execute("SELECT id FROM materials WHERE name = ?", (material,))
+                    material_row = cur.fetchone()
+                    if not material_row:
+                        warn(f"Material {material} nao encontrado, pulando")
                         continue
-                    if col in set(columns):
-                        coerced = coerce_value(col, value)
-                        if coerced is not None:
-                            row[col] = coerced
 
-                values = [row.get(col) for col in columns]
-                placeholders = ", ".join(["?"] * len(columns))
-                cur.execute(
-                    f"INSERT INTO process_profiles({', '.join(columns)}) VALUES ({placeholders})",
-                    values,
-                )
-                inserted += 1
+                    row = {
+                        "material_id": material_row[0],
+                        "device_id": device_id,
+                        "profile_name": profile_data["name"],
+                        "profile_type": profile_type,
+                        "layer_height": float(layer_height),
+                        "printer_model": "Creality K2 Combo",
+                        "nozzle_size": 0.4,
+                        "base_id": profile_data.get("base_id", "GP004"),
+                        "inherits": profile_data.get("inherits"),
+                        "version": profile_data.get("version", "26.4.28.18"),
+                        "description": f"Perfil {profile_type} para {material} - {device['display_name']} 0.4mm",
+                        "notes": f"Gerado via heranca: {device_id}/{profile_type}/{layer_height}/{material}",
+                        "active": 1,
+                    }
+
+                    # Map all other fields
+                    for json_key, value in profile_data.items():
+                        col = json_to_col.get(json_key, json_key)
+                        if col in row:
+                            continue
+                        if col in set(columns):
+                            coerced = coerce_value(col, value)
+                            if coerced is not None:
+                                row[col] = coerced
+
+                    values = [row.get(col) for col in columns]
+                    placeholders = ", ".join(["?"] * len(columns))
+                    cur.execute(
+                        f"INSERT INTO process_profiles({', '.join(columns)}) VALUES ({placeholders})",
+                        values,
+                    )
+                    inserted += 1
 
     conn.commit()
     conn.close()
@@ -1043,7 +1174,7 @@ def export_processes():
             pp.flush_into_infill, pp.flush_into_objects, pp.flush_into_support,
             pp.flush_multiplier,
             pp.printer_model, pp.base_id, pp.inherits, pp.version,
-            m.name AS material_name
+            m.name AS material_name, pp.device_id
         FROM process_profiles pp
         JOIN materials m ON m.id = pp.material_id
         WHERE pp.active = 1
@@ -1051,8 +1182,15 @@ def export_processes():
     rows = cur.fetchall()
     conn.close()
 
+    exported = 0
     for row in rows:
         profile_name = row[0]
+        device_id = row[70]
+
+        # Creality Print só gera para devices que o suportam (CC2 é Orca-only).
+        device = load_device(device_id)
+        if not device["slicers"].get("creality_print", {}).get("enabled"):
+            continue
 
         data = {
             "base_id": row[66] if row[66] else "GP004",
@@ -1123,7 +1261,9 @@ def export_processes():
         with open(info_path, "w", encoding="utf-8") as f:
             f.write(f"sync_info = \nuser_id = 8401264742\nsetting_id = {now}\nbase_id = {data.get('base_id', 'GP004')}\nupdated_time = {now}\n")
 
-    info(f"Exportados: {len(rows)} perfis de processo")
+        exported += 1
+
+    info(f"Exportados: {exported} perfis de processo")
 
 
 # =============================================================================
@@ -1155,14 +1295,32 @@ ORCA_FILAMENT_TYPE = {
 }
 
 
+def orca_enabled_devices():
+    """Lista (ordenada) de devices com Orca habilitado, derivada de combinations.
+
+    O filamento descreve o material (não a máquina), então é exportado uma vez
+    por device Orca habilitado — cada um com seu sufixo e compatible_printers.
+    """
+    combinations = load_json(PROCESS_BASE_DIR / "combinations.json")
+    referenced = set(combinations.get("default_devices", ["k2"]))
+    for combo in combinations["combinations"]:
+        referenced.update(combo.get("devices", []))
+    result = []
+    for dev_id in sorted(referenced):
+        device = load_device(dev_id)
+        if device["slicers"].get("orca", {}).get("enabled"):
+            result.append(device)
+    return result
+
+
 def export_orca_filaments():
     """Exporta perfis de filamento do banco para OrcaSlicer/filament/."""
     info("Exportando filamentos para OrcaSlicer/filament/...")
 
-    if EXPORT_ORCA_FILAMENTS_DIR.exists():
-        for f in EXPORT_ORCA_FILAMENTS_DIR.iterdir():
-            f.unlink()
+    _clean_export_tree(EXPORT_ORCA_FILAMENTS_DIR)
     EXPORT_ORCA_FILAMENTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    devices = orca_enabled_devices()
 
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
@@ -1187,43 +1345,46 @@ def export_orca_filaments():
         if not _export_allowed(export_enabled):
             continue
 
-        # Orca profile name includes @K2 suffix for printer compatibility
-        orca_name = f"{profile_name} @K2"
         inherits = ORCA_FILAMENT_INHERITS.get(material, "fdm_filament_pla")
         filament_type = ORCA_FILAMENT_TYPE.get(material, "PLA")
-
         bed_temp = int(bed) if bed else 60
 
-        payload = {
-            "type": "filament",
-            "name": orca_name,
-            "inherits": inherits,
-            "from": "User",
-            "instantiation": "true",
-            "filament_flow_ratio": [str(flow or 1.0)],
-            "filament_max_volumetric_speed": [str(int(mvs)) if mvs else "14"],
-            "filament_type": [filament_type],
-            "filament_vendor": [brand],
-            "nozzle_temperature": [str(n_init)],
-            "nozzle_temperature_initial_layer": [str(n_init)],
-            "nozzle_temperature_range_low": [str(n_min)],
-            "nozzle_temperature_range_high": [str(n_max)],
-            "hot_plate_temp": [str(bed_temp)],
-            "hot_plate_temp_initial_layer": [str(bed_temp + 5)],
-            "textured_plate_temp": [str(bed_temp)],
-            "textured_plate_temp_initial_layer": [str(bed_temp + 5)],
-            "cool_plate_temp": [str(bed_temp)],
-            "cool_plate_temp_initial_layer": [str(bed_temp + 5)],
-            "compatible_printers": [
-                "Creality K2 0.4 nozzle",
-            ],
-        }
+        # Exporta o mesmo filamento uma vez por device Orca habilitado, cada um
+        # com seu sufixo de nome e compatible_printers.
+        for device in devices:
+            orca_cfg = device["slicers"]["orca"]
+            suffix = device["orca_name_suffix"]
+            orca_name = f"{profile_name} @{suffix}"
 
-        json_path = EXPORT_ORCA_FILAMENTS_DIR / f"{orca_name}.json"
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=4, ensure_ascii=False)
+            payload = {
+                "type": "filament",
+                "name": orca_name,
+                "inherits": inherits,
+                "from": "User",
+                "instantiation": "true",
+                "filament_flow_ratio": [str(flow or 1.0)],
+                "filament_max_volumetric_speed": [str(int(mvs)) if mvs else "14"],
+                "filament_type": [filament_type],
+                "filament_vendor": [brand],
+                "nozzle_temperature": [str(n_init)],
+                "nozzle_temperature_initial_layer": [str(n_init)],
+                "nozzle_temperature_range_low": [str(n_min)],
+                "nozzle_temperature_range_high": [str(n_max)],
+                "hot_plate_temp": [str(bed_temp)],
+                "hot_plate_temp_initial_layer": [str(bed_temp + 5)],
+                "textured_plate_temp": [str(bed_temp)],
+                "textured_plate_temp_initial_layer": [str(bed_temp + 5)],
+                "cool_plate_temp": [str(bed_temp)],
+                "cool_plate_temp_initial_layer": [str(bed_temp + 5)],
+                "compatible_printers": list(orca_cfg.get("compatible_printers", [])),
+            }
 
-        exported += 1
+            out_dir = orca_filament_dir_for_device(device["id"])
+            out_dir.mkdir(parents=True, exist_ok=True)
+            json_path = out_dir / f"{orca_name}.json"
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=4, ensure_ascii=False)
+            exported += 1
 
     filter_desc = "todos (override)" if EXPORT_ALL else "export: true"
     info(f"Exportados: {exported} perfis de filamento Orca (filtro: {filter_desc})")
@@ -1236,6 +1397,47 @@ def export_orca_filaments():
 # Orca process profiles inherit from the built-in K2 Standard profile
 ORCA_PROCESS_BASE = "0.20mm Standard @Creality K2 0.4 nozzle"
 
+# Device cuja saída Orca permanece na raiz dos diretórios de export (layout
+# legado, preserva regressão zero e não quebra o run-orca-slicer.sh existente).
+# Devices adicionais vão para subpastas <dir>/<device_id>/.
+ORCA_FLAT_DEVICE = "k2"
+
+
+def _clean_export_tree(root):
+    """Remove .json/.info de um diretório de export, incluindo subpastas de device.
+
+    Preserva o diretório raiz. Remove subdiretórios de device vazios após limpar
+    para não deixar pastas órfãs de devices que saíram do combinations.json.
+    """
+    if not root.exists():
+        return
+    for path in sorted(root.rglob("*"), reverse=True):
+        if path.is_file() and path.suffix in (".json", ".info"):
+            path.unlink()
+        elif path.is_dir():
+            try:
+                path.rmdir()  # só remove se vazio
+            except OSError:
+                pass
+
+
+def orca_process_dir_for_device(device_id):
+    """Diretório de export de processos Orca para um device.
+
+    K2 (ORCA_FLAT_DEVICE) usa o diretório raiz legado; demais devices vão para
+    uma subpasta por id, isolando a saída e preservando o layout atual.
+    """
+    if device_id == ORCA_FLAT_DEVICE:
+        return EXPORT_ORCA_PROCESS_DIR
+    return EXPORT_ORCA_PROCESS_DIR / device_id
+
+
+def orca_filament_dir_for_device(device_id):
+    """Diretório de export de filamentos Orca para um device (ver acima)."""
+    if device_id == ORCA_FLAT_DEVICE:
+        return EXPORT_ORCA_FILAMENTS_DIR
+    return EXPORT_ORCA_FILAMENTS_DIR / device_id
+
 
 def export_orca_processes():
     """Exporta perfis de processo para OrcaSlicer/process/.
@@ -1245,9 +1447,7 @@ def export_orca_processes():
     """
     info("Exportando processos para OrcaSlicer/process/...")
 
-    if EXPORT_ORCA_PROCESS_DIR.exists():
-        for f in EXPORT_ORCA_PROCESS_DIR.iterdir():
-            f.unlink()
+    _clean_export_tree(EXPORT_ORCA_PROCESS_DIR)
     EXPORT_ORCA_PROCESS_DIR.mkdir(parents=True, exist_ok=True)
 
     conn = sqlite3.connect(DB_PATH)
@@ -1269,7 +1469,7 @@ def export_orca_processes():
             pp.seam_slope_start_height, pp.seam_slope_steps,
             pp.staggered_inner_seams,
             pp.ironing_type, pp.ironing_speed, pp.ironing_flow, pp.ironing_spacing,
-            m.name AS material_name
+            m.name AS material_name, pp.device_id
         FROM process_profiles pp
         JOIN materials m ON m.id = pp.material_id
         WHERE pp.active = 1
@@ -1277,6 +1477,7 @@ def export_orca_processes():
     rows = cur.fetchall()
     conn.close()
 
+    exported = 0
     for row in rows:
         (profile_name, profile_type, layer_height, initial_layer_height,
          inner_wall, outer_wall, sparse_infill, solid_infill, top_surface,
@@ -1289,25 +1490,27 @@ def export_orca_processes():
          seam_slope_start_height, seam_slope_steps,
          staggered_inner_seams,
          ironing_type, ironing_speed, ironing_flow, ironing_spacing,
-         material_name) = row
+         material_name, device_id) = row
+
+        # Resolve device: inherits e compatible_printers vêm da definição.
+        device = load_device(device_id)
+        orca_cfg = device["slicers"].get("orca", {})
+        if not orca_cfg.get("enabled"):
+            continue
 
         # Orca profile name (same as Creality Print)
         orca_name = profile_name
 
-        # Determine which built-in to inherit from based on layer height
-        lh = float(layer_height) if layer_height else 0.2
-        if lh <= 0.10:
-            orca_inherits = "0.08mm SuperDetail @Creality K2 0.4 nozzle"
-        elif lh <= 0.14:
-            orca_inherits = "0.12mm Detail @Creality K2 0.4 nozzle"
-        elif lh <= 0.18:
-            orca_inherits = "0.16mm Optimal @Creality K2 0.4 nozzle"
-        elif lh <= 0.22:
-            orca_inherits = "0.20mm Standard @Creality K2 0.4 nozzle"
-        elif lh <= 0.26:
-            orca_inherits = "0.24mm Draft @Creality K2 0.4 nozzle"
-        else:
-            orca_inherits = "0.28mm SuperDraft @Creality K2 0.4 nozzle"
+        orca_inherits = resolve_inherits(
+            orca_cfg.get("process_inherits_by_layer", []),
+            layer_height,
+            display_name=device["display_name"],
+            profile_type=profile_type,
+        )
+
+        # Publicação por device: K2 no diretório atual, demais em subpastas.
+        out_dir = orca_process_dir_for_device(device_id)
+        out_dir.mkdir(parents=True, exist_ok=True)
 
         data = {
             "type": "process",
@@ -1315,7 +1518,7 @@ def export_orca_processes():
             "inherits": orca_inherits,
             "from": "User",
             "instantiation": "true",
-            "compatible_printers": ["Creality K2 0.4 nozzle"],
+            "compatible_printers": list(orca_cfg.get("compatible_printers", [])),
         }
 
         # Only set fields we override (Orca inherits the rest from base)
@@ -1369,11 +1572,12 @@ def export_orca_processes():
         if infill_pattern:
             data["sparse_infill_pattern"] = str(infill_pattern)
 
-        json_path = EXPORT_ORCA_PROCESS_DIR / f"{orca_name}.json"
+        json_path = out_dir / f"{orca_name}.json"
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
+        exported += 1
 
-    info(f"Exportados: {len(rows)} perfis de processo Orca")
+    info(f"Exportados: {exported} perfis de processo Orca")
 
 
 # =============================================================================

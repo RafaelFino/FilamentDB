@@ -402,6 +402,7 @@ materials:
     - line: PLA Pro Line
       commercial_name: PLA Pro
       profile_name: Elegoo PLA Pro
+      export: true
       nozzle:
         initial: 220
         min: 210

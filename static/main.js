@@ -2658,7 +2658,7 @@ invShowUsed?.addEventListener('change', loadInventory);
 // ─── Catalog pre-fill (window.treeData) ──────────────────────────────────────
 function populateCatalogManufacturers() {
     if (!invCatMfr) return;
-    const mfrs = Object.keys(treeData || {}).sort();
+    const mfrs = Object.keys(treeData || {}).sort((a, b) => a.localeCompare(b));
     invCatMfr.innerHTML = '<option value="">Fabricante...</option>' +
         mfrs.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
 }
@@ -2669,7 +2669,7 @@ invCatMfr?.addEventListener('change', () => {
     invCatVariant.innerHTML = '<option value="">Cor...</option>';
     invCatVariant.disabled = true;
     if (!mfr) { invCatMat.disabled = true; return; }
-    const mats = Object.keys(treeData[mfr]?.materials || {}).sort();
+    const mats = Object.keys(treeData[mfr]?.materials || {}).sort((a, b) => a.localeCompare(b));
     invCatMat.innerHTML += mats.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
     invCatMat.disabled = false;
 });
@@ -2679,14 +2679,18 @@ invCatMat?.addEventListener('change', () => {
     invCatVariant.innerHTML = '<option value="">Cor...</option>';
     if (!mfr || !mat) { invCatVariant.disabled = true; return; }
     const profiles = treeData[mfr]?.materials?.[mat]?.profiles || [];
-    // Flatten all variants of all profiles/lines for this material
-    let opts = '';
+    // Flatten all variants of all profiles/lines for this material, ordenando
+    // as cores em ordem alfabética (case-insensitive) por color_name.
+    const entries = [];
     profiles.forEach((p, pi) => {
         (p.variants || []).forEach((varnt, vi) => {
-            const label = `${varnt.color_name || 'Cor'}${varnt.finish ? ' · ' + varnt.finish : ''} (${p.commercial_name})`;
-            opts += `<option value="${pi}:${vi}">${escapeHtml(label)}</option>`;
+            const colorName = varnt.color_name || 'Cor';
+            const label = `${colorName}${varnt.finish ? ' · ' + varnt.finish : ''} (${p.commercial_name})`;
+            entries.push({ key: colorName, html: `<option value="${pi}:${vi}">${escapeHtml(label)}</option>` });
         });
     });
+    entries.sort((a, b) => a.key.localeCompare(b.key));
+    let opts = entries.map(e => e.html).join('');
     if (!opts) opts = '<option value="" disabled>Sem variantes no catálogo</option>';
     invCatVariant.innerHTML += opts;
     invCatVariant.disabled = false;

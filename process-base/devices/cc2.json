@@ -1,0 +1,24 @@
+{
+    "id": "cc2",
+    "display_name": "Elegoo CC2",
+    "nozzle": "0.4",
+    "orca_name_suffix": "CC2",
+    "name_template": "{layer}mm {type} @{display_name} {nozzle} nozzle - {material}",
+    "limits": {
+        "max_extrusion_speed": 500,
+        "max_travel_speed": 500,
+        "max_acceleration": 20000
+    },
+    "slicers": {
+        "orca": {
+            "enabled": true,
+            "compatible_printers": ["Elegoo CC2 0.4 Nozzle"],
+            "process_inherits_by_layer": [
+                { "max": 99.0, "inherits": "0.20mm Standard @Elegoo CC2 0.4 Nozzle" }
+            ]
+        },
+        "creality_print": {
+            "enabled": false
+        }
+    }
+}

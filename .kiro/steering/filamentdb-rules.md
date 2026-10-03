@@ -47,11 +47,97 @@ Safe:     speed=0.70x  accel=0.60x  quality_speed=0.50x (outer/top/1st layer)
 
 Os perfis Detail e Safe usam multiplicadores **assimétricos**: campos que afetam qualidade visual (outer wall, top surface, primeira camada) recebem o `quality_speed` mais baixo, enquanto campos internos (inner wall, infill, travel, support) usam o `speed` regular mais alto. Isso permite imprimir rápido onde não importa e lento apenas onde melhora a qualidade ou confiabilidade.
 
-### Limites Físicos da Máquina (caps no build.py)
+### Limites Físicos da Máquina (caps vêm do device)
 
-- Velocidade de extrusão: 600 mm/s (spec K2)
-- Travel: 800 mm/s
-- Aceleração: 20000 mm/s²
+Os caps não são mais hardcoded no `build.py` — vêm do arquivo do device
+(`process-base/devices/<id>.json`, chave `limits`). Ver a seção **Devices**.
+
+- K2: extrusão 600 mm/s, travel 800 mm/s, aceleração 20000 mm/s²
+- CC2: extrusão 500 mm/s, travel 500 mm/s, aceleração 20000 mm/s²
+
+Default documentado (quando o device não declara `limits`): os valores da K2
+(600/800/20000).
+
+## Devices (Printer Targets)
+
+O **device** é a quarta dimensão de configuração do pipeline, ao lado de
+material, profile_type e layer_height. Ele encapsula tudo que é específico da
+impressora: caps físicos, cadeia de herança do slicer, `compatible_printers` e
+sufixo de nome. Isso permite gerar perfis para múltiplas impressoras a partir da
+mesma base, sem duplicação manual.
+
+```
+device × profile_type × layer_height × material
+   │          │              │            │
+caps,      estrutura,     geometria,   velocidades
+inherits,  multiplic.     shells,      base, temps
+compat.                   adhesion
+```
+
+### Separação device / material / processo
+
+- **Device** → o que a *impressora* permite: caps físicos (velocidade/accel),
+  herança do slicer, `compatible_printers`, sufixo de nome.
+- **Processo** → o que o *profile type* tenta atingir: velocidades alvo,
+  acelerações, estrutura da peça.
+- **Material (processo)** → velocidades base por tipo de material (alvo Standard
+  na referência K2).
+- **Filamento** → o que o *material físico* aguenta (`max_volumetric_speed`).
+
+O slicer combina tudo em runtime e aplica o menor limitador. O cap volumétrico
+(MVS) continua **exclusivo do filamento** — nunca entra no processo. O cap de
+velocidade/aceleração é **exclusivo do device**.
+
+### Estrutura `process-base/devices/<id>.json`
+
+Cada device é um JSON declarativo:
+
+```json
+{
+  "id": "k2",
+  "display_name": "Creality K2",
+  "nozzle": "0.4",
+  "orca_name_suffix": "K2",
+  "name_template": "{layer}mm {type} @{display_name} {nozzle} nozzle - {material}",
+  "limits": { "max_extrusion_speed": 600, "max_travel_speed": 800, "max_acceleration": 20000 },
+  "slicers": {
+    "orca": {
+      "enabled": true,
+      "compatible_printers": ["Creality K2 0.4 nozzle"],
+      "process_inherits_by_layer": [ { "max": 0.22, "inherits": "0.20mm Standard @Creality K2 0.4 nozzle" }, ... ]
+    },
+    "creality_print": { "enabled": true, "process_inherits_by_layer": [ ... ] }
+  }
+}
+```
+
+- `name_template` monta o nome do perfil (placeholders `{layer}`, `{type}`,
+  `{display_name}`, `{nozzle}`, `{material}`).
+- `process_inherits_by_layer` é uma lista `{max, inherits}`; o build escolhe a
+  primeira entrada cujo `max` ≥ layer height. `inherits` aceita placeholders
+  `{layer}`/`{type}`.
+- `slicers.<slicer>.enabled = false` desliga a exportação daquele slicer para o
+  device.
+
+### Devices atuais
+
+- **K2** (`k2`): CoreXY, Direct Drive, bico 0.4mm. Suportada por **Orca e
+  Creality Print**. Layout de export legado (K2 na raiz de `OrcaSlicer/` e
+  `Creality-Print/`).
+- **CC2** (`cc2`): Elegoo Centauri Carbon 2 — CoreXY, Direct Drive, bico 0.4mm,
+  volume 256³mm, Klipper. Caps 500/500/20000. **Orca-only**
+  (`creality_print.enabled = false`) — o Creality Print não suporta a CC2.
+  **O nome exato do perfil de máquina CC2 no OrcaSlicer alvo deve ser confirmado
+  na instalação** antes de usar os perfis (alimenta `compatible_printers` e os
+  `inherits`); a herança falha silenciosamente no slicer se o nome não bater.
+
+### Combinações por device
+
+`combinations.json` aceita `devices` por combinação e `default_devices` no topo.
+Combinação sem `devices` usa `default_devices` (`["k2"]`), preservando o
+comportamento anterior. O build itera `device × profile_type × layer_height ×
+material` e valida que todo device referenciado tem arquivo em `devices/`
+(falha explícita citando o `id` ausente).
 
 ## Defaults de Suporte e Multifilamento
 
@@ -95,17 +181,33 @@ perfil de filamento decide se é exportado via a flag `export: true` no YAML
 (propagada para a coluna `export_enabled` no banco pelo build). Isso mantém a
 curadoria junto da fonte de verdade e evita listas paralelas hardcoded.
 
-Produtos atualmente habilitados para exportação (os em uso real):
+Produtos atualmente habilitados para exportação (curadoria deliberada, baseada
+no estoque físico real — 18 produtos):
 
-- Voolt3D PLA Velvet
-- Voolt3D PLA V-Silk
-- Voolt3D PETG HF
-- Sunlu PLA High Speed
-- Sunlu PETG HS (High Speed Matte)
-- Creality Hyper PLA
-- Creality CR PETG
-- Creality Hyper PETG
-- Elegoo PLA+
+| Produto | Material | YAML |
+|---------|----------|------|
+| Voolt3D PLA Velvet | PLA | voolt3d |
+| Voolt3D PLA High Speed | PLA | voolt3d |
+| Voolt3D PLA Macaron | PLA | voolt3d |
+| Voolt3D PLA V-Silk | PLA | voolt3d |
+| Voolt3D PLA Premium Outlet | PLA | voolt3d |
+| Voolt3D PLA EVO | PLA | voolt3d |
+| Voolt3D PLA CF | PLA-CF | voolt3d |
+| Voolt3D PETG HF | PETG | voolt3d |
+| Voolt3D ABS | ABS | voolt3d |
+| Voolt3D TPU | TPU | voolt3d |
+| Sunlu PLA High Speed | PLA | sunlu |
+| Sunlu PLA Matte | PLA | sunlu |
+| Sunlu PETG HS (High Speed Matte) | PETG | sunlu |
+| Creality Hyper PLA | PLA | creality |
+| Creality CR PETG | PETG | creality |
+| Creality Hyper PETG | PETG | creality |
+| Elegoo PLA+ | PLA | elegoo |
+| Elegoo PLA Pro | PLA | elegoo |
+
+Nota: a restrição de materiais especiais (PLA-CF/ABS/TPU só geram **processo**
+em 0.20mm Standard) aplica-se ao processo; não impede a exportação do
+**filamento** (Voolt3D PLA CF, ABS e TPU são exportados como filamento).
 
 Todos os demais perfis (mesmo dos fabricantes acima) ficam no banco
 (filament-data/) para referência, comparação e price tracking, mas **não** são
@@ -126,8 +228,11 @@ Destino: `~/filament-db/` com subpastas por slicer:
 │   ├── filament/   ← .json + .info
 │   └── process/    ← apenas .json
 ├── orca/
-│   ├── filament/   ← .json
-│   └── process/    ← .json
+│   ├── filament/   ← .json (K2 — layout legado na raiz)
+│   ├── process/    ← .json (K2 — layout legado na raiz)
+│   └── cc2/        ← devices adicionais em subpasta por id
+│       ├── filament/
+│       └── process/
 ├── backups/        ← zips com timestamp (últimos 10)
 └── diff/           ← perfis órfãos arquivados pelos scripts de inicialização
 ```
@@ -161,10 +266,12 @@ Cada slicer tem um script em `~/run-<slicer>.sh` que sincroniza perfis de `~/fil
 
 - `filament-data/*.yaml` — fonte de verdade para filamentos (inclui `max_volumetric_speed` por perfil)
 - `process-base/` — sistema de herança para perfis de processo
+- `process-base/devices/` — definição de cada impressora (caps, herança do
+  slicer, `compatible_printers`, sufixo de nome). Ver seção **Devices**.
 - `process-base/materials/` — velocidades base por tipo de material (sem MVS)
 - `process-base/profile_types/` — parâmetros estruturais por profile type
 - `process-base/layer_heights/` — overrides por layer height
-- `process-base/combinations.json` — define quais combinações são geradas
+- `process-base/combinations.json` — define quais combinações são geradas (por device)
 - `build.py` — pipeline que gera banco SQLite + exporta para Creality-Print/
 - `Creality-Print/` — output final para importar no slicer
 - `publish.sh` — build + copia para ~/filament-db/

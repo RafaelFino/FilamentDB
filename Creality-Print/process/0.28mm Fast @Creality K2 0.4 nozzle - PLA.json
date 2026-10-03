@@ -48,11 +48,11 @@
     "ironing_type": "no ironing",
     "seam_position": "nearest",
     "enable_prime_tower": "1",
-    "prime_tower_width": "25",
+    "prime_tower_width": "35",
     "prime_tower_brim_width": "3",
     "prime_volume": "30",
     "flush_into_infill": "1",
     "flush_into_objects": "1",
     "flush_into_support": "1",
-    "flush_multiplier": "0.5"
+    "flush_multiplier": "0.8"
 }

@@ -357,6 +357,7 @@ materials:
     - line: PLA Matte Line
       commercial_name: PLA Matte
       profile_name: Sunlu PLA Matte
+      export: true
       nozzle:
         initial: 210
         min: 195

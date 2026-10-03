@@ -108,6 +108,34 @@ lines:
   - Natural
   - Black
   - Gray
+- name: Outlet Line
+  description: PLA de troca de cor da linha de produção; cor imprevisível, base premium
+  positioning: aesthetic
+  difficulty: 40
+  target_use: general_printing
+  tier: premium
+  category: aesthetic
+  finish: variable
+  notes: >
+    Produto de troca de cor (cor indefinida, cada rolo é único). Mesma base dos
+    PLA tradicionais, posicionado como linha premium. Linhas com aditivos
+    (Stone/Wood/Cosmos) podem exigir bico >= 0.6mm; default do catálogo permanece 0.4mm.
+  color_options:
+  - Indefinida
+- name: EVO Line
+  description: PLA Standard+ com maior aderência e resistência entre camadas
+  positioning: balanced
+  difficulty: 40
+  target_use: general_printing
+  tier: standard
+  category: general
+  finish: standard
+  notes: >
+    PLA Standard+ reforçado na adesão entre camadas (peças mais resistentes),
+    baixo warping e boa fluidez. Compatível com impressoras convencionais e High
+    Speed. Specs oficiais Voolt3D.
+  color_options:
+  - Natural
 materials:
   PLA:
     profiles:
@@ -450,6 +478,7 @@ materials:
     - line: High Speed Line
       commercial_name: PLA High Speed
       profile_name: Voolt3D PLA High Speed
+      export: true
       nozzle:
         initial: 225
         min: 215
@@ -541,6 +570,7 @@ materials:
     - line: Macaron Line
       commercial_name: PLA Macaron
       profile_name: Voolt3D PLA Macaron
+      export: true
       nozzle:
         initial: 215
         min: 205
@@ -581,6 +611,87 @@ materials:
         dry_temp: 50
         dry_hours: 8.0
         recommended_use: Decorative models
+        status: Active
+    - line: Outlet Line
+      commercial_name: PLA Premium Outlet
+      profile_name: Voolt3D PLA Premium Outlet
+      export: true
+      notes: >
+        Produto de troca de cor: a cor é indefinida (cada rolo é único, pode vir de
+        qualquer linha Voolt3D). Mesma base dos PLA tradicionais, posicionado como
+        premium. Linhas com aditivos (Stone/Wood/Cosmos) podem pedir bico >= 0.6mm;
+        o default do catálogo permanece 0.4mm.
+      nozzle:
+        initial: 220
+        min: 190
+        max: 230
+      bed:
+        initial: 65
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 25
+      density: 1.24
+      glass_transition_temp: 55
+      recommendation: >
+        PLA premium a preço de outlet, para quem não se importa com a cor (ela é
+        imprevisível). Mesma base dos PLA tradicionais Voolt3D, MVS 25 aproveita a K2.
+        Quando escolher: protótipos e peças internas onde a cor não importa e o custo pesa.
+      color: Indefinida
+      surface_finish: Standard
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: VLT-POU-IND-1K
+        color_name: Indefinida
+        hex: '#9E9E9E'
+        rgb: [158, 158, 158]
+        finish: Variable
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
+        notes: Cor de troca de produção, imprevisível
+        status: Active
+    - line: EVO Line
+      commercial_name: PLA EVO
+      profile_name: Voolt3D PLA EVO
+      export: true
+      notes: >
+        PLA Standard+ com formulação para maior aderência e resistência entre camadas
+        (peças mais resistentes), baixo warping e boa fluidez. Compatível com impressoras
+        convencionais e High Speed. Specs oficiais Voolt3D (bico 0.4mm de referência).
+      nozzle:
+        initial: 215
+        min: 190
+        max: 230
+      bed:
+        initial: 65
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 25
+      density: 1.24
+      glass_transition_temp: 55
+      recommendation: >
+        PLA "Standard+": o meio-termo entre o Standard e os premium. Melhor adesão entre
+        camadas que o PLA comum, o que dá peças mais resistentes, com baixo warping e
+        fluidez boa (MVS 25). Quando escolher: peças de uso diário que pedem um pouco mais
+        de robustez que o PLA Standard, sem precisar partir para PETG.
+      color: Natural
+      surface_finish: Standard
+      drying_temperature: 50
+      drying_time: 8.0
+      variants:
+      - sku: VLT-EVO-NAT-1K
+        color_name: Branco Off White
+        hex: '#F5F0E8'
+        rgb: [245, 240, 232]
+        finish: Standard
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        recommended_use: General purpose
         status: Active
   PETG:
     profiles:
@@ -890,6 +1001,7 @@ materials:
     - line: Engineering Line
       commercial_name: ABS Standard
       profile_name: Voolt3D ABS
+      export: true
       nozzle:
         initial: 250
         min: 240
@@ -925,6 +1037,7 @@ materials:
     - line: Engineering Line
       commercial_name: PLA-CF
       profile_name: Voolt3D PLA CF
+      export: true
       nozzle:
         initial: 225
         min: 215
@@ -960,6 +1073,7 @@ materials:
     - line: Flexible Line
       commercial_name: TPU 95A
       profile_name: Voolt3D TPU
+      export: true
       nozzle:
         initial: 225
         min: 215
