@@ -22,6 +22,7 @@ RUN_GROUP="${FILAMENTDB_RUN_GROUP:-$RUN_USER}"
 LOG_PREFIX="[$(date '+%Y-%m-%d %H:%M:%S')]"
 
 log()  { echo "$LOG_PREFIX $*"; }
+warn() { echo "$LOG_PREFIX WARN: $*" >&2; }
 err()  { echo "$LOG_PREFIX ERROR: $*" >&2; }
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -65,12 +66,13 @@ BACKUP_DIR="${FILAMENTDB_BACKUP_DIR:-${REPO_DIR}/backups}"
 MAX_DB_BACKUPS="${MAX_DB_BACKUPS:-30}"
 WORKTREE_BACKUP_DIR="${BACKUP_DIR}/worktree"
 MAX_WORKTREE_BACKUPS="${MAX_WORKTREE_BACKUPS:-20}"
-# Dump JSON lógico do estoque (dado vivo e insubstituível) ANTES de qualquer
-# alteração do deploy. Diferente do dump via API no fim (estado pós-deploy),
-# este captura o ponto exato pré-deploy e via Python direto — robusto mesmo se
-# a API estiver fora. Nome com data-hora-segundos para restaurar o ponto exato.
-INVENTORY_JSON_PRE_DIR="${BACKUP_DIR}/inventory-json-pre"
-MAX_INVENTORY_JSON_PRE="${MAX_INVENTORY_JSON_PRE:-20}"
+# Dump JSON lógico do estoque (dado vivo e insubstituível). O deploy gera um
+# dump no INÍCIO (via scripts/dump_inventory.sh, lendo o banco direto, robusto
+# mesmo com a API fora) e já havia um no FIM (via API). Ambos caem em
+# backups/inventory-json/ com nome data-hora-segundos e rotação compartilhada,
+# formando o histórico de pontos restauráveis do estoque.
+INVENTORY_JSON_DIR="${BACKUP_DIR}/inventory-json"
+MAX_INVENTORY_JSON="${MAX_INVENTORY_JSON:-30}"
 
 backup_db() {
     local src="$1" label="$2"
@@ -143,27 +145,16 @@ snapshot_tracked_worktree() {
     fi
 }
 
-# Dump JSON lógico do ESTOQUE (dado vivo) antes de qualquer alteração do deploy.
-# Usa inventory.export_data() direto (sem HTTP) — lê o inventory.db atual e
-# gera o mesmo envelope versionado de GET /api/inventory/export, restaurável
-# via POST /api/inventory/import ou scripts/restore_inventory.sh.
-#
-# Executa ANTES do git pull/build: captura o estado exato pré-deploy. O backup
-# binário (.db via sqlite3) e o dump via API no fim continuam existindo; este é
-# a camada lógica, legível e diffável, do ponto de partida.
-snapshot_inventory_json() {
-    mkdir -p "$INVENTORY_JSON_PRE_DIR"
-    local ts dest
-    ts="$(date '+%Y%m%d_%H%M%S')"
-    dest="${INVENTORY_JSON_PRE_DIR}/inventory_${ts}.json"
-    # Gera e valida num passo só: o Python escreve o envelope e falha (exit!=0)
-    # se export_data() quebrar ou o resultado não tiver 'items'.
-    #
-    # Preferimos rodar como ${RUN_USER} (mesmo dono dos serviços e do
-    # inventory.db) para não criar artefato root. Se nem runuser nem sudo
-    # existirem, rodamos direto (o deploy já é root) e o chown -R posterior
-    # normaliza o dono — então nunca deixamos de gerar o dump por falta da
-    # ferramenta de troca de usuário.
+# Dump JSON lógico do estoque via scripts/dump_inventory.sh (fonte única da
+# lógica, lendo o banco direto, sem HTTP). Mantém o deploy DRY: a mesma
+# ferramenta que você roda na mão é a que roda aqui, no início e no fim.
+#   $1: rótulo para o log (ex.: "pré-deploy", "pós-deploy").
+# Executa como ${RUN_USER} (dono dos serviços e do inventory.db) para não criar
+# artefato root; fallback runuser → sudo -u → direto (o deploy é root e o
+# chown -R posterior normaliza o dono). Nunca aborta o deploy: o backup binário
+# do inventory.db (via sqlite3) é a garantia primária; este é camada extra.
+dump_inventory_json() {
+    local label="$1"
     local -a RUN_AS
     if command -v runuser >/dev/null 2>&1; then
         RUN_AS=(runuser -u "$RUN_USER" --)
@@ -172,41 +163,22 @@ snapshot_inventory_json() {
     else
         RUN_AS=()
     fi
-    if "${RUN_AS[@]}" python3 - "$dest" <<'PY' 2>/dev/null
-import json, sys
-sys.path.insert(0, ".")
-from src import inventory
-data = inventory.export_data()
-if "items" not in data:
-    sys.exit("export_data sem 'items'")
-with open(sys.argv[1], "w", encoding="utf-8") as f:
-    json.dump(data, f, ensure_ascii=False, indent=2)
-PY
-    then
-        local n size
-        n=$(python3 -c "import json;print(json.load(open('$dest')).get('count','?'))" 2>/dev/null || echo '?')
-        size=$(du -h "$dest" 2>/dev/null | cut -f1)
-        log "Dump JSON do estoque (pré-deploy) → ${dest} (${n} itens, ${size})"
+    # dump_inventory.sh grava em <BACKUP_DIR>/inventory-json/ — passamos o mesmo
+    # BACKUP_DIR do deploy, então o arquivo cai em INVENTORY_JSON_DIR com a
+    # rotação de MAX_INVENTORY_JSON.
+    if BACKUP_DIR="$BACKUP_DIR" \
+       MAX_JSON_BACKUPS="$MAX_INVENTORY_JSON" \
+       "${RUN_AS[@]}" "${REPO_DIR}/scripts/dump_inventory.sh" >/dev/null 2>&1; then
+        log "Dump JSON do estoque (${label}) gerado em ${INVENTORY_JSON_DIR}/."
     else
-        rm -f "$dest" 2>/dev/null || true
-        # Não aborta o deploy: o backup binário do inventory.db (via sqlite3,
-        # feito logo abaixo) é a garantia primária. Este dump é camada extra.
-        err "Dump JSON do estoque (pré-deploy) FALHOU — seguindo com backup binário do inventory.db."
-    fi
-    local count
-    count=$(find "$INVENTORY_JSON_PRE_DIR" -maxdepth 1 -name "inventory_*.json" -type f 2>/dev/null | wc -l)
-    if [ "$count" -gt "$MAX_INVENTORY_JSON_PRE" ]; then
-        find "$INVENTORY_JSON_PRE_DIR" -maxdepth 1 -name "inventory_*.json" -type f -printf '%T+ %p\n' \
-            | sort | head -n "$((count - MAX_INVENTORY_JSON_PRE))" | cut -d' ' -f2- \
-            | while read -r old; do rm -f "$old"; done
-        log "Rotação dump JSON estoque (pré): mantidos últimos ${MAX_INVENTORY_JSON_PRE}."
+        err "Dump JSON do estoque (${label}) FALHOU — backup binário do inventory.db permanece a garantia."
     fi
 }
 
 mkdir -p "$BACKUP_DIR"
 
 log "Dump JSON lógico do estoque (dado vivo) — primeiro, antes de tudo..."
-snapshot_inventory_json
+dump_inventory_json "pré-deploy"
 
 log "Fazendo backup dos bancos..."
 backup_db "$INVENTORY_DB" "inventory"
@@ -375,35 +347,11 @@ if ! curl -fsS --max-time 10 "${API_LOCAL_URL}/health/ready" >/dev/null; then
 fi
 log "API health e ready OK em ${API_LOCAL_URL}."
 
-API_URL="${FILAMENTDB_API_URL:-http://localhost:5000}"
-JSON_BACKUP_DIR="${BACKUP_DIR}/inventory-json"
-MAX_JSON_BACKUPS="${MAX_JSON_BACKUPS:-30}"
-
-if command -v curl >/dev/null 2>&1; then
-    mkdir -p "$JSON_BACKUP_DIR"
-    ts_json="$(date '+%Y%m%d_%H%M%S')"
-    json_dest="${JSON_BACKUP_DIR}/inventory_${ts_json}.json"
-    if curl -fsS --max-time 15 "${API_URL}/api/inventory/export" -o "$json_dest" 2>/dev/null; then
-        if python3 -c "import json,sys; d=json.load(open('$json_dest')); sys.exit(0 if 'items' in d else 1)" 2>/dev/null; then
-            log "Dump JSON do estoque → ${json_dest}"
-        else
-            err "Export JSON retornou conteúdo inesperado. Descartando ${json_dest}."
-            rm -f "$json_dest"
-        fi
-    else
-        rm -f "$json_dest" 2>/dev/null || true
-        err "Export JSON do estoque falhou (API em ${API_URL} não respondeu). Backup binário do início permanece válido."
-    fi
-    json_count=$(find "$JSON_BACKUP_DIR" -maxdepth 1 -name "inventory_*.json" -type f 2>/dev/null | wc -l)
-    if [ "$json_count" -gt "$MAX_JSON_BACKUPS" ]; then
-        find "$JSON_BACKUP_DIR" -maxdepth 1 -name "inventory_*.json" -type f -printf '%T+ %p\n' \
-            | sort | head -n "$((json_count - MAX_JSON_BACKUPS))" | cut -d' ' -f2- \
-            | while read -r old; do rm -f "$old"; done
-        log "Rotação dumps JSON: mantidos últimos ${MAX_JSON_BACKUPS}."
-    fi
-else
-    err "curl ausente — dump JSON do estoque pulado (backup binário permanece válido)."
-fi
+# Dump JSON do estoque PÓS-deploy (estado após o build/restart), via o mesmo
+# scripts/dump_inventory.sh — lendo o banco direto, sem depender de HTTP/API.
+# Cai na mesma pasta inventory-json/ com rotação compartilhada, formando o
+# histórico de pontos restauráveis (pré e pós de cada deploy).
+dump_inventory_json "pós-deploy"
 
 BUILD_INFO_PATH="${FILAMENTDB_BUILD_INFO_PATH:-${REPO_DIR}/build-info.env}"
 CURRENT_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"

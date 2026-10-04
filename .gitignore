@@ -17,6 +17,12 @@ ENV/
 data/*.db
 !data/price-history.db
 
+# Dumps JSON soltos em data/ (ex.: um backup gerado por engano com
+# dump_inventory.sh sem BACKUP_DIR) não devem ser versionados — backups vão
+# para backups/. Exceção: o exemplo versionado do formato de export do estoque.
+data/*.json
+!data/inventory-example.json
+
 # Legacy: filament.db must live in data/ (via DB_PATH), never at the repo root.
 # A stale root-level copy previously broke the price collector validation.
 /filament.db

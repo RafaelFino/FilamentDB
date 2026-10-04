@@ -481,12 +481,12 @@ sequenceDiagram
     participant Git
     participant Build as build.py
     participant Sys as systemd
-    participant API as Flask API
 
     Cron->>Sh: executa (como root)
     Sh->>Sh: source config.env (paths, auth)
-    Sh->>Sh: backup inventory.db + filament.db (sqlite3 .backup, rotação)
-    Sh->>Git: limpa artefatos + git pull --ff-only
+    Sh->>Sh: dump JSON estoque pré-deploy (dump_inventory.sh, sem HTTP)
+    Sh->>Sh: backup bancos (sqlite3 .backup) + snapshot zip da árvore tracked
+    Sh->>Git: limpa artefatos de export (cirúrgico) + git pull --ff-only (retry)
     Sh->>Build: python3 build.py
     alt build falha (ex: material-data ausente)
         Build-->>Sh: exit != 0
@@ -494,8 +494,8 @@ sequenceDiagram
     else build ok
         Sh->>Sh: valida filament.db (SELECT 1 FROM filament_profiles)
         Sh->>Sys: systemctl restart filamentdb.service
-        Sys-->>Sh: is-active?
-        Sh->>API: GET /api/inventory/export (dump JSON best-effort)
+        Sys-->>Sh: is-active? + health/ready da API
+        Sh->>Sh: dump JSON estoque pós-deploy (dump_inventory.sh)
         Sh->>Sh: grava build-info.env (updated_at, commit)
     end
 ```
@@ -545,19 +545,42 @@ O script roda como root (precisa de `systemctl restart`) e executa, em ordem, co
 
 1. **Carrega `config.env`** — garante que backup e serviço usem exatamente os mesmos paths.
 2. **Sanidade da auth** — se `FILAMENTDB_AUTH_ENABLED` está ligada mas `FILAMENTDB_WRITERS` está vazia, alerta (ninguém poderia escrever), sem bloquear.
-3. **Backup dos bancos** — `sqlite3 .backup` (cópia consistente mesmo com o serviço ativo; fallback `cp`). Inventário primeiro (dado insubstituível). Rotação mantém os últimos `MAX_DB_BACKUPS` (30).
-4. **Limpeza + `git pull --ff-only origin main`** — remove `filament.db` (regenerável) antes do pull para garantir fast-forward limpo.
-5. **Instala os units systemd do repo** — `filamentdb.service` e `filamentdb-api.service` são copiados de `systemd/` para `/etc/systemd/system/` (deploy self-healing: um servidor novo recebe as units pelo próprio pull).
-6. **Normaliza o dono para `${FILAMENTDB_RUN_USER}`** (default `fino`) — `chown -R` no repositório. O deploy roda como root, mas os dois serviços e os bancos operam como esse usuário; sem isso o `git pull`/`build` deixariam tudo `root:root` e a API (`User=fino`) falharia ao escrever em `price-history.db`.
-7. **`python3 build.py`** — regenera o catálogo. Se falhar (ex.: `material-data/materials.yaml` ausente), **aborta sem reiniciar**, deixando o serviço no estado anterior em vez de subir quebrado.
-8. **Validação do banco** — `SELECT 1 FROM filament_profiles` antes de reiniciar. Barreira final contra "no such table".
-9. **Importa snapshots de preços** — `import_price_data.py` projeta `data/price-data/*.json` em `price-history.db` (idempotente).
-10. **Renormaliza o dono** — build e import rodaram como root e recriaram bancos; novo `chown -R` antes de subir os serviços.
-11. **`systemctl restart`** de ambos os serviços + verificação `is-active` e health/ready da API.
-12. **Dump JSON do estoque** — `GET /api/inventory/export` via `curl` (best-effort, após o serviço subir), com rotação própria. Complementa o backup binário.
-13. **Grava `build-info.env`** — só no fim: se qualquer etapa abortou, o arquivo reflete a última atualização *bem-sucedida* anterior. A UI lê via `/api/build-info`.
+3. **Dump JSON do estoque (pré-deploy)** — `scripts/dump_inventory.sh` lê o `inventory.db` **direto** (sem HTTP, robusto mesmo com a API fora) e grava `backups/inventory-json/inventory_<data-hora-segundos>.json` — o envelope versionado restaurável via `scripts/restore_inventory.sh`. É a primeira coisa a rodar: captura o estado exato *antes* de qualquer alteração. O estoque é o dado vivo e insubstituível.
+4. **Backup binário dos bancos** — `sqlite3 .backup` (cópia consistente mesmo com o serviço ativo; fallback `cp`). Inventário primeiro. Rotação mantém os últimos `MAX_DB_BACKUPS` (30).
+5. **Snapshot da working tree** — zipa **só os arquivos rastreados** (`git ls-files`) em `backups/worktree/worktree_<ts>.zip` (inclui `inventory.db`/`price-history.db`, que são tracked), rotação `MAX_WORKTREE_BACKUPS` (20). Rede de segurança antes de qualquer descarte.
+6. **Auto-recuperação de artefatos + `git pull --ff-only origin main`** — o `build.py` reescreve os `.info` dos exports com timestamp a cada run, deixando a árvore "suja" e travando o pull. O script descarta **cirurgicamente** só os artefatos de export (`Creality-Print/`, `OrcaSlicer/`) — regeneráveis — e faz o pull; se ainda falhar, re-limpa e tenta uma segunda vez. Deliberadamente **não** usa `git reset --hard` global (preservaria mudanças locais fora dos exports, inclusive os bancos tracked).
+7. **Instala os units systemd do repo** — `filamentdb.service` e `filamentdb-api.service` são copiados de `systemd/` para `/etc/systemd/system/` (deploy self-healing: um servidor novo recebe as units pelo próprio pull).
+8. **Normaliza o dono para `${FILAMENTDB_RUN_USER}`** (default `fino`) — `chown -R` no repositório. O deploy roda como root, mas os dois serviços e os bancos operam como esse usuário; sem isso o `git pull`/`build` deixariam tudo `root:root` e a API (`User=fino`) falharia ao escrever em `price-history.db`.
+9. **`python3 build.py`** — regenera o catálogo. Se falhar (ex.: `material-data/materials.yaml` ausente), **aborta sem reiniciar**, deixando o serviço no estado anterior em vez de subir quebrado.
+10. **Validação do banco** — `SELECT 1 FROM filament_profiles` antes de reiniciar. Barreira final contra "no such table".
+11. **Importa snapshots de preços** — `import_price_data.py` projeta `data/price-data/*.json` em `price-history.db` (idempotente).
+12. **Renormaliza o dono** — build e import rodaram como root e recriaram bancos; novo `chown -R` antes de subir os serviços.
+13. **`systemctl restart`** de ambos os serviços + verificação `is-active` e health/ready da API.
+14. **Dump JSON do estoque (pós-deploy)** — de novo via `scripts/dump_inventory.sh` (mesma ferramenta, sem HTTP), capturando o estado após o build/restart na mesma pasta `backups/inventory-json/`.
+15. **Grava `build-info.env`** — só no fim: se qualquer etapa abortou, o arquivo reflete a última atualização *bem-sucedida* anterior. A UI lê via `/api/build-info`.
 
-A robustez do script vem de fazer backup **antes** de qualquer alteração e de nunca reiniciar com banco inválido.
+A robustez do script vem de três princípios: fazer backup (binário, lógico e snapshot da árvore) **antes** de qualquer alteração; auto-recuperar de artefatos de build sujos sem `reset --hard` global; e nunca reiniciar com banco inválido.
+
+### Backup e restauração do estoque (manual)
+
+O estoque tem backup lógico independente do deploy, pela mesma ferramenta:
+
+```bash
+# Dump JSON do estoque lendo o banco direto (não precisa da API no ar)
+./scripts/dump_inventory.sh                 # → backups/inventory-json/inventory_<ts>.json
+./scripts/dump_inventory.sh -o estoque.json # arquivo de saída fixo
+
+# Dump via API (servidor remoto no ar)
+./scripts/backup_inventory.sh               # GET /api/inventory/export
+BASE_URL=https://meu-servidor ./scripts/backup_inventory.sh
+
+# Restaurar (upsert idempotente por uid; --replace para espelho)
+./scripts/restore_inventory.sh backups/inventory-json/inventory_<ts>.json
+```
+
+O formato é o envelope versionado de `GET /api/inventory/export`
+(`{schema_version, exported_at, count, items}`). Um exemplo do formato está
+versionado em `data/inventory-example.json`.
 
 > **Modelo de usuário:** ambos os serviços (`filamentdb.service` e `filamentdb-api.service`) rodam como `fino` (configurável via `FILAMENTDB_RUN_USER`/`FILAMENTDB_RUN_GROUP` no `config.env`). Como escrevem nos mesmos bancos em `data/`, precisam ser o mesmo usuário — misturar root e `fino` causa `PermissionError` na ingestão de preços. Nunca rode `run.sh`, `build.py` ou `run-price-pipeline.sh` com `sudo`: isso deixa artefatos `root:root` e quebra os serviços.
 
@@ -617,15 +640,21 @@ FilamentDB/
 ├── material-data/           # materials.yaml — propriedades dos polímeros (obrigatório)
 ├── process-base/            # sistema de herança de processos
 │   ├── base.json            # config base (suporte, prime tower, flush)
-│   ├── combinations.json    # quais perfis gerar
+│   ├── combinations.json    # quais perfis gerar (por device)
+│   ├── devices/             # alvos de impressão (K2, CC2): caps, herança, compat.
 │   ├── layer_heights/       # override por layer height
 │   ├── materials/           # velocidades alvo por material
 │   └── profile_types/       # estrutura por profile type
+├── data/                    # bancos gerados + inventory-example.json (formato de export)
 ├── src/                     # aplicação Flask
 ├── templates/ static/       # dashboard web
 ├── Creality-Print/          # output exportado (.json + .info)
 ├── OrcaSlicer/              # output exportado (.json)
-├── scripts/update-server.sh # deploy (git pull + build + restart)
+├── scripts/
+│   ├── update-server.sh         # deploy (backup → pull → build → restart)
+│   ├── dump_inventory.sh        # dump JSON do estoque lendo o banco (sem HTTP)
+│   ├── backup_inventory.sh      # dump JSON do estoque via API
+│   └── restore_inventory.sh     # restaura o estoque de um dump
 ├── build.py                 # pipeline unificado
 ├── publish.sh  run.sh       # publicação local / servidor de dev
 └── config.env.example
