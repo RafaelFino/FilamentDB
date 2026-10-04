@@ -63,6 +63,14 @@ INVENTORY_DB="${FILAMENT_INVENTORY_DB_PATH:-${FILAMENT_DB%/*}/inventory.db}"
 PRICE_HISTORY_DB="${FILAMENT_PRICE_HISTORY_DB_PATH:-${FILAMENT_DB%/*}/price-history.db}"
 BACKUP_DIR="${FILAMENTDB_BACKUP_DIR:-${REPO_DIR}/backups}"
 MAX_DB_BACKUPS="${MAX_DB_BACKUPS:-30}"
+WORKTREE_BACKUP_DIR="${BACKUP_DIR}/worktree"
+MAX_WORKTREE_BACKUPS="${MAX_WORKTREE_BACKUPS:-20}"
+# Dump JSON lógico do estoque (dado vivo e insubstituível) ANTES de qualquer
+# alteração do deploy. Diferente do dump via API no fim (estado pós-deploy),
+# este captura o ponto exato pré-deploy e via Python direto — robusto mesmo se
+# a API estiver fora. Nome com data-hora-segundos para restaurar o ponto exato.
+INVENTORY_JSON_PRE_DIR="${BACKUP_DIR}/inventory-json-pre"
+MAX_INVENTORY_JSON_PRE="${MAX_INVENTORY_JSON_PRE:-20}"
 
 backup_db() {
     local src="$1" label="$2"
@@ -91,25 +99,168 @@ backup_db() {
     fi
 }
 
-log "Fazendo backup dos bancos..."
+# Snapshot da working tree ANTES de qualquer descarte (git checkout/clean no
+# deploy). Rede de segurança: se a limpeza algum dia remover algo que importava
+# (ex.: inventory.db e data/price-history.db são TRACKED — o estoque é o dado
+# mais precioso), este zip preserva o estado exato de antes.
+#
+# Cuidados pedidos:
+#   - só o que o git RASTREIA (git ls-files): nada de .venv/, caches, nem o
+#     próprio backups/ — o que também evita o zip-dentro-do-zip recursivo, já
+#     que backups/ não é tracked;
+#   - inclui os bancos tracked (inventory.db, data/price-history.db) — o dado
+#     precioso entra na rede de segurança;
+#   - rotação dos últimos MAX_WORKTREE_BACKUPS (default 20) para não lotar disco.
+snapshot_tracked_worktree() {
+    if ! command -v zip >/dev/null 2>&1; then
+        err "zip ausente — snapshot da working tree PULADO (backup dos bancos permanece válido)."
+        return 0
+    fi
+    mkdir -p "$WORKTREE_BACKUP_DIR"
+    local ts dest
+    ts="$(date '+%Y%m%d_%H%M%S')"
+    dest="${WORKTREE_BACKUP_DIR}/worktree_${ts}.zip"
+    # git ls-files: um arquivo rastreado por linha. `zip -@` lê essa lista do
+    # stdin (uma entrada por linha) — lida corretamente com espaços nos nomes
+    # dos perfis (ex.: "...Standard @Creality K2 0.4 nozzle - PLA.json"); só
+    # falharia com newline literal no nome, que não ocorre neste repo.
+    if git ls-files | zip -q "$dest" -@ 2>/dev/null; then
+        local size
+        size=$(du -h "$dest" 2>/dev/null | cut -f1)
+        log "Snapshot da working tree (tracked) → ${dest} (${size})"
+    else
+        rm -f "$dest" 2>/dev/null || true
+        err "Snapshot da working tree FALHOU. Abortando antes de descartar qualquer coisa."
+        exit 1
+    fi
+    local count
+    count=$(find "$WORKTREE_BACKUP_DIR" -maxdepth 1 -name "worktree_*.zip" -type f 2>/dev/null | wc -l)
+    if [ "$count" -gt "$MAX_WORKTREE_BACKUPS" ]; then
+        find "$WORKTREE_BACKUP_DIR" -maxdepth 1 -name "worktree_*.zip" -type f -printf '%T+ %p\n' \
+            | sort | head -n "$((count - MAX_WORKTREE_BACKUPS))" | cut -d' ' -f2- \
+            | while read -r old; do rm -f "$old"; done
+        log "Rotação worktree: mantidos últimos ${MAX_WORKTREE_BACKUPS}."
+    fi
+}
+
+# Dump JSON lógico do ESTOQUE (dado vivo) antes de qualquer alteração do deploy.
+# Usa inventory.export_data() direto (sem HTTP) — lê o inventory.db atual e
+# gera o mesmo envelope versionado de GET /api/inventory/export, restaurável
+# via POST /api/inventory/import ou scripts/restore_inventory.sh.
+#
+# Executa ANTES do git pull/build: captura o estado exato pré-deploy. O backup
+# binário (.db via sqlite3) e o dump via API no fim continuam existindo; este é
+# a camada lógica, legível e diffável, do ponto de partida.
+snapshot_inventory_json() {
+    mkdir -p "$INVENTORY_JSON_PRE_DIR"
+    local ts dest
+    ts="$(date '+%Y%m%d_%H%M%S')"
+    dest="${INVENTORY_JSON_PRE_DIR}/inventory_${ts}.json"
+    # Gera e valida num passo só: o Python escreve o envelope e falha (exit!=0)
+    # se export_data() quebrar ou o resultado não tiver 'items'.
+    #
+    # Preferimos rodar como ${RUN_USER} (mesmo dono dos serviços e do
+    # inventory.db) para não criar artefato root. Se nem runuser nem sudo
+    # existirem, rodamos direto (o deploy já é root) e o chown -R posterior
+    # normaliza o dono — então nunca deixamos de gerar o dump por falta da
+    # ferramenta de troca de usuário.
+    local -a RUN_AS
+    if command -v runuser >/dev/null 2>&1; then
+        RUN_AS=(runuser -u "$RUN_USER" --)
+    elif command -v sudo >/dev/null 2>&1; then
+        RUN_AS=(sudo -u "$RUN_USER")
+    else
+        RUN_AS=()
+    fi
+    if "${RUN_AS[@]}" python3 - "$dest" <<'PY' 2>/dev/null
+import json, sys
+sys.path.insert(0, ".")
+from src import inventory
+data = inventory.export_data()
+if "items" not in data:
+    sys.exit("export_data sem 'items'")
+with open(sys.argv[1], "w", encoding="utf-8") as f:
+    json.dump(data, f, ensure_ascii=False, indent=2)
+PY
+    then
+        local n size
+        n=$(python3 -c "import json;print(json.load(open('$dest')).get('count','?'))" 2>/dev/null || echo '?')
+        size=$(du -h "$dest" 2>/dev/null | cut -f1)
+        log "Dump JSON do estoque (pré-deploy) → ${dest} (${n} itens, ${size})"
+    else
+        rm -f "$dest" 2>/dev/null || true
+        # Não aborta o deploy: o backup binário do inventory.db (via sqlite3,
+        # feito logo abaixo) é a garantia primária. Este dump é camada extra.
+        err "Dump JSON do estoque (pré-deploy) FALHOU — seguindo com backup binário do inventory.db."
+    fi
+    local count
+    count=$(find "$INVENTORY_JSON_PRE_DIR" -maxdepth 1 -name "inventory_*.json" -type f 2>/dev/null | wc -l)
+    if [ "$count" -gt "$MAX_INVENTORY_JSON_PRE" ]; then
+        find "$INVENTORY_JSON_PRE_DIR" -maxdepth 1 -name "inventory_*.json" -type f -printf '%T+ %p\n' \
+            | sort | head -n "$((count - MAX_INVENTORY_JSON_PRE))" | cut -d' ' -f2- \
+            | while read -r old; do rm -f "$old"; done
+        log "Rotação dump JSON estoque (pré): mantidos últimos ${MAX_INVENTORY_JSON_PRE}."
+    fi
+}
+
 mkdir -p "$BACKUP_DIR"
+
+log "Dump JSON lógico do estoque (dado vivo) — primeiro, antes de tudo..."
+snapshot_inventory_json
+
+log "Fazendo backup dos bancos..."
 backup_db "$INVENTORY_DB" "inventory"
 backup_db "$FILAMENT_DB" "filament"
 backup_db "$PRICE_HISTORY_DB" "price-history"
+
+log "Snapshot da working tree (arquivos tracked) antes de qualquer descarte..."
+snapshot_tracked_worktree
 
 log "Limpando artefatos de build (regenerados pelo build.py)..."
 git rm --cached --quiet filament.db 2>/dev/null || true
 rm -f filament.db 2>/dev/null || true
 git checkout -- filament.db 2>/dev/null || true
 
+# Artefatos de export (Creality-Print/, OrcaSlicer/) são versionados mas o
+# build.py os reescreve a cada execução — em especial os .info, cujos campos
+# setting_id/updated_time carregam o timestamp do build. No server, isso deixa
+# a árvore "suja" nesses arquivos e fazia o `git pull --ff-only` abortar com
+# "local changes would be overwritten". Como esses artefatos são 100%
+# regeneráveis pelo build logo abaixo, descartamos as modificações locais DELES
+# (cirurgicamente, só os paths de export rastreados) antes do pull.
+#
+# Deliberadamente NÃO usamos `git reset --hard` global aqui: isso apagaria
+# qualquer mudança local, inclusive em código/config que não deveria sumir num
+# deploy automático. O checkout restrito aos diretórios de export resolve o
+# bloqueio real sem esse risco.
+EXPORT_PATHS=(Creality-Print OrcaSlicer)
+dirty_exports=$(git status --porcelain -- "${EXPORT_PATHS[@]}" 2>/dev/null | wc -l)
+if [ "$dirty_exports" -gt 0 ]; then
+    log "Descartando ${dirty_exports} artefato(s) de export modificado(s) localmente (regeneráveis)..."
+    # Restaura os rastreados ao estado do commit (resolve o conflito do pull)...
+    git checkout -- "${EXPORT_PATHS[@]}" 2>/dev/null || true
+    # ...e remove export não rastreado (ex.: subpastas de device antigas) para
+    # não acumular lixo que o build atual não geraria mais.
+    git clean -fdq -- "${EXPORT_PATHS[@]}" 2>/dev/null || true
+fi
+
 log "Verificando atualizações..."
 BEFORE=$(git rev-parse HEAD)
-git pull --ff-only origin main 2>&1 || {
-    err "git pull falhou. Se for erro de autenticação, o remote pode ter virado"
-    err "  privado/SSH sem credencial disponível ao usuário do deploy."
-    err "  Remote atual: $(git remote get-url origin 2>/dev/null || echo '?')"
-    exit 1
-}
+# Em caso de bloqueio inesperado por artefatos de export (ex.: um .info que
+# escapou da limpeza acima), tenta uma segunda vez após re-restaurar os paths
+# de export — mantendo a limpeza cirúrgica, sem reset --hard global.
+if ! git pull --ff-only origin main 2>&1; then
+    warn "git pull falhou na 1a tentativa; re-limpando artefatos de export e repetindo..."
+    git checkout -- "${EXPORT_PATHS[@]}" 2>/dev/null || true
+    git clean -fdq -- "${EXPORT_PATHS[@]}" 2>/dev/null || true
+    if ! git pull --ff-only origin main 2>&1; then
+        err "git pull falhou. Possíveis causas: mudanças locais FORA dos artefatos"
+        err "  de export (em código/config — investigue com 'git status'), ou erro"
+        err "  de autenticação (remote privado/SSH sem credencial no deploy)."
+        err "  Remote atual: $(git remote get-url origin 2>/dev/null || echo '?')"
+        exit 1
+    fi
+fi
 AFTER=$(git rev-parse HEAD)
 
 if [ "$BEFORE" = "$AFTER" ]; then
