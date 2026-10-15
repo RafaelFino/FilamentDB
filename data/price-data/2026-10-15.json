@@ -1,0 +1,154 @@
+{
+  "schema_version": 2,
+  "snapshot_date": "2026-10-15",
+  "collected_at": "2026-10-15T09:24:56.818557-03:00",
+  "collector": "FilamentDB API-driven AI Price Agent",
+  "collector_version": "2.0",
+  "scope": {
+    "tracked_profiles": 27,
+    "sources": "API /v1/agent/instructions"
+  },
+  "collection": [
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "found",
+      "offers_found": 2,
+      "notes": "Pesquisa agentic via groq."
+    },
+    {
+      "filament_key": "petg|creality|cr petg line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "error",
+      "offers_found": 0,
+      "notes": "Todos os agentes falharam: gemini: chamada ao LLM falhou: Error code: 402 - [{'error': {'code': 402, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}]"
+    },
+    {
+      "filament_key": "petg|creality|hyper petg line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "error",
+      "offers_found": 0,
+      "notes": "Todos os agentes falharam: groq: chamada ao LLM falhou: Error code: 400 - {'error': {'message': 'Failed to parse tool call arguments as JSON', 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '{\"name\": \"submit_offer\", \"arguments\": {\"filament_key\":\"petg|creality|hyper petg line\",\"store\":\"Amazon.com.br\",\"title\":\"Creality Filamento PETG, Hyper 1,75 mm 1 kg PETG\",\"url\":\"https://www.amazon.com.br/Creality-Filamento-PETG-Hyper-dimensional/dp/B0F9PSLW7M\",\"price\":??,\"price_basis\":\"total\",\"unit_weight_g\":??,\"quantity\":1,\"availability\":\"em estoque\",\"currency\":\"BRL\"}\"}'}}"
+    },
+    {
+      "filament_key": "petg|f3d|industrial line",
+      "color": "Natural",
+      "store": "agentic",
+      "status": "found",
+      "offers_found": 2,
+      "notes": "Pesquisa agentic via groq."
+    },
+    {
+      "filament_key": "petg|national 3d|petg line",
+      "color": "Black",
+      "store": "agentic",
+      "status": "found",
+      "offers_found": 1,
+      "notes": "Pesquisa agentic via groq."
+    },
+    {
+      "filament_key": "petg|sunlu|petg high speed matte line",
+      "color": "Black",
+      "store": "agentic",
+      "status": "error",
+      "offers_found": 0,
+      "notes": "Todos os agentes falharam: groq: chamada ao LLM falhou: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01m186s046eehtpkcrc6q808zw` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 197830, Requested 3622. Please try again in 10m27.264s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}"
+    }
+  ],
+  "offers": [
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "3DLAB",
+      "url": "https://3dlab.com.br/produto/filamento-petg-preto/",
+      "title": "Filamento PETG Preto Eclipse - 3D Lab",
+      "price": 69.9,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 69.9,
+      "seller": "3DLAB",
+      "available": true,
+      "deliverable_to_sao_paulo": true,
+      "source": "3DLAB",
+      "international": false,
+      "price_pending_shipping_taxes": false
+    },
+    {
+      "filament_key": "petg|3dlab|petg line",
+      "store": "3DLAB",
+      "url": "https://3dlab.com.br/produto/filamento-petg-low-cost/",
+      "title": "Filamento PETG Low Cost - 3DLAB",
+      "price": 72.73,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 72.73,
+      "seller": "3DLAB",
+      "available": true,
+      "deliverable_to_sao_paulo": true,
+      "source": "3DLAB",
+      "international": false,
+      "price_pending_shipping_taxes": false
+    },
+    {
+      "filament_key": "petg|f3d|industrial line",
+      "store": "Mercado Livre",
+      "url": "https://www.mercadolivre.com.br/filamento-petg-premium-1kg-amarelo-175mm-f3d/p/MLB41765226",
+      "title": "Filamento Petg Premium 1kg Amarelo 1.75mm F3d",
+      "price": 139.0,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 139.0,
+      "seller": "F3D Filaments",
+      "available": true,
+      "deliverable_to_sao_paulo": true,
+      "source": "Mercado Livre",
+      "international": false,
+      "price_pending_shipping_taxes": false
+    },
+    {
+      "filament_key": "petg|f3d|industrial line",
+      "store": "Loja 3D Prints",
+      "url": "https://loja.3dprints.com.br/produtos/filamento-petg-f3d-1kg-branco/",
+      "title": "Filamento PETG F3D 1kg Branco",
+      "price": 129.0,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 129.0,
+      "seller": "F3D Filaments",
+      "available": true,
+      "deliverable_to_sao_paulo": true,
+      "source": "Loja 3D Prints",
+      "international": false,
+      "price_pending_shipping_taxes": false
+    },
+    {
+      "filament_key": "petg|national 3d|petg line",
+      "store": "Lojanational3d.com.br",
+      "url": "https://www.lojanational3d.com.br/filamento-petgnatural175mm1kg/prod-8850000/",
+      "title": "PETG 1,75mm 1kg | PETG Line – National 3D",
+      "price": 119.9,
+      "currency": "BRL",
+      "quantity": 1,
+      "unit_weight_g": 1000.0,
+      "price_basis": "unit",
+      "total_price": 119.9,
+      "seller": "National 3D",
+      "available": true,
+      "deliverable_to_sao_paulo": true,
+      "source": "Lojanational3d.com.br",
+      "international": false,
+      "price_pending_shipping_taxes": false
+    }
+  ],
+  "notes": "Snapshot é a fonte de verdade: ofertas coletadas pelos agentes, validadas offline e publicadas na API por publish_price_snapshot.py."
+}
