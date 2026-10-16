@@ -32,16 +32,16 @@
     "is_custom_defined": "0",
     "name": "PLA - Elegoo - Pro",
     "nozzle_temperature": [
-        "220"
+        "200"
     ],
     "nozzle_temperature_initial_layer": [
-        "220"
+        "200"
     ],
     "nozzle_temperature_range_low": [
-        "210"
+        "190"
     ],
     "nozzle_temperature_range_high": [
-        "235"
+        "215"
     ],
     "textured_plate_temp": [
         "60"

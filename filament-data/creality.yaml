@@ -137,7 +137,7 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.0
-      max_volumetric_speed: 23
+      max_volumetric_speed: 20
       density: 1.24
       tensile_strength_mpa: 52.99
       elongation_at_break_pct: 6.3
@@ -357,10 +357,10 @@ materials:
         min: 240
         max: 260
       bed:
-        initial: 85
-        temp: 85
+        initial: 80
+        temp: 80
       flow_ratio: 0.97
-      max_volumetric_speed: 23
+      max_volumetric_speed: 18
       recommendation: >
         PETG de alta velocidade da Creality (MVS 23) — aproveita a K2 para peças funcionais rápidas.
         Mesma resistência do CR PETG, mas com fluxo bem maior. Requer bed mais quente (85°C).

@@ -404,9 +404,9 @@ materials:
       profile_name: Elegoo PLA Pro
       export: true
       nozzle:
-        initial: 220
-        min: 210
-        max: 235
+        initial: 200
+        min: 190
+        max: 215
       bed:
         initial: 60
         temp: 60
@@ -443,7 +443,7 @@ materials:
       profile_name: Elegoo Rapid PLA+
       nozzle:
         initial: 220
-        min: 190
+        min: 200
         max: 230
       bed:
         initial: 50

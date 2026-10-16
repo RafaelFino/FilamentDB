@@ -4,7 +4,7 @@
         "0.97"
     ],
     "filament_max_volumetric_speed": [
-        "23.0"
+        "18.0"
     ],
     "filament_settings_id": [
         "PETG - Creality - Hyper PETG"
@@ -23,10 +23,10 @@
     ],
     "from": "User",
     "hot_plate_temp": [
-        "85"
+        "80"
     ],
     "hot_plate_temp_initial_layer": [
-        "90"
+        "85"
     ],
     "inherits": "Hyper PETG @Creality K2 0.4 nozzle",
     "is_custom_defined": "0",
@@ -44,10 +44,10 @@
         "260"
     ],
     "textured_plate_temp": [
-        "85"
+        "80"
     ],
     "textured_plate_temp_initial_layer": [
-        "90"
+        "85"
     ],
     "version": "26.4.28.18"
 }

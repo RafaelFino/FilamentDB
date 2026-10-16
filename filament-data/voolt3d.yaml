@@ -151,7 +151,7 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.04
-      max_volumetric_speed: 25
+      max_volumetric_speed: 20
       density: 1.24
       glass_transition_temp: 55
       diameter_tolerance: 0.02
@@ -487,7 +487,7 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 0.98
-      max_volumetric_speed: 25
+      max_volumetric_speed: 20
       recommendation: >
         PLA para quando o objetivo é tempo de impressão. MVS 25 sustenta perfis Fast
         sem faltar fluxo. Acabamento e precisão cedem um pouco em troca de velocidade.
@@ -629,7 +629,7 @@ materials:
         initial: 65
         temp: 60
       flow_ratio: 1.0
-      max_volumetric_speed: 25
+      max_volumetric_speed: 20
       density: 1.24
       glass_transition_temp: 55
       recommendation: >
@@ -669,7 +669,7 @@ materials:
         initial: 65
         temp: 60
       flow_ratio: 1.0
-      max_volumetric_speed: 25
+      max_volumetric_speed: 20
       density: 1.24
       glass_transition_temp: 55
       recommendation: >
@@ -708,7 +708,7 @@ materials:
         initial: 80
         temp: 80
       flow_ratio: 0.98
-      max_volumetric_speed: 12
+      max_volumetric_speed: 15
       recommendation: >
         PETG principal para peças funcionais: tenaz, resiste a calor moderado e químicos.
         A variante HF (High Fluidity) flui melhor que PETG comum, ajudando na velocidade.
