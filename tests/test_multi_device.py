@@ -114,10 +114,12 @@ class K2RegressionTests(unittest.TestCase):
         self.assertEqual(prof["name"], "0.20mm Standard @Creality K2 0.4 nozzle - PLA")
         # inherits Creality Print do K2.
         self.assertEqual(prof["inherits"], "0.20mm Standard @Creality K2 0.4 nozzle")
-        # Valores-chave do Standard 0.20 PLA (base calibrada para K2).
-        self.assertEqual(float(prof["inner_wall_speed"]), 450.0)
-        self.assertEqual(float(prof["outer_wall_speed"]), 250.0)
-        self.assertEqual(float(prof["sparse_infill_speed"]), 500.0)
+        # Valores-chave do Standard 0.20 PLA (base recalibrada, conservadora).
+        # inner usa speed mult 1.0 (300); outer é quality field com quality_speed
+        # 0.6 (150 * 0.6 = 90).
+        self.assertEqual(float(prof["inner_wall_speed"]), 300.0)
+        self.assertEqual(float(prof["outer_wall_speed"]), 90.0)
+        self.assertEqual(float(prof["sparse_infill_speed"]), 350.0)
         self.assertEqual(int(float(prof["default_acceleration"])), 18000)
 
     def test_k2_caps_are_600_800_20000(self):

@@ -629,11 +629,30 @@ def seed_filaments():
 PROFILE_MULTIPLIERS = {
     "fast": {"speed": 1.50, "accel": 1.50},
     "economy": {"speed": 1.0, "accel": 1.0},
-    "standard": {"speed": 1.0, "accel": 1.0},
+    "standard": {"speed": 1.0, "accel": 1.0, "quality_speed": 0.6},
     "strong": {"speed": 0.85, "accel": 0.80},
-    "detail": {"speed": 0.80, "accel": 0.75, "quality_speed": 0.30},
+    "detail": {"speed": 0.80, "accel": 0.75, "quality_speed": 0.45},
     "safe": {"speed": 0.70, "accel": 0.60, "quality_speed": 0.50},
+    # Aeromodel-oriented types: leves, estrutura reduzida. Mesma velocidade
+    # moderada (sem quality_speed) — a diferença está na estrutura (walls/infill).
+    "lw-extreme": {"speed": 0.90, "accel": 0.85},
+    "lw-structure": {"speed": 0.90, "accel": 0.85},
+    # Factory: perfil de fábrica conservador, velocidade reduzida.
+    "factory": {"speed": 0.65, "accel": 0.65},
 }
+
+# Display names for profile types. Hyphenated ids (lw-extreme) would be mangled
+# by str.capitalize() ("Lw-extreme"), so they get an explicit mapping; everything
+# else falls back to per-segment capitalization, which equals .capitalize() for
+# single-word ids (zero regression).
+PROFILE_TYPE_DISPLAY = {
+    "lw-extreme": "LW-Extreme",
+    "lw-structure": "LW-Structure",
+}
+
+
+def profile_type_display(pt):
+    return PROFILE_TYPE_DISPLAY.get(pt) or "-".join(s.capitalize() for s in pt.split("-"))
 
 # Fields where lower speed actually improves visible quality or print reliability.
 # These use 'quality_speed' multiplier when available (Detail/Safe).
@@ -763,7 +782,7 @@ def resolve_inherits(inherits_by_layer, layer_height, display_name=None, profile
     layer_fmt = str(layer_height) if layer_height is not None else ""
     return chosen.format(
         layer=layer_fmt,
-        type=(profile_type.capitalize() if profile_type else ""),
+        type=(profile_type_display(profile_type) if profile_type else ""),
         display_name=(display_name or ""),
     )
 
@@ -860,7 +879,7 @@ def generate_process_profile(profile_type, layer_height, material_name, device):
 
     profile["name"] = device["name_template"].format(
         layer=layer_height,
-        type=profile_type.capitalize(),
+        type=profile_type_display(profile_type),
         display_name=device["display_name"],
         nozzle=device["nozzle"],
         material=material_name,

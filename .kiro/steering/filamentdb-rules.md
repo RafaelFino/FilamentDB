@@ -19,33 +19,79 @@ Isso garante que filamentos premium (Voolt3D Velvet MVS=25, Sunlu HS MVS=22) apr
 
 **Nunca** limitar velocidades no perfil de processo com base no MVS do material. O cap volumétrico é responsabilidade exclusiva do filamento.
 
-## Hierarquia de Perfis de Processo
+### Recalibração: qualidade antes de velocidade
 
-Do mais rápido ao mais caprichado:
+As velocidades base dos materiais (`process-base/materials/PLA.json`,
+`PETG.json`) foram recalibradas para valores **conservadores e realistas** na
+K2, priorizando qualidade e confiabilidade sobre tempo. O racional:
+
+- **O número do perfil é a velocidade real.** Nada de inflar velocidades base
+  contando com o cap do slicer para segurar — a base já reflete o que a peça
+  deve imprimir com boa qualidade.
+- Problemas de baixa extrusão e falhas (especialmente PETG de troca de cor)
+  vêm de velocidades otimistas demais. Valores menores reduzem under-extrusion,
+  stringing e falhas de camada.
+- O cap volumétrico (MVS) do filamento continua sendo o limitador superior em
+  runtime; a base conservadora apenas garante que, mesmo sem o cap morder, a
+  qualidade se mantém.
+
+Bases recalibradas (alvo Standard na K2, mm/s):
 
 ```
-Fast → Economy → Standard → Strong → Detail → Safe
+         inner outer sparse solid  top  init travel supp gap
+PLA       300   150    350   250   130   50   700   200  200
+PETG      240   120    280   200   110   40   500   160  160
+```
+
+ABS/TPU/PLA-CF/PETG-CF **não** foram tocados — já eram conservadores por
+material.
+
+## Hierarquia de Perfis de Processo
+
+Do mais rápido ao mais caprichado, mais os tipos especializados:
+
+```
+Fast → Economy → Factory → Standard → Strong → Detail → Safe
+                              ├── LW-Structure (aeromodelo: fuselagem/corpo)
+                              └── LW-Extreme   (aeromodelo: asas)
 ```
 
 - **Fast**: Velocidade máxima. O mais rápido possível — aceita redução de qualidade em troca de tempo. 3 walls, 12% infill grid, inner-first.
 - **Economy**: Economia de filamento. Estrutura mínima viável — 2 walls, 8% grid, inner-first. Velocidade igual Standard — a economia vem da estrutura reduzida, não da velocidade. Ideal para protótipos descartáveis e peças não-estruturais.
-- **Standard**: Equilíbrio geral, padrão de uso diário. 4 walls, 15% gyroid, outer-first, bom acabamento. Nome obrigatório — Creality Print requer um perfil "Standard" para iniciar.
+- **Factory**: Perfil de fábrica conservador — espelha a estrutura do Standard (4 walls, 15% gyroid, outer-first, top 5/bottom 4) mas com velocidade reduzida (0.65x) e **BRIM sempre ligado** (`brim_width` 5.0, `brim_object_gap` 0.15). Suportes herdados da base (ligados, apenas regiões críticas). Variações apenas PLA/PETG.
+- **Standard**: Equilíbrio geral, padrão de uso diário. 4 walls, 15% gyroid, outer-first, bom acabamento. Usa `quality_speed` 0.6 nos campos visíveis (outer/top/1ª camada). Nome obrigatório — Creality Print requer um perfil "Standard" para iniciar.
 - **Strong**: Resistência mecânica (6 walls, 50% infill gyroid). Mais lento, peças funcionais.
-- **Detail**: Qualidade visual máxima. Layer heights baixos (0.08-0.16mm), 5 walls, 20% infill.
+- **Detail**: Qualidade visual máxima. Layer heights baixos (0.08-0.16mm), 5 walls, 20% infill. `quality_speed` 0.45.
 - **Safe**: Ultra-conservador para primeira impressão ou materiais desconhecidos. Lento mas confiável.
+- **LW-Structure**: Peças leves de aeromodelo que ainda precisam de alguma resistência (fuselagem/corpo). 2 walls, 7% gyroid, top/bottom 3, inner-first, seam aligned, brim 5.0. Gerado só nos layer heights que fazem sentido (0.16, 0.20).
+- **LW-Extreme**: Peças leves ao extremo (asas). 1 wall, 3% gyroid, top/bottom 1, inner-first, seam nearest, brim 4.0. Gerado só em 0.20 e 0.24. Usar com PETG ou PLA (material LW ainda a definir).
+
+Os ids dos LW são **hifenizados em inglês** (`lw-extreme`, `lw-structure`); o
+build mapeia para o display `LW-Extreme`/`LW-Structure`.
 
 ### Multiplicadores por Profile Type
 
 ```
-Fast:     speed=1.50x  accel=1.50x
-Economy:  speed=1.00x  accel=1.00x  (economia via estrutura, não velocidade)
-Standard: speed=1.00x  accel=1.00x
-Strong:   speed=0.85x  accel=0.80x
-Detail:   speed=0.80x  accel=0.75x  quality_speed=0.45x (outer/top/1st layer)
-Safe:     speed=0.70x  accel=0.60x  quality_speed=0.50x (outer/top/1st layer)
+Fast:         speed=1.50x  accel=1.50x
+Economy:      speed=1.00x  accel=1.00x  (economia via estrutura, não velocidade)
+Factory:      speed=0.65x  accel=0.65x
+Standard:     speed=1.00x  accel=1.00x  quality_speed=0.60x (outer/top/1st layer/gap)
+Strong:       speed=0.85x  accel=0.80x
+Detail:       speed=0.80x  accel=0.75x  quality_speed=0.45x (outer/top/1st layer/gap)
+Safe:         speed=0.70x  accel=0.60x  quality_speed=0.50x (outer/top/1st layer/gap)
+LW-Structure: speed=0.90x  accel=0.85x
+LW-Extreme:   speed=0.90x  accel=0.85x
 ```
 
-Os perfis Detail e Safe usam multiplicadores **assimétricos**: campos que afetam qualidade visual (outer wall, top surface, primeira camada) recebem o `quality_speed` mais baixo, enquanto campos internos (inner wall, infill, travel, support) usam o `speed` regular mais alto. Isso permite imprimir rápido onde não importa e lento apenas onde melhora a qualidade ou confiabilidade.
+Standard, Detail e Safe usam multiplicadores **assimétricos**: campos que afetam
+qualidade visual (outer wall, top surface, primeira camada, gap infill) recebem o
+`quality_speed` mais baixo, enquanto campos internos (inner wall, infill, travel,
+support) usam o `speed` regular mais alto. Isso permite imprimir rápido onde não
+importa e lento apenas onde melhora a qualidade ou confiabilidade. Os LW não usam
+`quality_speed` — a diferença entre eles está na estrutura (walls/infill), não na
+velocidade.
+
+`QUALITY_SPEED_FIELDS = {outer_wall_speed, top_surface_speed, initial_layer_speed, gap_infill_speed}`.
 
 ### Limites Físicos da Máquina (caps vêm do device)
 
@@ -139,6 +185,43 @@ comportamento anterior. O build itera `device × profile_type × layer_height ×
 material` e valida que todo device referenciado tem arquivo em `devices/`
 (falha explícita citando o `id` ausente).
 
+A herança do slicer (`process_inherits_by_layer`) é **por layer height**, não
+por profile type. Novos profile types (factory, lw-extreme, lw-structure) são
+gerados sem nenhuma alteração no device — herdam a cadeia do layer height
+correspondente automaticamente.
+
+### Nomes de display e capitalização
+
+Os ids de profile type são **lowercase em inglês**; os hifenizados usam hífen
+(`lw-extreme`, `lw-structure`). O build gera o nome de display via
+`profile_type_display()`: ids com entrada em `PROFILE_TYPE_DISPLAY`
+(`lw-extreme`→`LW-Extreme`, `lw-structure`→`LW-Structure`) usam o mapa; os demais
+caem na capitalização por segmento (`-`), que para ids de palavra única equivale
+a `.capitalize()` (zero regressão). Isso evita o `str.capitalize()` quebrar
+`lw-extreme` em `Lw-extreme`.
+
+### Matriz completa de combinações (device k2, salvo nota)
+
+| Profile type | Layer heights                      | Materiais        |
+|--------------|------------------------------------|------------------|
+| fast         | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
+| economy      | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
+| standard     | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
+| strong       | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
+| safe         | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
+| factory      | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
+| detail       | 0.08, 0.12, 0.16, 0.20, 0.24, 0.28 | PLA, PETG        |
+| lw-extreme   | 0.20, 0.24                         | PLA, PETG        |
+| lw-structure | 0.16, 0.20                         | PLA, PETG        |
+| standard     | 0.20                               | TPU, ABS, PLA-CF, PETG-CF |
+| standard     | 0.20 (**device cc2**)              | PLA, PETG        |
+
+Total: **86** perfis de processo. Por tipo: detail 12; fast/economy/strong/
+safe/factory 10 cada; standard 16 (10 PLA/PETG + 4 especiais + 2 cc2);
+lw-extreme 4; lw-structure 4. `default_devices = ["k2"]`. O device cc2 é
+Orca-only, então o export Creality Print tem 84 processos (86 − 2 cc2) e o Orca
+tem 86.
+
 ## Defaults de Suporte e Multifilamento
 
 Todos os perfis de processo incluem por padrão:
@@ -160,10 +243,14 @@ Os arquivos de material definem velocidades base que representam o alvo **Standa
 
 O `speed_multiplier` no material é 1.0 por padrão — a diferença entre materiais já está encodada nas velocidades base. Isso evita dupla penalização.
 
+As bases de PLA e PETG foram recalibradas para serem conservadoras (ver
+**Recalibração: qualidade antes de velocidade**). O número do perfil é a
+velocidade real — não se infla a base contando com o cap do slicer.
+
 | Material | speed_mult | accel_mult | default_accel | inner_wall base | Racional |
 |----------|-----------|-----------|---------------|-----------------|----------|
-| PLA      | 1.00      | 1.00      | 18000         | 450             | K2 max — filamento limita via MVS |
-| PETG     | 1.00      | 1.00      | 15000         | 380             | Levemente conservador por cooling/stringing |
+| PLA      | 1.00      | 1.00      | 18000         | 300             | Recalibrado conservador — filamento limita via MVS |
+| PETG     | 1.00      | 1.00      | 15000         | 240             | Recalibrado conservador por cooling/stringing |
 | ABS      | 1.00      | 1.00      | 12000         | 300             | Menor por warping — sem dupla penalização |
 | PLA-CF   | 1.00      | 1.00      | 10000         | 280             | Rigidez da fibra + desgaste do nozzle |
 | PETG-CF  | 1.00      | 1.00      | 9000          | 240             | Fibra + PETG — material mais difícil |
