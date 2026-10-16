@@ -61,3 +61,6 @@ tempCodeRunnerFile.py
 
 # External tools
 .tools/
+
+# Agent workflow scratch (task/review tracking, not project source)
+.agents/
