@@ -332,22 +332,30 @@ Ao publicar para a pasta local, copiar apenas os perfis filtrados (fabricantes h
 
 ## Inicialização dos Slicers
 
-Cada slicer tem um script em `~/run-<slicer>.sh` que sincroniza perfis de `~/filament-db/<slicer>/` para o diretório do usuário do slicer, arquiva perfis órfãos em `~/filament-db/diff/` e abre o aplicativo.
+Cada slicer tem um script em `~/run-<slicer>.sh` que sincroniza perfis de `~/filament-db/<slicer>/` para o diretório do usuário do slicer, arquiva perfis órfãos em `~/filament-db/diff/` e abre o aplicativo. Ambos os scripts **detectam o destino dinamicamente** — nada de caminhos hardcoded que quebram a cada atualização do slicer.
 
 ### Creality Print
 
 - Script: `~/run-creality-print.sh`
 - Origem: `~/filament-db/creality-print/{filament,process}`
-- Destino: `~/.config/Creality/Creality Print/7.0/user/8401264742/{filament,process}`
+- Destino: `~/.config/Creality/Creality Print/<versão>/user/<user_id>/{filament,process}`
+- **Detecção de versão**: o script lista os diretórios `X.Y` em `~/.config/Creality/Creality Print/` e escolhe o maior via `sort -V`. Segue automaticamente futuras atualizações do slicer (ex.: 7.0 → 7.3) sem edição manual.
+- **Detecção do user id**: pega o diretório numérico em `<versão>/user/`; se houver mais de um, usa o modificado mais recentemente. Nada de hardcode da conta.
+- Falha explícita (mensagem clara, exit 1) se não encontrar a base, nenhuma versão `X.Y` ou nenhum user id.
+- Loga o alvo escolhido no início: `Creality Print alvo: versão <v>, user <id>`.
 - `filament/` — recebe .json + .info
 - `process/` — recebe apenas .json
+- Versões antigas do slicer (ex.: 7.0 após migrar para 7.3) ficam intocadas — o script só mira a versão corrente.
 
 ### Orca Slicer
 
 - Script: `~/run-orca-slicer.sh`
-- Origem: `~/filament-db/orca/{filament,process}`
-- Destino: `~/.config/OrcaSlicer/user/default/{filament,process}`
+- Origem: `~/filament-db/orca/{filament,process}` (K2, layout legado na raiz) **+** `~/filament-db/orca/<device>/{filament,process}` (devices adicionais, ex.: `cc2`)
+- Destino: `~/.config/OrcaSlicer/user/default/{filament,process}` (único, achatado)
 - Ambos recebem apenas .json
+- **Sync agregado K2 + devices**: o Orca guarda todos os perfis achatados em um único diretório de usuário — ele distingue os perfis pelo nome (sufixo `@<device>`, ex.: `@CC2`) e pelo `compatible_printers`, não por subpasta. O script agrega a raiz (K2) e todas as subpastas de device (`orca/*/{filament,process}`) e copia tudo para o destino único.
+- **Arquivamento de órfãos ciente de todas as fontes**: um perfil no destino só é arquivado em `diff/` se não existir em **nenhuma** fonte (raiz nem devices). Isso evita arquivar perfis de device válidos (`@CC2`) a cada execução.
+- O destino do Orca não é versionado por pasta como o Creality — não precisa de detecção de versão.
 
 ## Estrutura de Dados
 
