@@ -330,9 +330,93 @@ O `publish.sh` executa o pipeline local: build → backup → publish para ~/fil
 
 Ao publicar para a pasta local, copiar apenas os perfis filtrados (fabricantes habilitados, combinações válidas).
 
+## Instalação e Atualização dos Slicers (`install-slicers.sh` / `update-slicers.sh`)
+
+Dois scripts versionados mantêm os slicers (Creality Print e OrcaSlicer) sempre
+atualizados, sem intervenção manual. Compartilham a biblioteca `lib-slicers.sh`.
+
+**Fonte: GitHub Releases oficiais** (URLs determinísticas e versionadas, o mesmo
+binário do site oficial):
+- Creality Print: `CrealityOfficial/CrealityPrint` — asset
+  `CrealityPrint-V<ver>.<build>-x86_64-Release.AppImage`. A tag pode ter vários
+  builds; o script escolhe o maior por `sort -V`.
+- Orca Slicer: `SoftFever/OrcaSlicer` — asset
+  `OrcaSlicer_Linux_AppImage_Ubuntu2404_V<ver>.AppImage` (exclui `aarch64`).
+
+O site `creality.com/download` é dinâmico (sem URL estável) e **não** é usado —
+não é automatizável de forma robusta. O GitHub oficial serve o mesmo AppImage.
+
+**Layout de instalação** (sem sudo, sobrescrevível por env `SLICER_APPS_DIR` /
+`SLICER_BIN_DIR`):
+- AppImages em `~/Applications/` (versão anterior arquivada em `~/Applications/old/`).
+- Symlinks estáveis no PATH: `~/.local/bin/creality-print` e
+  `~/.local/bin/orca-slicer` → apontam para o AppImage da versão corrente.
+
+**`install-slicers.sh`** — baixa e instala a versão mais recente dos dois numa
+máquina nova. Idempotente: pula se já na latest (`--force` reinstala). Flags:
+`--only creality|orca`, `--force`, `--dry-run`, `--no-structure`. Ao final chama
+`install.sh --force` para criar a árvore e regenerar os runners.
+
+**`update-slicers.sh`** — compara a versão instalada (lida do AppImage apontado
+pelo symlink) com a latest e atualiza **só se houver versão nova**. A versão
+anterior vai para `~/Applications/old/`. Flags: `--check` (só reporta, não
+escreve), `--dry-run`, `--only`, `--no-structure`. Após atualizar, regenera os
+runners via `install.sh`.
+
+**Detecção da versão instalada (`lib_installed_version`)**: lê a versão do nome
+do AppImage apontado pelo symlink; no fallback, varre `~/Applications`,
+`~/Applications/old`, `~/orca`, `~/Downloads`, `/opt`. Isso detecta o **layout
+legado** do Orca (`~/orca/*.AppImage`). O Creality legado (ELF em
+`/usr/local/bin/creality-print`, sem versão no nome) aparece como `<nenhuma>` —
+na primeira atualização ele é **migrado** para o AppImage versionado em
+`~/.local/bin` (comportamento intencional de migração, não bug).
+
+**Fluxo numa máquina nova**: `./install-slicers.sh` → `./publish.sh` →
+`~/run-<slicer>.sh`. Para manter atualizado depois: `./update-slicers.sh` (ou
+`--check` para só verificar).
+
+## Estrutura Local (`install.sh`)
+
+`install.sh` (na raiz do repo, **versionado**) faz o bootstrap da árvore
+`~/filament-db/` e gera os inicializadores. É a **fonte de verdade** da lógica
+dos inicializadores: os `~/run-<slicer>.sh` passam a ser **artefatos gerados**
+por ele, não arquivos mantidos à mão. Chamado automaticamente por
+`install-slicers.sh` e `update-slicers.sh`, mas também roda sozinho.
+
+O que faz, de forma idempotente:
+
+1. **Detecta os slicers** instalados (não-fatal se faltar um):
+   - Creality Print: binário via `command -v creality-print` + candidatos
+     (`/usr/local/bin`, `/usr/bin`, `/opt/...`).
+   - Orca Slicer: AppImage via glob (`~/orca`, `~/Applications`, `~/.local/bin`,
+     `~/Downloads`, `/opt`), escolhendo o mais novo por `sort -V` sobre a versão
+     no nome; fallback para binário no PATH.
+2. **Cria a árvore** `~/filament-db/{creality-print/{filament,process},orca/{filament,process},backups,diff}`.
+   As subpastas de device do Orca (`orca/cc2/`, ...) são criadas pelo `publish.sh`,
+   não pelo instalador.
+3. **Gera os inicializadores** `~/run-creality-print.sh` e `~/run-orca-slicer.sh`
+   via heredoc, injetando o caminho **resolvido** de cada executável (binário do
+   Creality e AppImage do Orca) — o `exec` final não depende do PATH. A lógica de
+   detecção dinâmica (versão/user do Creality, agregação K2+devices do Orca) vive
+   embutida nos runners gerados.
+
+Flags: `--dry-run` (mostra sem escrever), `--force` (sobrescreve runners sem
+backup), `--help`. Var de ambiente: `FILAMENT_DB_ROOT` (default `~/filament-db`).
+
+Comportamento seguro: faz backup do runner antigo (`.bak.YYYYMMDD_HHMMSS`) antes
+de sobrescrever (salvo `--force`); gera apenas o runner do slicer detectado e
+avisa sobre o ausente; falha explícita só se **nenhum** slicer for encontrado.
+
+Fluxo típico: `install.sh` é chamado automaticamente pelos scripts de slicer.
+Para só (re)gerar a estrutura/runners sem mexer nos binários: `./install.sh`.
+
 ## Inicialização dos Slicers
 
-Cada slicer tem um script em `~/run-<slicer>.sh` que sincroniza perfis de `~/filament-db/<slicer>/` para o diretório do usuário do slicer, arquiva perfis órfãos em `~/filament-db/diff/` e abre o aplicativo. Ambos os scripts **detectam o destino dinamicamente** — nada de caminhos hardcoded que quebram a cada atualização do slicer.
+Cada slicer tem um script em `~/run-<slicer>.sh` (gerado pelo `install.sh`) que
+sincroniza perfis de `~/filament-db/<slicer>/` para o diretório do usuário do
+slicer, arquiva perfis órfãos em `~/filament-db/diff/` e abre o aplicativo. Ambos
+os scripts **detectam o destino dinamicamente** — nada de caminhos hardcoded que
+quebram a cada atualização do slicer.
 
 ### Creality Print
 
