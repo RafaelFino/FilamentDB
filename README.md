@@ -1,6 +1,6 @@
 # FilamentDB
 
-Sistema de gestão de perfis de impressão 3D e controle de estoque de filamentos, focado na **Creality K2** (CoreXY, Direct Drive, nozzle 0.4mm) com **Creality Print 7.0** e **Orca Slicer**. O pipeline é **multi-device**: além da K2, gera perfis para outras impressoras (ex.: Elegoo Centauri Carbon 2, Orca-only) a partir da mesma base — ver [Devices](#devices-múltiplos-alvos-de-impressão).
+Sistema de gestão de perfis de impressão 3D e controle de estoque de filamentos, focado na **Creality K2** (CoreXY, Direct Drive, nozzle 0.4mm) com **Creality Print** e **Orca Slicer** (a versão de cada slicer é detectada dinamicamente — ver [Instalação e atualização dos slicers](#instalação-e-atualização-dos-slicers-máquina-local)). O pipeline é **multi-device**: além da K2, gera perfis para outras impressoras (ex.: Elegoo Centauri Carbon 2, Orca-only) a partir da mesma base — ver [Devices](#devices-múltiplos-alvos-de-impressão).
 
 O FilamentDB tem dois lados complementares:
 
@@ -21,6 +21,7 @@ O FilamentDB tem dois lados complementares:
 - [Configuração (`config.env`)](#configuração-configenv)
 - [Deploy com `update-server.sh`](#deploy-com-update-serversh)
 - [Health checks](#health-checks)
+- [Instalação e atualização dos slicers (máquina local)](#instalação-e-atualização-dos-slicers-máquina-local)
 - [Desenvolvimento local](#desenvolvimento-local)
 - [Formação dos perfis (decisões técnicas)](#formação-dos-perfis-decisões-técnicas) — a parte "core" do projeto
 
@@ -609,6 +610,135 @@ Um `.db` vazio abre sem erro mas falha no primeiro `SELECT` — por isso o probe
 
 ---
 
+## Instalação e atualização dos slicers (máquina local)
+
+Esta seção cobre o lado **estação de trabalho** (a máquina do Fino), não o
+servidor. Quatro scripts versionados automatizam a instalação dos slicers, o
+bootstrap da estrutura de publicação e a geração dos inicializadores — para que
+montar o ambiente numa máquina nova (ou mantê-la atualizada) não exija nenhum
+passo manual.
+
+```mermaid
+flowchart LR
+    IS[install-slicers.sh] -->|baixa AppImages| APPS[~/Applications/<br/>+ symlinks ~/.local/bin]
+    US[update-slicers.sh] -->|atualiza se houver nova| APPS
+    IS --> INST[install.sh]
+    US --> INST
+    INST -->|cria árvore| FDB[~/filament-db/]
+    INST -->|gera| RUN[~/run-creality-print.sh<br/>~/run-orca-slicer.sh]
+    LIB[lib-slicers.sh] -.sourced.-> IS
+    LIB -.sourced.-> US
+```
+
+| Script | Papel |
+|--------|-------|
+| `install-slicers.sh` | Instala Creality Print e OrcaSlicer (AppImages) do zero numa máquina nova |
+| `update-slicers.sh` | Mantém os dois sempre na versão mais recente, sem intervenção manual |
+| `install.sh` | Cria a árvore `~/filament-db/` e gera os inicializadores `run-*.sh` |
+| `lib-slicers.sh` | Biblioteca comum (sourced pelos dois scripts de slicer) |
+
+### Fonte dos binários: GitHub Releases oficiais
+
+Os AppImages vêm das **GitHub Releases oficiais** — o mesmo binário do site
+oficial, mas com URL determinística e versão detectável via API:
+
+- **Creality Print**: [`CrealityOfficial/CrealityPrint`](https://github.com/CrealityOfficial/CrealityPrint) — asset `CrealityPrint-V<ver>.<build>-x86_64-Release.AppImage`. Uma tag pode ter vários builds; o script escolhe o maior por `sort -V`.
+- **Orca Slicer**: [`SoftFever/OrcaSlicer`](https://github.com/SoftFever/OrcaSlicer) — asset `OrcaSlicer_Linux_AppImage_Ubuntu2404_V<ver>.AppImage` (exclui `aarch64`).
+
+O site `creality.com/download` é dinâmico (sem URL estável) e **não** é usado:
+não é automatizável de forma robusta. O GitHub oficial da Creality serve o mesmo
+AppImage de release.
+
+### Layout de instalação (sem sudo)
+
+```
+~/Applications/
+├── CrealityPrint-V<ver>-x86_64-Release.AppImage
+├── OrcaSlicer_Linux_AppImage_Ubuntu2404_V<ver>.AppImage
+└── old/                       # versões anteriores arquivadas na atualização
+
+~/.local/bin/
+├── creality-print  →  ~/Applications/CrealityPrint-V<ver>...AppImage
+└── orca-slicer     →  ~/Applications/OrcaSlicer_...AppImage
+```
+
+Os AppImages ficam em `~/Applications/`; os symlinks estáveis em
+`~/.local/bin/` (que precisa estar no `PATH`). Nenhum passo exige `sudo`. Os
+diretórios são sobrescrevíveis por `SLICER_APPS_DIR` / `SLICER_BIN_DIR`.
+
+### Instalar numa máquina nova
+
+```bash
+./install-slicers.sh          # baixa a última versão dos dois + cria estrutura + gera runners
+./publish.sh                  # build + publica os perfis em ~/filament-db/
+~/run-creality-print.sh       # sincroniza e abre o Creality Print
+~/run-orca-slicer.sh          # sincroniza e abre o Orca Slicer
+```
+
+`install-slicers.sh` é idempotente: se o slicer já está na versão mais recente,
+não refaz o download. Ao final chama `install.sh` automaticamente.
+
+| Flag | Efeito |
+|------|--------|
+| `--only creality` \| `--only orca` | Processa só um dos slicers |
+| `--force` | Reinstala mesmo se já na versão mais recente |
+| `--dry-run` | Mostra o que faria, sem baixar nem escrever |
+| `--no-structure` | Pula a chamada ao `install.sh` (só os binários) |
+
+### Manter atualizado
+
+```bash
+./update-slicers.sh           # atualiza o que estiver desatualizado + regenera runners
+./update-slicers.sh --check   # só reporta se há atualização (não baixa nada)
+```
+
+`update-slicers.sh` compara a versão instalada (lida do AppImage apontado pelo
+symlink) com a mais recente nas releases e baixa **só se houver versão nova**. A
+versão anterior é arquivada em `~/Applications/old/`. Flags: `--check`,
+`--dry-run`, `--only`, `--no-structure`.
+
+A detecção de versão instalada também reconhece o **layout legado** (Orca em
+`~/orca/*.AppImage`). O Creality legado (binário em `/usr/local/bin` sem versão
+no nome) é **migrado** para o AppImage versionado em `~/.local/bin` na primeira
+atualização — comportamento intencional, não erro.
+
+### `install.sh` — estrutura + inicializadores
+
+Chamado automaticamente pelos scripts de slicer, mas também roda sozinho quando
+só se quer (re)gerar a estrutura/runners sem mexer nos binários:
+
+```bash
+./install.sh            # detecta slicers, cria ~/filament-db/ e gera os run-*.sh
+./install.sh --dry-run  # mostra sem escrever
+./install.sh --force    # sobrescreve runners sem backup
+```
+
+Ele é a **fonte de verdade da lógica dos inicializadores**: os
+`~/run-<slicer>.sh` são **artefatos gerados**, não arquivos mantidos à mão.
+Cria `~/filament-db/{creality-print,orca}/{filament,process}` + `backups/` +
+`diff/`, e gera os dois runners injetando o caminho resolvido de cada executável
+(o `exec` final não depende do `PATH`). Faz backup do runner anterior
+(`.bak.<timestamp>`) antes de sobrescrever.
+
+### Inicializadores inteligentes (`run-*.sh`)
+
+Os inicializadores gerados detectam o destino **em runtime**, sem caminhos
+hardcoded que quebrariam a cada atualização do slicer:
+
+- **`run-creality-print.sh`** — descobre a **versão mais recente** instalada do
+  Creality Print (ordena os diretórios `X.Y` em `~/.config/Creality/Creality Print/`
+  por `sort -V`) e o **user id** numérico da conta (sem hardcode). Sincroniza os
+  perfis de `~/filament-db/creality-print/` para o diretório do usuário dessa
+  versão, arquiva órfãos em `~/filament-db/diff/` e abre o app.
+- **`run-orca-slicer.sh`** — o Orca guarda todos os perfis achatados num único
+  diretório de usuário. O runner **agrega** a raiz (K2) e todas as subpastas de
+  device (`orca/cc2/`, ...) e sincroniza tudo junto; perfis se distinguem pelo
+  nome (sufixo `@<device>`) e pelo `compatible_printers`. O arquivamento de
+  órfãos é ciente de todas as fontes (perfis de device válidos não são
+  arquivados por engano).
+
+---
+
 ## Desenvolvimento local
 
 ```bash
@@ -623,12 +753,16 @@ python3 build.py
 python3 build.py --only-db       # só o banco
 python3 build.py --only-export   # só export (banco já existe)
 
+# Instalar/atualizar os slicers (ver seção dedicada acima)
+./install-slicers.sh             # máquina nova
+./update-slicers.sh              # manter atualizado
+
 # Abrir os slicers (sync local + launch)
 ~/run-creality-print.sh
 ~/run-orca-slicer.sh
 ```
 
-`run.sh` reconstrói o banco se ele estiver ausente **ou** inválido (não basta o arquivo existir). `publish.sh` faz backup automático em `~/filament-db/backups/` (zip com timestamp, últimos 10) antes de sobrescrever.
+`run.sh` reconstrói o banco se ele estiver ausente **ou** inválido (não basta o arquivo existir). `publish.sh` faz backup automático em `~/filament-db/backups/` (zip com timestamp, últimos 10) antes de sobrescrever. Para montar o ambiente dos slicers numa máquina nova, ver [Instalação e atualização dos slicers](#instalação-e-atualização-dos-slicers-máquina-local).
 
 **Requisitos**: Python 3.9+, Flask, PyYAML (`requirements.txt`).
 
@@ -948,6 +1082,10 @@ Os demais ficam no banco (`filament-data/`) para referência. Para incluir fabri
 | `python3 build.py` | Recria banco + exporta perfis (sem publish) |
 | `python3 build.py --only-db` | Apenas recria o banco (sem export) |
 | `python3 build.py --only-export` | Apenas exporta (banco já existe) |
+| `./install-slicers.sh` | Instala Creality Print + OrcaSlicer (máquina nova) |
+| `./update-slicers.sh` | Atualiza os slicers para a versão mais recente |
+| `./update-slicers.sh --check` | Só reporta se há atualização dos slicers |
+| `./install.sh` | (Re)gera a árvore `~/filament-db/` e os inicializadores |
 | `~/run-creality-print.sh` | Sync perfis locais + abre Creality Print |
 | `~/run-orca-slicer.sh` | Sync perfis locais + abre Orca Slicer |
 
