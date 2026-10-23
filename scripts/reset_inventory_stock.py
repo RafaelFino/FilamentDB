@@ -3,37 +3,31 @@
 reset_inventory_stock.py — Reset total do estoque a partir do arquivo de estoque.
 
 O arquivo `data/Estoque <data>.md` é a IMAGEM COMPLETA do estoque físico (fonte
-de verdade). Este script lê as tabelas markdown desse arquivo e espelha o banco:
-apaga TODO o estoque atual e insere exatamente os rolos listados, todos como
-`in_stock`. Qualquer localização anterior (cfs/spool/drybox/open) é descartada —
-a redistribuição física (CFS, drybox, etc.) é feita depois pela interface.
+de verdade, recontada por foto e enriquecida com a nomenclatura do catálogo).
+Este script lê as tabelas markdown e espelha o banco de estoque: apaga TODO o
+estoque atual e insere exatamente os rolos listados, preservando a localização
+(`Local`) de cada um.
 
 Modelo do banco (ver src/inventory.py): 1 linha = 1 rolo (spools=1), com `uid`
 estável por rolo. Uma linha da tabela com Quantidade=N vira N linhas físicas.
 
-O reset é feito via `inventory.import_data(payload, replace=True)`, que espelha
-o payload: insere os itens do arquivo e remove todo o resto. Reusa a validação e
-a geração de uid do próprio módulo, sem depender do servidor HTTP no ar.
+Enriquecimento com o catálogo: a coluna `filament_key` casa o rolo com um
+`filament_profiles` do catálogo (filament.db); o id resolvido é gravado em
+`variant_id`, criando a ponte estoque↔catálogo (MVS, temps, preço acessíveis a
+partir do item). O `hex_color` vem da coluna `Hex` do arquivo (tom curado), que
+alimenta o swatch da UI — sem ele o quadradinho de cor fica cinza.
 
-Antes de escrever, faz um backup do estoque atual (dump lógico versionado via
-export_data()) em <data_dir>/backups/.
+O reset usa `inventory.import_data(payload, replace=True)` (espelho). Antes de
+escrever, faz backup do estoque atual em <data_dir>/backups/.
 
-Formato esperado do markdown (uma seção por material):
+Formato esperado do markdown (uma seção `## <MATERIAL>` por material):
 
-    ## PLA
-    | Marca | Tipo | Cor | Quantidade | Tamanho do rolo | Obs |
-    | - | - | - | - | - | - |
-    | Voolt3d | Velvet | Vermelho | 2 | 1 kg | (Troca de Cor) |
-    ...
+    | Marca | Tipo | Cor | Quantidade | Tamanho do rolo | Hex | RGB | Local | Obs | Linha | Produto | filament_key |
 
-Mapeamentos:
-  - título da seção (## PLA)      → material
-  - Marca                         → manufacturer (Voolt3d → Voolt3D)
-  - Tipo                          → finish (literal: Velvet, HF, CR, HS, PRO, ...)
-  - Cor                           → color_name
-  - Quantidade                    → nº de linhas físicas (spools=1 cada)
-  - Tamanho do rolo               → weight_g (1 kg→1000, 0.5kg→500)
-  - Obs                           → notes (parênteses removidos; vazio → None)
+Colunas Hex, Local e filament_key são opcionais (ausentes → hex nulo,
+Local=in_stock, sem ponte com o catálogo). O `filament_key` contém `|`
+(separador de célula do markdown), então é escapado como `\\|` no arquivo; o
+parser divide em pipes NÃO escapados e des-escapa cada célula.
 
 Uso:
     python scripts/reset_inventory_stock.py <arquivo.md>   # explícito
@@ -46,25 +40,41 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sqlite3
 import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Permite rodar como `python scripts/reset_inventory_stock.py` a partir da raiz.
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT))
 
-from src import inventory  # noqa: E402
+from src import config, inventory  # noqa: E402
 
 # Normalização de fabricante para a capitalização usada no banco/catálogo.
-# O arquivo digita "Voolt3d"; o banco usa "Voolt3D". Demais marcas já batem.
 _MANUFACTURER_CANON = {
     "voolt3d": "Voolt3D",
     "creality": "Creality",
     "sunlu": "Sunlu",
     "elegoo": "Elegoo",
 }
+
+# Colunas aceitas (nome normalizado em casefold → chave interna).
+_COL_ALIASES = {
+    "marca": "manufacturer",
+    "tipo": "finish",
+    "cor": "color_name",
+    "quantidade": "quantity",
+    "tamanho do rolo": "weight",
+    "hex": "hex_color",
+    "rgb": "rgb",
+    "local": "status",
+    "obs": "notes",
+    "linha": "line",
+    "produto": "product",
+    "filament_key": "filament_key",
+}
+_REQUIRED_COLS = {"manufacturer", "finish", "color_name", "quantity", "weight"}
 
 
 def _now():
@@ -76,110 +86,115 @@ def _canon_manufacturer(raw: str) -> str:
 
 
 def _parse_weight_g(raw: str) -> int:
-    """'1 kg' → 1000, '0.5kg' → 500, '500 g' → 500. Default 1000 se não parsear."""
+    """'1 kg' → 1000, '0.5kg' → 500, '500 g' → 500. Default 1000."""
     s = (raw or "").strip().casefold().replace(",", ".")
     m = re.search(r"([0-9]*\.?[0-9]+)\s*(kg|g)?", s)
     if not m:
         return 1000
     value = float(m.group(1))
-    unit = m.group(2) or "kg"  # "1" sem unidade é interpretado como kg (formato do arquivo)
+    unit = m.group(2) or "kg"  # número sem unidade = kg (formato do arquivo)
     grams = value * 1000 if unit == "kg" else value
     return int(round(grams))
 
 
 def _clean_notes(raw: str):
-    """Obs → notes. Remove parênteses externos e espaços; vazio vira None."""
+    """Obs → notes. Remove parênteses externos; vazio vira None."""
     s = (raw or "").strip()
-    # Remove um par de parênteses externos, se houver: "(Troca de Cor)" → "Troca de Cor".
     m = re.fullmatch(r"\((.*)\)", s)
     if m:
         s = m.group(1).strip()
     return s or None
 
 
-def _split_row(line: str):
-    """Quebra uma linha de tabela markdown em células, descartando as bordas."""
-    # Tira o pipe inicial/final e separa; strip em cada célula.
-    cells = [c.strip() for c in line.strip().strip("|").split("|")]
-    return cells
+def _split_cells(line: str):
+    """Divide uma linha de tabela markdown em células.
+
+    Divide apenas em pipes NÃO escapados (`(?<!\\)\\|`) e des-escapa `\\|`→`|`
+    em cada célula. Necessário porque o filament_key contém `|`.
+    """
+    s = line.strip()
+    if s.startswith("|"):
+        s = s[1:]
+    if s.endswith("|"):
+        s = s[:-1]
+    return [c.replace("\\|", "|").strip() for c in re.split(r"(?<!\\)\|", s)]
 
 
 def _is_separator_row(cells) -> bool:
-    """Linha separadora do header: células só com '-', ':' (ex.: '-', ':-:')."""
     return all(re.fullmatch(r":?-+:?", c or "") for c in cells) and any(cells)
 
 
-def parse_markdown(path: Path):
-    """Lê o arquivo de estoque e retorna a lista de itens físicos (1 rolo cada).
+def _load_catalog_keys():
+    """Mapa filament_key → filament_profiles.id (ponte estoque↔catálogo).
 
-    Levanta ValueError com mensagem clara se o formato não bater (header de
-    coluna ausente, material sem tabela, etc.) — melhor falhar explícito do que
-    espelhar o banco com dados parciais.
+    Lê o catálogo (filament.db). Se o banco/tabela não existir, devolve {} e o
+    script segue sem preencher variant_id (não é fatal — o estoque é autônomo).
     """
+    try:
+        db_path = config.database_path("filament.db")
+        conn = sqlite3.connect(str(db_path))
+        rows = conn.execute(
+            "SELECT filament_key, id FROM filament_profiles "
+            "WHERE filament_key IS NOT NULL AND TRIM(filament_key) <> ''"
+        ).fetchall()
+        conn.close()
+        return {k: i for k, i in rows}
+    except Exception as exc:
+        print(f"[aviso] catálogo indisponível ({exc}); variant_id ficará nulo.")
+        return {}
+
+
+def _normalize_status(raw: str) -> str:
+    s = (raw or "").strip().casefold()
+    return s if s in inventory.VALID_STATUSES else inventory.DEFAULT_STATUS
+
+
+def parse_markdown(path: Path, catalog_keys: dict):
+    """Lê o arquivo de estoque e devolve a lista de itens físicos (1 rolo cada)."""
     text = path.read_text(encoding="utf-8")
     now = _now()
     items = []
+    unknown_keys = set()
     current_material = None
-    header = None  # mapeia nome-de-coluna normalizado → índice
-
-    # Nomes de coluna aceitos (normalizados em casefold, sem acento relevante).
-    col_aliases = {
-        "marca": "manufacturer",
-        "tipo": "finish",
-        "cor": "color_name",
-        "quantidade": "quantity",
-        "tamanho do rolo": "weight",
-        "obs": "notes",
-    }
-    required = {"manufacturer", "finish", "color_name", "quantity", "weight"}
+    header = None
 
     for raw_line in text.splitlines():
         line = raw_line.rstrip()
         if not line.strip():
             continue
 
-        # Cabeçalho de seção: "## PLA" define o material corrente.
         m = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
         if m:
             heading = m.group(1).strip()
-            # Só tratamos como material se for uma palavra de material plausível
-            # (evita pegar o título "# Lista atualizada..."). Um material é um
-            # token curto sem espaços (PLA, PETG, ABS, TPU, PLA-CF).
             if re.fullmatch(r"[A-Za-z0-9\-]+", heading):
                 current_material = heading.upper()
-                header = None  # nova seção reinicia o header
             else:
                 current_material = None
-                header = None
+            header = None
             continue
 
-        # Fora de qualquer tabela de material: ignora texto solto.
         if not line.lstrip().startswith("|"):
             continue
 
-        cells = _split_row(line)
+        cells = _split_cells(line)
 
-        # Linha separadora (|---|---|): ignora.
         if _is_separator_row(cells):
             continue
 
-        # Primeira linha de pipes após o heading é o header de colunas.
         if header is None:
             header = {}
             for idx, name in enumerate(cells):
-                key = col_aliases.get(name.strip().casefold())
+                key = _COL_ALIASES.get(name.strip().casefold())
                 if key:
                     header[key] = idx
-            missing = required - set(header)
+            missing = _REQUIRED_COLS - set(header)
             if missing:
                 raise ValueError(
-                    f"Seção '## {current_material}': header de tabela não "
-                    f"reconhecido (faltam colunas {sorted(missing)}). "
-                    f"Linha: {line!r}"
+                    f"Seção '## {current_material}': header não reconhecido "
+                    f"(faltam {sorted(missing)}). Linha: {line!r}"
                 )
             continue
 
-        # Linha de dados.
         if current_material is None:
             raise ValueError(f"Linha de tabela sem material definido: {line!r}")
 
@@ -192,16 +207,25 @@ def parse_markdown(path: Path):
         color = cell("color_name").strip()
         qty_raw = cell("quantity").strip()
         weight_g = _parse_weight_g(cell("weight"))
+        hex_color = cell("hex_color").strip() or None
+        status = _normalize_status(cell("status"))
         notes = _clean_notes(cell("notes"))
+        filament_key = cell("filament_key").strip() or None
+
+        variant_id = None
+        if filament_key:
+            variant_id = catalog_keys.get(filament_key)
+            if variant_id is None:
+                unknown_keys.add(filament_key)
 
         if not color or not manufacturer:
             raise ValueError(f"Linha com Marca/Cor vazias: {line!r}")
         try:
             qty = int(qty_raw)
         except ValueError:
-            raise ValueError(f"Quantidade inválida ({qty_raw!r}) na linha: {line!r}")
+            raise ValueError(f"Quantidade inválida ({qty_raw!r}): {line!r}")
         if qty < 1:
-            raise ValueError(f"Quantidade < 1 na linha: {line!r}")
+            raise ValueError(f"Quantidade < 1: {line!r}")
 
         for _ in range(qty):
             items.append({
@@ -209,12 +233,12 @@ def parse_markdown(path: Path):
                 "material": current_material,
                 "manufacturer": manufacturer,
                 "color_name": color,
-                "hex_color": None,
+                "hex_color": hex_color,
                 "finish": finish,
                 "weight_g": weight_g,
                 "spools": 1,
-                "status": inventory.STATUS_IN_STOCK,
-                "variant_id": None,
+                "status": status,
+                "variant_id": variant_id,
                 "sku": None,
                 "notes": notes,
                 "created_at": now,
@@ -223,14 +247,15 @@ def parse_markdown(path: Path):
 
     if not items:
         raise ValueError(
-            f"Nenhum item encontrado em {path}. Confira se há tabelas de "
-            f"material (## PLA, ## PETG, ...) no formato esperado."
+            f"Nenhum item em {path}. Confira as tabelas de material (## PLA, ...)."
         )
+    if unknown_keys:
+        print("[aviso] filament_key(s) não encontrados no catálogo (variant_id "
+              f"ficou nulo nesses): {sorted(unknown_keys)}")
     return items
 
 
-def _resolve_source(arg: str | None) -> Path:
-    """Resolve o arquivo de estoque: o argumento, ou o 'data/Estoque *.md' mais recente."""
+def _resolve_source(arg):
     if arg:
         p = Path(arg)
         if not p.is_absolute():
@@ -241,14 +266,13 @@ def _resolve_source(arg: str | None) -> Path:
     candidates = sorted((_REPO_ROOT / "data").glob("Estoque *.md"))
     if not candidates:
         raise SystemExit(
-            "Nenhum 'data/Estoque *.md' encontrado. Passe o caminho explícito: "
+            "Nenhum 'data/Estoque *.md'. Passe o caminho: "
             "python scripts/reset_inventory_stock.py <arquivo.md>"
         )
-    return candidates[-1]  # ordenação lexicográfica = data mais recente no nome
+    return candidates[-1]
 
 
 def backup_current(backup_dir: Path):
-    """Dump lógico do estoque atual antes do reset. Retorna o caminho ou None."""
     inventory.init_db()
     data = inventory.export_data()
     if data["count"] == 0:
@@ -261,28 +285,33 @@ def backup_current(backup_dir: Path):
 
 
 def summarize(items):
-    by_mat = {}
+    by_mat, by_loc = {}, {}
     for it in items:
         by_mat[it["material"]] = by_mat.get(it["material"], 0) + 1
-    return by_mat
+        by_loc[it["status"]] = by_loc.get(it["status"], 0) + 1
+    return by_mat, by_loc
 
 
 def main():
     ap = argparse.ArgumentParser(description="Reset total do estoque a partir do arquivo markdown.")
-    ap.add_argument("source", nargs="?", help="arquivo de estoque .md (default: data/Estoque *.md mais recente)")
+    ap.add_argument("source", nargs="?", help="arquivo .md (default: data/Estoque *.md mais recente)")
     ap.add_argument("--dry-run", action="store_true", help="mostra o que faria sem escrever")
     ap.add_argument("--no-backup", action="store_true", help="pula o backup do estoque atual")
     args = ap.parse_args()
 
     source = _resolve_source(args.source)
-    items = parse_markdown(source)
-    by_mat = summarize(items)
+    catalog_keys = _load_catalog_keys()
+    items = parse_markdown(source, catalog_keys)
+    by_mat, by_loc = summarize(items)
 
     print(f"Fonte: {source}")
     print(f"Banco de estoque: {inventory.INVENTORY_DB_PATH}")
-    print(f"Itens a inserir (1 rolo = 1 linha, todos in_stock): {len(items)}")
+    print(f"Itens a inserir (1 rolo = 1 linha): {len(items)}")
     for mat, n in sorted(by_mat.items()):
         print(f"  {mat}: {n} rolos")
+    print(f"Por localização: {by_loc}")
+    linked = sum(1 for it in items if it["variant_id"] is not None)
+    print(f"Vinculados ao catálogo (variant_id): {linked}/{len(items)}")
 
     current = inventory.list_items()
     print(f"Itens atualmente no banco (serão substituídos): {len(current)}")
@@ -317,7 +346,7 @@ def main():
             print(f"    - {e}")
 
     final = inventory.list_items()
-    print(f"\nTotal final no banco: {len(final)} rolos (todos in_stock)")
+    print(f"\nTotal final no banco: {len(final)} rolos")
 
 
 if __name__ == "__main__":
