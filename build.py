@@ -933,8 +933,14 @@ def coerce_value(column, raw):
     return str(raw)
 
 
-def seed_processes():
-    """Gera perfis de processo via heranÃ§a e insere no banco."""
+def seed_processes(validate_profiles: bool = True):
+    """Gera perfis de processo via heranÃ§a e insere no banco.
+
+    Se ``validate_profiles`` (default True), roda o validador de invariantes
+    (validate.py) sobre os perfis gerados EM MEMÓRIA antes de concluir. O
+    validador é read-only: severidade "high" aborta o build (sys.exit via
+    error()); "medium"/"low" apenas avisam.
+    """
     info("Gerando perfis de processo via heranÃ§a...")
 
     combinations = load_json(PROCESS_BASE_DIR / "combinations.json")
@@ -1011,15 +1017,32 @@ def seed_processes():
 
     default_devices = load_devices_for_combinations(combinations)
 
+    # Acumula os perfis gerados em memória (+ metadados de origem) para o
+    # validador de invariantes rodar antes de concluir. Read-only: nada aqui
+    # altera DB nem perfis.
+    generated = []
+    loaded_devices = {}
+
     inserted = 0
     for combo in combinations["combinations"]:
         profile_type = combo["profile_type"]
         combo_devices = combo.get("devices", default_devices)
         for device_id in combo_devices:
             device = load_device(device_id)
+            loaded_devices[device_id] = device
             for layer_height in combo["layer_heights"]:
                 for material in combo["materials"]:
                     profile_data = generate_process_profile(profile_type, layer_height, material, device)
+
+                    if validate_profiles:
+                        import validate  # import tardio: quebra o ciclo build<->validate
+                        generated.append(validate.GeneratedProfile(
+                            profile=profile_data,
+                            profile_type=profile_type,
+                            layer_height=layer_height,
+                            material=material,
+                            device=device,
+                        ))
 
                     cur.execute("SELECT id FROM materials WHERE name = ?", (material,))
                     material_row = cur.fetchone()
@@ -1064,6 +1087,26 @@ def seed_processes():
     conn.commit()
     conn.close()
     info(f"Perfis de processo gerados: {inserted}")
+
+    if validate_profiles:
+        import validate  # import tardio: build já está em sys.modules aqui
+        info("Validando invariantes dos perfis de processo...")
+        violations = validate.run_all(generated, loaded_devices, combinations)
+        highs = [v for v in violations if v.severity == "high"]
+        lows = [v for v in violations if v.severity != "high"]
+        for v in lows:
+            warn(str(v))
+        if highs:
+            for v in highs:
+                error_msg = str(v)
+                print(f"\033[0;31m[ERROR]\033[0m {error_msg}", file=sys.stderr)
+            error(
+                f"Validação de invariantes falhou: {len(highs)} violação(ões) de "
+                f"severidade ALTA (ver acima). Build abortado."
+            )
+        info(
+            f"Validação concluída: {len(violations)} aviso(s), 0 violação(ões) ALTA."
+        )
 
 
 # =============================================================================
@@ -1671,6 +1714,14 @@ def main():
     parser = argparse.ArgumentParser(description="FilamentDB â Build Pipeline")
     parser.add_argument("--only-db", action="store_true", help="Apenas cria banco (sem export)")
     parser.add_argument("--only-export", action="store_true", help="Apenas exporta (banco ja existe)")
+    parser.add_argument(
+        "--validate", dest="validate", action="store_true", default=True,
+        help="Valida invariantes dos perfis de processo (LIGADO por padrão)",
+    )
+    parser.add_argument(
+        "--no-validate", dest="validate", action="store_false",
+        help="Pula a validação de invariantes dos perfis de processo",
+    )
     args = parser.parse_args()
 
     print()
@@ -1687,11 +1738,11 @@ def main():
     elif args.only_db:
         create_schema()
         seed_filaments()
-        seed_processes()
+        seed_processes(validate_profiles=args.validate)
     else:
         create_schema()
         seed_filaments()
-        seed_processes()
+        seed_processes(validate_profiles=args.validate)
         export_filaments()
         export_processes()
         export_orca_filaments()
