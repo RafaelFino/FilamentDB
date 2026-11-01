@@ -66,6 +66,13 @@ jobs:
       - name: Build catalog database
         run: python build.py --only-db
 
+      - name: Validate profile invariants
+        # Guarda automática contra a classe de bug da spec
+        # profile-audit-consistency (initial_layer_print_height não-múltiplo do
+        # layer_height, caps do device, etc.). --validate já é default; o passo
+        # explicita a intenção e falha o job (exit 1) em qualquer violação ALTA.
+        run: python build.py --only-db --validate
+
       - name: Run test suite
         run: python -m pytest tests/ -v
 
