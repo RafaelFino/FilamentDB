@@ -18,9 +18,16 @@ lines:
   finish: standard
   notes: Linha Ultra da Soleyin, foco em velocidade e troca de cor.
   color_options:
-  - Natural
   - Black
   - White
+  - Grey
+  - Ocean Blue
+  - Greenery
+  - Pineapple Yellow
+  - Almond Purple
+  - Light Green
+  - Rosehip
+  - Strawberry Milk
 
 materials:
   PLA:
@@ -46,7 +53,67 @@ materials:
         PLA Ultra da Soleyin (sub-marca Creality), feito para troca de cor no CFS
         da K2. Fluxo moderado (MVS 8). Quando escolher: impressões multicolor na
         K2 Combo sem gastar o Hyper. Continua PLA — sem resistência térmica.
-      color: Natural
       surface_finish: Standard
       drying_temperature: 55
       drying_time: 8.0
+      variants:
+      - color_name: Black
+        hex: "#101010"
+        finish: Standard
+        weight_g: 1000
+        status: Active
+        sku: "3301010608"
+      - color_name: White
+        hex: "#F4F4F2"
+        finish: Standard
+        weight_g: 1000
+        status: Active
+        sku: "3301010609"
+      - color_name: Grey
+        hex: "#8A8D8F"
+        finish: Standard
+        weight_g: 1000
+        status: Active
+        sku: "3301010606"
+      - color_name: Ocean Blue
+        hex: "#1F6FB2"
+        finish: Standard
+        weight_g: 1000
+        status: Active
+        sku: "3301010607"
+      - color_name: Greenery
+        hex: "#3C7A3E"
+        finish: Standard
+        weight_g: 1000
+        status: Active
+        sku: "3301010604"
+      - color_name: Pineapple Yellow
+        hex: "#F4C430"
+        finish: Standard
+        weight_g: 1000
+        status: Active
+        sku: "3301010605"
+      - color_name: Almond Purple
+        hex: "#9B8AA6"
+        finish: Standard
+        weight_g: 1000
+        status: Active
+        sku: "3301010600"
+      - color_name: Light Green
+        hex: "#9CCB7A"
+        finish: Standard
+        weight_g: 1000
+        status: Active
+        sku: "3301010603"
+      - color_name: Rosehip
+        hex: "#B23A48"
+        finish: Standard
+        weight_g: 1000
+        status: Active
+        sku: "3301010601"
+      - color_name: Strawberry Milk
+        hex: "#F2C6CE"
+        finish: Standard
+        weight_g: 1000
+        status: Active
+        sku: "3301010602"
