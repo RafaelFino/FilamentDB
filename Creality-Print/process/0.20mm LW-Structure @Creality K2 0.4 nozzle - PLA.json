@@ -7,7 +7,7 @@
     "print_settings_id": "0.20mm LW-Structure @Creality K2 0.4 nozzle - PLA",
     "version": "26.4.28.18",
     "layer_height": "0.2",
-    "initial_layer_print_height": "0.24",
+    "initial_layer_print_height": "0.2",
     "inner_wall_speed": "270.0",
     "outer_wall_speed": "135.0",
     "sparse_infill_speed": "315.0",

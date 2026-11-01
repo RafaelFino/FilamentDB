@@ -7,7 +7,7 @@
     "print_settings_id": "0.08mm Standard @Creality K2 0.4 nozzle - PLA",
     "version": "26.4.28.18",
     "layer_height": "0.08",
-    "initial_layer_print_height": "0.24",
+    "initial_layer_print_height": "0.2",
     "inner_wall_speed": "300.0",
     "outer_wall_speed": "75.0",
     "sparse_infill_speed": "350.0",

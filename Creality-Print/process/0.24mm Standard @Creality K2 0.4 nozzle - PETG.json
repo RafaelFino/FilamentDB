@@ -7,7 +7,7 @@
     "print_settings_id": "0.24mm Standard @Creality K2 0.4 nozzle - PETG",
     "version": "26.4.28.18",
     "layer_height": "0.24",
-    "initial_layer_print_height": "0.28",
+    "initial_layer_print_height": "0.24",
     "inner_wall_speed": "204.0",
     "outer_wall_speed": "51.0",
     "sparse_infill_speed": "238.0",
