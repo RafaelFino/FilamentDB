@@ -1,0 +1,52 @@
+manufacturer:
+  name: Soleyin
+  country: China
+  website: https://www.creality.com
+  notes: >
+    Sub-marca da Creality. A linha Ultra PLA é de alta velocidade e
+    multi-material (compatível com CFS), confirmada em páginas de produto.
+
+lines:
+- name: Ultra Line
+  description: PLA de alta velocidade multi-material (compatível com CFS)
+  positioning: performance
+  difficulty: 30
+  target_use: production_speed
+  tier: standard
+  tracking: true
+  category: high_speed
+  finish: standard
+  notes: Linha Ultra da Soleyin, foco em velocidade e troca de cor.
+  color_options:
+  - Natural
+  - Black
+  - White
+
+materials:
+  PLA:
+    profiles:
+    - line: Ultra Line
+      commercial_name: Ultra PLA
+      profile_name: Soleyin Ultra PLA
+      export: true
+      notes: >
+        Specs conferidas em páginas de produto: nozzle 190-230°C, bed 45-60°C,
+        velocidade 30-300 mm/s, multi-material (CFS). Reescrito para licença.
+      nozzle:
+        initial: 210
+        min: 190
+        max: 230
+      bed:
+        initial: 55
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 8
+      density: 1.24
+      recommendation: >
+        PLA Ultra da Soleyin (sub-marca Creality), feito para troca de cor no CFS
+        da K2. Fluxo moderado (MVS 8). Quando escolher: impressões multicolor na
+        K2 Combo sem gastar o Hyper. Continua PLA — sem resistência térmica.
+      color: Natural
+      surface_finish: Standard
+      drying_temperature: 55
+      drying_time: 8.0

@@ -173,7 +173,43 @@ lines:
   - Natural
   - Black
   - Gray
+- name: LW Line
+  description: PLA de baixo peso (foaming) para aeromodelismo
+  positioning: specialty
+  difficulty: 70
+  target_use: lightweight_rc
+  tier: premium
+  tracking: false
+  category: specialty
+  finish: matte
+  notes: PLA Lightweight da Sunlu, expande por temperatura (foaming).
+  color_options:
+  - Natural
+  - Black
 materials:
+  PLA-LW:
+    profiles:
+    - line: LW Line
+      commercial_name: PLA Lightweight
+      profile_name: Sunlu PLA Lightweight
+      export: false
+      notes: >
+        PLA leve (foaming) da Sunlu para aeromodelismo. Flow reduzido no filamento
+        controla a expansão por temperatura. Reescrito para licença.
+      nozzle:
+        initial: 230
+        min: 200
+        max: 250
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 0.55
+      max_volumetric_speed: 6
+      density: 0.6
+      color: Natural
+      surface_finish: Matte
+      drying_temperature: 55
+      drying_time: 8.0
   PLA:
     profiles:
     - line: PLA Standard Line

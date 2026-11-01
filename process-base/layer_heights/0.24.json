@@ -1,5 +1,6 @@
 {
     "layer_height": "0.24",
+    "speed_scale": 0.85,
     "initial_layer_print_height": "0.28",
     "top_shell_thickness": "0.96",
     "bottom_shell_thickness": "0.96",

@@ -147,6 +147,42 @@ materials:
       Peças funcionais rígidas que precisam de resistência química/térmica.
       Abrasivo: exige bico endurecido. Só em 0.20mm Standard na K2.
 
+  PLA-LW:
+    description: PLA de baixo peso (foaming). Expande por temperatura, formando espuma de baixa densidade para aeromodelismo.
+    strength: 30          # a espuma reduz muito a resistência vs PLA sólido
+    flexibility: 20       # frágil, como o PLA, mas ainda mais leve/poroso
+    temp_resist: 20       # mesma Tg do PLA (~55-60°C)
+    uv_resist: 25
+    confidence_base: 45   # difícil: foaming exige calibração de flow/temperatura
+    food_safe: 0
+    indoor: 1
+    outdoor: 0
+    abrasive: 0
+    requires_enclosure: 0
+    recommended_nozzle_temp: 240   # faixa de foaming (ativa ~220, pico 240-250)
+    recommended_bed_temp: 55
+    notes: >
+      Material de aeromodelismo (foaming). Flow reduzido (~0.5-0.6) e temperatura
+      alta no filamento controlam a expansão. Só em 0.20mm Standard na K2.
+
+  PETG-LW:
+    description: PETG de baixo peso (foaming). Variante leve do PETG para peças de aeromodelismo que pedem mais tenacidade que o PLA-LW.
+    strength: 35
+    flexibility: 35
+    temp_resist: 45       # herda a Tg do PETG (~80°C)
+    uv_resist: 55
+    confidence_base: 40   # ainda mais difícil: foaming + stringing do PETG
+    food_safe: 0
+    indoor: 1
+    outdoor: 1
+    abrasive: 0
+    requires_enclosure: 0
+    recommended_nozzle_temp: 250
+    recommended_bed_temp: 75
+    notes: >
+      PETG leve (foaming) para aeromodelismo. Menos difundido que o PLA-LW;
+      manter como material de processo. Só em 0.20mm Standard na K2.
+
   SUPPORT:
     description: Material de suporte (breakaway/solúvel). Não é material estrutural.
     strength: 0

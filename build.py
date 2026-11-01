@@ -307,6 +307,15 @@ def create_schema():
         flush_into_objects INTEGER DEFAULT 0,
         flush_into_support INTEGER DEFAULT 1,
         flush_multiplier REAL DEFAULT 0.8,
+        single_extruder_multi_material_priming TEXT,
+        wiping_volumes_extruders TEXT,
+        wipe_tower_bridging TEXT,
+        wipe_tower_cone_angle TEXT,
+        wipe_tower_extra_spacing TEXT,
+        wipe_tower_no_sparse_layers TEXT,
+        wipe_tower_rotation_angle TEXT,
+        prime_tower_enhance_type TEXT,
+        ooze_prevention TEXT,
         printer_model TEXT DEFAULT 'Creality K2 Combo',
         nozzle_size REAL DEFAULT 0.4,
         base_id TEXT DEFAULT 'GP004',
@@ -629,7 +638,7 @@ def seed_filaments():
 PROFILE_MULTIPLIERS = {
     "fast": {"speed": 1.50, "accel": 1.50},
     "economy": {"speed": 1.0, "accel": 1.0},
-    "standard": {"speed": 1.0, "accel": 1.0, "quality_speed": 0.6},
+    "standard": {"speed": 1.0, "accel": 1.0, "quality_speed": 0.5},
     "strong": {"speed": 0.85, "accel": 0.80},
     "detail": {"speed": 0.80, "accel": 0.75, "quality_speed": 0.45},
     "safe": {"speed": 0.70, "accel": 0.60, "quality_speed": 0.50},
@@ -851,6 +860,13 @@ def generate_process_profile(profile_type, layer_height, material_name, device):
     material_mult = material_data.get("speed_multiplier", 1.0)
     material_accel_mult = material_data.get("acceleration_multiplier", 1.0)
 
+    # Redução de velocidade por altura de camada (combate sub-extrusão em layer
+    # heights > 0.20). Justificado pela altura de camada (fluxo volumétrico por mm
+    # cresce com a camada), NUNCA pelo MVS do material (MVS é exclusivo do
+    # filamento). Aplicado a todos os SPEED_FIELDS exceto travel_speed (movimento
+    # sem extrusão). O MVS continua sendo o limitador superior em runtime.
+    layer_speed_scale = float(layer_data.get("speed_scale", 1.0))
+
     for field in SPEED_FIELDS:
         if field in material_data:
             # Use quality_speed multiplier for fields that affect visible quality
@@ -859,6 +875,9 @@ def generate_process_profile(profile_type, layer_height, material_name, device):
             else:
                 speed_mult = mult["speed"]
             raw_speed = float(material_data[field]) * speed_mult * material_mult
+            # Redução por altura de camada (não toca travel — movimento sem extrusão).
+            if field != "travel_speed":
+                raw_speed *= layer_speed_scale
             # Cap at machine maximum (vem do device: travel vs extrusão)
             if field == "travel_speed":
                 raw_speed = min(raw_speed, travel_cap)
@@ -928,7 +947,7 @@ def seed_processes():
     # nÃ£o ter sido criados no seed_filaments. Usamos as MESMAS propriedades
     # canÃ´nicas (material-data/materials.yaml) para nÃ£o recair em defaults 50/50.
     material_defs = load_material_defs()
-    process_materials = ["PLA", "PETG", "TPU", "ABS", "PLA-CF", "PETG-CF"]
+    process_materials = ["PLA", "PETG", "TPU", "ABS", "PLA-CF", "PETG-CF", "PLA-LW", "PETG-LW"]
     for name in process_materials:
         cur.execute("SELECT id FROM materials WHERE name = ?", (name,))
         if cur.fetchone():
@@ -979,6 +998,10 @@ def seed_processes():
         "staggered_inner_seams", "role_based_wipe_speed", "wipe_on_loops",
         "enable_prime_tower", "prime_tower_width", "prime_tower_brim_width", "prime_volume",
         "flush_into_infill", "flush_into_objects", "flush_into_support", "flush_multiplier",
+        "single_extruder_multi_material_priming", "wiping_volumes_extruders",
+        "wipe_tower_bridging", "wipe_tower_cone_angle", "wipe_tower_extra_spacing",
+        "wipe_tower_no_sparse_layers", "wipe_tower_rotation_angle",
+        "prime_tower_enhance_type", "ooze_prevention",
         "printer_model", "nozzle_size", "base_id", "inherits", "version",
         "description", "notes", "active",
     ]
@@ -1192,6 +1215,10 @@ def export_processes():
             pp.prime_volume,
             pp.flush_into_infill, pp.flush_into_objects, pp.flush_into_support,
             pp.flush_multiplier,
+            pp.single_extruder_multi_material_priming, pp.wiping_volumes_extruders,
+            pp.wipe_tower_bridging, pp.wipe_tower_cone_angle, pp.wipe_tower_extra_spacing,
+            pp.wipe_tower_no_sparse_layers, pp.wipe_tower_rotation_angle,
+            pp.prime_tower_enhance_type, pp.ooze_prevention,
             pp.printer_model, pp.base_id, pp.inherits, pp.version,
             m.name AS material_name, pp.device_id
         FROM process_profiles pp
@@ -1204,7 +1231,7 @@ def export_processes():
     exported = 0
     for row in rows:
         profile_name = row[0]
-        device_id = row[70]
+        device_id = row[79]
 
         # Creality Print só gera para devices que o suportam (CC2 é Orca-only).
         device = load_device(device_id)
@@ -1212,13 +1239,13 @@ def export_processes():
             continue
 
         data = {
-            "base_id": row[66] if row[66] else "GP004",
+            "base_id": row[75] if row[75] else "GP004",
             "from": "User",
-            "inherits": row[67] if row[67] else "0.20mm Standard @Creality K2 0.4 nozzle",
+            "inherits": row[76] if row[76] else "0.20mm Standard @Creality K2 0.4 nozzle",
             "is_custom_defined": "0",
             "name": profile_name,
             "print_settings_id": profile_name,
-            "version": row[68] if row[68] else "26.4.28.18",
+            "version": row[77] if row[77] else "26.4.28.18",
         }
 
         # Map indexed fields
@@ -1255,6 +1282,11 @@ def export_processes():
             (59, "prime_tower_brim_width"), (60, "prime_volume"),
             (61, "flush_into_infill"), (62, "flush_into_objects"),
             (63, "flush_into_support"), (64, "flush_multiplier"),
+            (65, "single_extruder_multi_material_priming"),
+            (66, "wiping_volumes_extruders"), (67, "wipe_tower_bridging"),
+            (68, "wipe_tower_cone_angle"), (69, "wipe_tower_extra_spacing"),
+            (70, "wipe_tower_no_sparse_layers"), (71, "wipe_tower_rotation_angle"),
+            (72, "prime_tower_enhance_type"), (73, "ooze_prevention"),
         ]
 
         for idx, key in field_map:
@@ -1298,6 +1330,8 @@ ORCA_FILAMENT_INHERITS = {
     "TPU": "fdm_filament_tpu",
     "PLA-CF": "fdm_filament_pla",
     "PETG-CF": "fdm_filament_petg",
+    "PLA-LW": "fdm_filament_pla",
+    "PETG-LW": "fdm_filament_petg",
     "SUPPORT": "fdm_filament_pla",
 }
 
@@ -1310,6 +1344,8 @@ ORCA_FILAMENT_TYPE = {
     "TPU": "TPU",
     "PLA-CF": "PLA-CF",
     "PETG-CF": "PETG-CF",
+    "PLA-LW": "PLA",
+    "PETG-LW": "PETG",
     "SUPPORT": "Support",
 }
 
@@ -1488,6 +1524,11 @@ def export_orca_processes():
             pp.seam_slope_start_height, pp.seam_slope_steps,
             pp.staggered_inner_seams,
             pp.ironing_type, pp.ironing_speed, pp.ironing_flow, pp.ironing_spacing,
+            pp.support_critical_regions_only,
+            pp.single_extruder_multi_material_priming, pp.wiping_volumes_extruders,
+            pp.wipe_tower_bridging, pp.wipe_tower_cone_angle, pp.wipe_tower_extra_spacing,
+            pp.wipe_tower_no_sparse_layers, pp.wipe_tower_rotation_angle,
+            pp.prime_tower_enhance_type, pp.ooze_prevention,
             m.name AS material_name, pp.device_id
         FROM process_profiles pp
         JOIN materials m ON m.id = pp.material_id
@@ -1509,6 +1550,11 @@ def export_orca_processes():
          seam_slope_start_height, seam_slope_steps,
          staggered_inner_seams,
          ironing_type, ironing_speed, ironing_flow, ironing_spacing,
+         support_critical_regions_only,
+         single_extruder_multi_material_priming, wiping_volumes_extruders,
+         wipe_tower_bridging, wipe_tower_cone_angle, wipe_tower_extra_spacing,
+         wipe_tower_no_sparse_layers, wipe_tower_rotation_angle,
+         prime_tower_enhance_type, ooze_prevention,
          material_name, device_id) = row
 
         # Resolve device: inherits e compatible_printers vêm da definição.
@@ -1577,6 +1623,24 @@ def export_orca_processes():
         set_val("seam_slope_start_height", seam_slope_start_height, as_int=True)
         set_val("seam_slope_steps", seam_slope_steps, as_int=True)
         set_val("staggered_inner_seams", staggered_inner_seams, as_int=True)
+
+        # Suporte apenas em regiões críticas é padrão obrigatório (materializado
+        # explícito em todo JSON — invariante travada por teste).
+        set_val("support_critical_regions_only", support_critical_regions_only, as_int=True)
+
+        # Bloco CFS/multi-material materializado explícito (não só via herança):
+        # garante que o reconhecimento de multifilamento do slicer não dependa da
+        # resolução da cadeia de inherits em runtime. wiping_volumes_extruders é a
+        # matriz de purga por tool, central no CFS.
+        set_val("single_extruder_multi_material_priming", single_extruder_multi_material_priming)
+        set_val("wiping_volumes_extruders", wiping_volumes_extruders)
+        set_val("wipe_tower_bridging", wipe_tower_bridging)
+        set_val("wipe_tower_cone_angle", wipe_tower_cone_angle)
+        set_val("wipe_tower_extra_spacing", wipe_tower_extra_spacing)
+        set_val("wipe_tower_no_sparse_layers", wipe_tower_no_sparse_layers)
+        set_val("wipe_tower_rotation_angle", wipe_tower_rotation_angle)
+        set_val("prime_tower_enhance_type", prime_tower_enhance_type)
+        set_val("ooze_prevention", ooze_prevention)
 
         if ironing_type and ironing_type != "no ironing":
             data["ironing_type"] = str(ironing_type)

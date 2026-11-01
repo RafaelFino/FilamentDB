@@ -2,50 +2,38 @@
     "default_devices": ["k2"],
     "combinations": [
         {
-            "profile_type": "fast",
-            "layer_heights": ["0.12", "0.16", "0.20", "0.24", "0.28"],
-            "materials": ["PLA", "PETG"],
-            "devices": ["k2"]
-        },
-        {
-            "profile_type": "economy",
-            "layer_heights": ["0.12", "0.16", "0.20", "0.24", "0.28"],
-            "materials": ["PLA", "PETG"],
-            "devices": ["k2"]
-        },
-        {
             "profile_type": "standard",
-            "layer_heights": ["0.12", "0.16", "0.20", "0.24", "0.28"],
-            "materials": ["PLA", "PETG"],
-            "devices": ["k2"]
-        },
-        {
-            "profile_type": "strong",
-            "layer_heights": ["0.12", "0.16", "0.20", "0.24", "0.28"],
-            "materials": ["PLA", "PETG"],
-            "devices": ["k2"]
-        },
-        {
-            "profile_type": "safe",
-            "layer_heights": ["0.12", "0.16", "0.20", "0.24", "0.28"],
-            "materials": ["PLA", "PETG"],
-            "devices": ["k2"]
-        },
-        {
-            "profile_type": "factory",
-            "layer_heights": ["0.12", "0.16", "0.20", "0.24", "0.28"],
-            "materials": ["PLA", "PETG"],
-            "devices": ["k2"]
-        },
-        {
-            "profile_type": "detail",
             "layer_heights": ["0.08", "0.12", "0.16", "0.20", "0.24", "0.28"],
             "materials": ["PLA", "PETG"],
             "devices": ["k2"]
         },
         {
-            "profile_type": "lw-extreme",
-            "layer_heights": ["0.20", "0.24"],
+            "profile_type": "detail",
+            "layer_heights": ["0.08", "0.12", "0.16", "0.20"],
+            "materials": ["PLA", "PETG"],
+            "devices": ["k2"]
+        },
+        {
+            "profile_type": "strong",
+            "layer_heights": ["0.16", "0.20", "0.24", "0.28"],
+            "materials": ["PLA", "PETG"],
+            "devices": ["k2"]
+        },
+        {
+            "profile_type": "fast",
+            "layer_heights": ["0.16", "0.20"],
+            "materials": ["PLA", "PETG"],
+            "devices": ["k2"]
+        },
+        {
+            "profile_type": "economy",
+            "layer_heights": ["0.20"],
+            "materials": ["PLA", "PETG"],
+            "devices": ["k2"]
+        },
+        {
+            "profile_type": "safe",
+            "layer_heights": ["0.20"],
             "materials": ["PLA", "PETG"],
             "devices": ["k2"]
         },
@@ -56,9 +44,15 @@
             "devices": ["k2"]
         },
         {
+            "profile_type": "lw-extreme",
+            "layer_heights": ["0.16", "0.20"],
+            "materials": ["PLA", "PETG"],
+            "devices": ["k2"]
+        },
+        {
             "profile_type": "standard",
             "layer_heights": ["0.20"],
-            "materials": ["TPU", "ABS", "PLA-CF", "PETG-CF"],
+            "materials": ["TPU", "ABS", "PLA-CF", "PLA-LW", "PETG-LW"],
             "devices": ["k2"]
         },
         {

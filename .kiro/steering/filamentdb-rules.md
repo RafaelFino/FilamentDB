@@ -51,20 +51,26 @@ material.
 Do mais rápido ao mais caprichado, mais os tipos especializados:
 
 ```
-Fast → Economy → Factory → Standard → Strong → Detail → Safe
-                              ├── LW-Structure (aeromodelo: fuselagem/corpo)
-                              └── LW-Extreme   (aeromodelo: asas)
+Fast → Economy → Standard → Strong → Detail → Safe
+                     ├── LW-Structure (aeromodelo: fuselagem/corpo)
+                     └── LW-Extreme   (aeromodelo: asas)
 ```
+
+> **Nota (overhaul de perfis):** o profile type `factory` foi **removido da
+> matriz** de combinações a pedido do usuário. O arquivo
+> `process-base/profile_types/factory.json` e a entrada em `PROFILE_MULTIPLIERS`
+> **permanecem no repo** (órfãos, não referenciados) para não perder a fonte.
 
 - **Fast**: Velocidade máxima. O mais rápido possível — aceita redução de qualidade em troca de tempo. 3 walls, 12% infill grid, inner-first.
 - **Economy**: Economia de filamento. Estrutura mínima viável — 2 walls, 8% grid, inner-first. Velocidade igual Standard — a economia vem da estrutura reduzida, não da velocidade. Ideal para protótipos descartáveis e peças não-estruturais.
-- **Factory**: Perfil de fábrica conservador — espelha a estrutura do Standard (4 walls, 15% gyroid, outer-first, top 5/bottom 4) mas com velocidade reduzida (0.65x) e **BRIM sempre ligado** (`brim_width` 5.0, `brim_object_gap` 0.15). Suportes herdados da base (ligados, apenas regiões críticas). Variações apenas PLA/PETG.
-- **Standard**: Equilíbrio geral, padrão de uso diário. 4 walls, 15% gyroid, outer-first, bom acabamento. Usa `quality_speed` 0.6 nos campos visíveis (outer/top/1ª camada). Nome obrigatório — Creality Print requer um perfil "Standard" para iniciar.
+- **Factory** (ÓRFÃO — fora da matriz): perfil de fábrica conservador. Mantido como arquivo/multiplicador no repo, mas **não gerado** (removido de `combinations.json` no overhaul de perfis).
+- **Standard**: Equilíbrio geral, padrão de uso diário. 4 walls, 15% gyroid, outer-first, bom acabamento. Usa `quality_speed` **0.50** nos campos visíveis (outer/top/1ª camada/gap) — baixado de 0.60 para melhorar o acabamento das paredes externas. Tem **ironing leve** no top (`ironing_type=top`, `ironing_flow=7.0`, `ironing_spacing=0.12`, `ironing_speed=30`). Nome obrigatório — Creality Print requer um perfil "Standard" para iniciar.
 - **Strong**: Resistência mecânica (6 walls, 50% infill gyroid). Mais lento, peças funcionais.
 - **Detail**: Qualidade visual máxima. Layer heights baixos (0.08-0.16mm), 5 walls, 20% infill. `quality_speed` 0.45.
 - **Safe**: Ultra-conservador para primeira impressão ou materiais desconhecidos. Lento mas confiável.
-- **LW-Structure**: Peças leves de aeromodelo que ainda precisam de alguma resistência (fuselagem/corpo). 2 walls, 7% gyroid, top/bottom 3, inner-first, seam aligned, brim 5.0. Gerado só nos layer heights que fazem sentido (0.16, 0.20).
-- **LW-Extreme**: Peças leves ao extremo (asas). 1 wall, 3% gyroid, top/bottom 1, inner-first, seam nearest, brim 4.0. Gerado só em 0.20 e 0.24. Usar com PETG ou PLA (material LW ainda a definir).
+- **Detail**: Qualidade visual máxima. `quality_speed` 0.45, `ironing_flow` **9.0** (acima do Standard 7.0 — acabamento mais pesado no top).
+- **LW-Structure**: Peças leves de aeromodelo que ainda precisam de alguma resistência (fuselagem/corpo). 2 walls, 7% gyroid, top/bottom 3, inner-first, seam aligned, brim 5.0. Gerado só nos layer heights que fazem sentido (**0.16, 0.20**).
+- **LW-Extreme**: Peças leves ao extremo (asas). 1 wall, 3% gyroid, top/bottom 1, inner-first, seam nearest, brim 4.0. Gerado só em **0.16 e 0.20**. Usar com PLA/PETG (ou os materiais de foaming PLA-LW/PETG-LW).
 
 Os ids dos LW são **hifenizados em inglês** (`lw-extreme`, `lw-structure`); o
 build mapeia para o display `LW-Extreme`/`LW-Structure`.
@@ -74,14 +80,33 @@ build mapeia para o display `LW-Extreme`/`LW-Structure`.
 ```
 Fast:         speed=1.50x  accel=1.50x
 Economy:      speed=1.00x  accel=1.00x  (economia via estrutura, não velocidade)
-Factory:      speed=0.65x  accel=0.65x
-Standard:     speed=1.00x  accel=1.00x  quality_speed=0.60x (outer/top/1st layer/gap)
+Factory:      speed=0.65x  accel=0.65x  (ÓRFÃO — fora da matriz)
+Standard:     speed=1.00x  accel=1.00x  quality_speed=0.50x (outer/top/1st layer/gap)
 Strong:       speed=0.85x  accel=0.80x
 Detail:       speed=0.80x  accel=0.75x  quality_speed=0.45x (outer/top/1st layer/gap)
 Safe:         speed=0.70x  accel=0.60x  quality_speed=0.50x (outer/top/1st layer/gap)
 LW-Structure: speed=0.90x  accel=0.85x
 LW-Extreme:   speed=0.90x  accel=0.85x
 ```
+
+### Redução de velocidade por altura de camada (`speed_scale`)
+
+Para combater **sub-extrusão** em camadas altas (relatada inclusive com PETG
+premium), os layer heights acima de 0.20 aplicam um `speed_scale` por layer
+height, declarado em `layer_heights/<lh>.json` e aplicado no `build.py` a **todos
+os `SPEED_FIELDS` exceto `travel_speed`** (movimento sem extrusão não causa
+sub-extrusão), **antes** dos caps de device/layer:
+
+```
+0.24: speed_scale=0.85
+0.28: speed_scale=0.75
+≤0.20: sem speed_scale (=1.0)
+```
+
+Justificado pela **altura de camada** (o fluxo volumétrico por mm cresce com a
+camada: +20% a 0.24, +40% a 0.28), **nunca** pelo MVS do material — o cap
+volumétrico continua exclusivo do filamento. Ex. PLA 0.24 Standard inner = 300 ×
+0.85 = 255; 0.28 = 300 × 0.75 = 225; travel permanece 700 nos dois.
 
 Standard, Detail e Safe usam multiplicadores **assimétricos**: campos que afetam
 qualidade visual (outer wall, top surface, primeira camada, gap infill) recebem o
@@ -204,29 +229,34 @@ a `.capitalize()` (zero regressão). Isso evita o `str.capitalize()` quebrar
 
 | Profile type | Layer heights                      | Materiais        |
 |--------------|------------------------------------|------------------|
-| fast         | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
-| economy      | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
-| standard     | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
-| strong       | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
-| safe         | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
-| factory      | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
-| detail       | 0.08, 0.12, 0.16, 0.20, 0.24, 0.28 | PLA, PETG        |
-| lw-extreme   | 0.20, 0.24                         | PLA, PETG        |
+| standard     | 0.08, 0.12, 0.16, 0.20, 0.24, 0.28 | PLA, PETG        |
+| detail       | 0.08, 0.12, 0.16, 0.20             | PLA, PETG        |
+| strong       | 0.16, 0.20, 0.24, 0.28             | PLA, PETG        |
+| fast         | 0.16, 0.20                         | PLA, PETG        |
+| economy      | 0.20                               | PLA, PETG        |
+| safe         | 0.20                               | PLA, PETG        |
 | lw-structure | 0.16, 0.20                         | PLA, PETG        |
-| standard     | 0.20                               | TPU, ABS, PLA-CF, PETG-CF |
+| lw-extreme   | 0.16, 0.20                         | PLA, PETG        |
+| standard     | 0.20                               | TPU, ABS, PLA-CF, PLA-LW, PETG-LW |
 | standard     | 0.20 (**device cc2**)              | PLA, PETG        |
 
-Total: **86** perfis de processo. Por tipo: detail 12; fast/economy/strong/
-safe/factory 10 cada; standard 16 (10 PLA/PETG + 4 especiais + 2 cc2);
-lw-extreme 4; lw-structure 4. `default_devices = ["k2"]`. O device cc2 é
-Orca-only, então o export Creality Print tem 84 processos (86 − 2 cc2) e o Orca
-tem 86.
+Total: **51** perfis de processo. Por tipo: standard 19 (12 PLA/PETG em 6 lh +
+5 especiais em 0.20 + 2 cc2); detail 8; strong 8; fast 4; economy 2; safe 2;
+lw-structure 4; lw-extreme 4. `default_devices = ["k2"]`. O device cc2 é
+Orca-only, então o export **Creality Print tem 49 processos** (51 − 2 cc2) e o
+**Orca tem 51**.
+
+`factory` foi **removido da matriz** (arquivo/multiplicador órfãos, preservados).
+`PETG-CF` foi **removido da matriz de especiais** (arquivo preservado em
+`materials/PETG-CF.json` e `material-data/`); os especiais agora são
+{TPU, ABS, PLA-CF, PLA-LW, PETG-LW}. Economy e Safe **só em 0.20**; LW (dois
+types) **só em 0.16/0.20**.
 
 ## Defaults de Suporte e Multifilamento
 
 Todos os perfis de processo incluem por padrão:
 
-- **Suportes**: Habilitados com `support_critical_regions_only = 1` (apenas regiões críticas), tree(auto), apenas na build plate.
+- **Suportes**: Habilitados com `support_critical_regions_only = 1` (apenas regiões críticas), tree(auto), apenas na build plate. **Invariante obrigatória**: suporte apenas em regiões críticas é padrão e **nenhum perfil pode desligá-lo** — o campo vem de `base.json`, nenhum profile_type/layer_height sobrescreve, é materializado explícito em todo JSON exportado (CP e Orca) e é **travado por teste** (`tests/test_multi_device.py`) sobre todos os processos de todos os devices (k2 + cc2).
 - **Distâncias de suporte otimizadas para remoção fácil** (especialmente PETG):
   - `support_top_z_distance`: 0.25mm (0.20mm layer) / 0.30mm (0.28mm layer) — gap vertical maior evita fusão com PETG
   - `support_interface_spacing`: 0.8-1.0mm — interface espaçada para menos contato
@@ -234,6 +264,39 @@ Todos os perfis de processo incluem por padrão:
   - `support_object_xy_distance`: 0.5-0.55mm — distância lateral generosa
 - **Prime Tower (multifilamento)**: Habilitada com largura mínima de 35mm para reduzir desperdício.
 - **Flush/Purga**: `flush_multiplier = 0.8` (reduzido do padrão 1.3), `flush_into_infill = 1`, `flush_into_support = 1` — minimiza desperdício de material em trocas de cor.
+
+### Materialização explícita do bloco CFS (fix de multifilamento)
+
+**Causa-raiz do bug relatado** (perfis como Detail não reconhecidos como
+multifilamento no Creality Print, enquanto Standard funcionava): os campos de
+CFS que o slicer precisa — em especial `wiping_volumes_extruders` (matriz de
+purga por tool) e `single_extruder_multi_material_priming` — chegavam ao perfil
+**só por herança** do preset de sistema nomeado em `inherits`. Quando a
+resolução de herança no runtime do CP falhava (preset de sistema editado/ausente,
+divergência de nome após atualização do slicer, ordem de carga), o perfil ficava
+sem a matriz de purga e o CFS deixava de ser reconhecido. Detail era o mais
+exposto (único presente em 0.08/0.12, e o que mais diverge do preset de sistema).
+
+**Fix**: materializar os **9 campos de CFS** explicitamente em `base.json` (logo,
+no merge → banco → export de TODO perfil), sem depender de herança:
+`single_extruder_multi_material_priming`, `wiping_volumes_extruders`,
+`wipe_tower_bridging`, `wipe_tower_cone_angle`, `wipe_tower_extra_spacing`,
+`wipe_tower_no_sparse_layers`, `wipe_tower_rotation_angle`,
+`prime_tower_enhance_type`, `ooze_prevention` (valores do preset de sistema da
+K2). `support_filament`/`support_interface_filament` **não** são materializados
+(são atribuição de tool por objeto, resolvida no slice — fixá-los em "0" quebra o
+fluxo multi-material). O pipeline ganhou 9 colunas TEXT (sem DEFAULT) em
+`process_profiles` + entradas no export CP (`field_map`) e Orca (`set_val`).
+Invariante travada por teste: o conjunto estendido (8 prime-tower/flush + 9 CFS)
+é idêntico entre todos os profile types em 0.20.
+
+**Cadeia de `inherits` NÃO alterada**: os presets de sistema alvo
+(`<lh>mm Standard @Creality K2 0.4 nozzle`) existem no CP em todos os layer
+heights (verificado); a cadeia resolve corretamente e permanece como camada
+secundária. A materialização explícita torna o perfil robusto mesmo se a herança
+falhar. **Não reproduzível fora do slicer**: o reconhecimento real do CFS só se
+confirma abrindo o Creality Print (o fix remove a dependência estrutural da
+herança, que é a causa-raiz verificável a nível de campo).
 
 **Nota sobre PETG e suportes**: PETG tem alta adesão entre camadas — os valores de distância de suporte são calibrados para que o suporte não funda com a peça, priorizando remoção limpa sobre acabamento da superfície suportada.
 
@@ -253,12 +316,21 @@ velocidade real — não se infla a base contando com o cap do slicer.
 | PETG     | 1.00      | 1.00      | 15000         | 240             | Recalibrado conservador por cooling/stringing |
 | ABS      | 1.00      | 1.00      | 12000         | 300             | Menor por warping — sem dupla penalização |
 | PLA-CF   | 1.00      | 1.00      | 10000         | 280             | Rigidez da fibra + desgaste do nozzle |
-| PETG-CF  | 1.00      | 1.00      | 9000          | 240             | Fibra + PETG — material mais difícil |
+| PETG-CF  | 1.00      | 1.00      | 9000          | 240             | Fibra + PETG — material mais difícil (fora da matriz) |
 | TPU      | 1.00      | 1.00      | 4000          | 120             | Flexível — Direct Drive ajuda, mas tem limites |
+| PLA-LW   | 1.00      | 1.00      | 5000          | 70              | Foaming: velocidade baixa para dar tempo de expandir |
+| PETG-LW  | 1.00      | 1.00      | 4000          | 60              | Foaming + stringing do PETG — ainda mais lento |
+
+**Materiais de processo LW (foaming)**: `PLA-LW.json`/`PETG-LW.json` definem
+apenas velocidades/acelerações conservadoras (bem abaixo do PLA/PETG regular,
+para dar tempo de o material expandir e evitar stringing). A **redução de flow
+(~0.55) e a temperatura alta de foaming vivem no perfil de FILAMENTO**, não no de
+processo. Só geram processo em 0.20mm Standard (ver restrições). Registrados em
+`build.py` (`process_materials`) e em `material-data/materials.yaml`.
 
 ## Restrições de Materiais Especiais
 
-- **ABS, TPU, PLA-CF, PETG-CF**: Apenas em **0.20mm Standard**. Não gerar outros layer heights ou profile types para esses materiais.
+- **ABS, TPU, PLA-CF, PLA-LW, PETG-LW**: Apenas em **0.20mm Standard**. Não gerar outros layer heights ou profile types para esses materiais. (`PETG-CF` foi removido da matriz de especiais no overhaul de perfis — arquivo preservado, mas não gera processo.)
 - **PLA e PETG**: Disponíveis em todos os profile types e layer heights definidos no combinations.json.
 
 ## Produtos para Exportação
@@ -269,7 +341,7 @@ perfil de filamento decide se é exportado via a flag `export: true` no YAML
 curadoria junto da fonte de verdade e evita listas paralelas hardcoded.
 
 Produtos atualmente habilitados para exportação (curadoria deliberada, baseada
-no estoque físico real — 18 produtos):
+no estoque físico real — 19 produtos):
 
 | Produto | Material | YAML |
 |---------|----------|------|
@@ -291,10 +363,18 @@ no estoque físico real — 18 produtos):
 | Creality Hyper PETG | PETG | creality |
 | Elegoo PLA+ | PLA | elegoo |
 | Elegoo PLA Pro | PLA | elegoo |
+| Soleyin Ultra PLA | PLA | soleyin |
 
 Nota: a restrição de materiais especiais (PLA-CF/ABS/TPU só geram **processo**
 em 0.20mm Standard) aplica-se ao processo; não impede a exportação do
 **filamento** (Voolt3D PLA CF, ABS e TPU são exportados como filamento).
+
+**Soleyin** é sub-marca da Creality; o produto **Soleyin Ultra PLA** (linha Ultra,
+compatível com CFS) é o 19º produto exportado (`filament-data/soleyin.yaml`,
+`export: true`). Perfis de filamento **LW/foaming** foram adicionados a
+eSUN (ePLA-LW), Sunlu (PLA Lightweight) e Prusament (PLA Lightweight / PolyLight)
+mapeados para o material `PLA-LW`, todos `export: false` (ficam no banco para
+referência, não vão para os slicers).
 
 Todos os demais perfis (mesmo dos fabricantes acima) ficam no banco
 (filament-data/) para referência, comparação e price tracking, mas **não** são

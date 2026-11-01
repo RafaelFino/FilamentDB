@@ -28,7 +28,42 @@ lines:
   - Black
   - White
   - Natural
+- name: Lightweight Line
+  description: PLA de baixo peso (foaming) para aeromodelismo
+  positioning: specialty
+  difficulty: 70
+  target_use: lightweight_rc
+  tier: professional
+  category: specialty
+  finish: matte
+  notes: PLA Lightweight / PolyLight da Prusa, expande 2,3-3x (foaming).
+  color_options:
+  - Natural
+  - Orange
 materials:
+  PLA-LW:
+    profiles:
+    - line: Lightweight Line
+      commercial_name: PLA Lightweight
+      profile_name: Prusament PLA Lightweight
+      export: false
+      notes: >
+        PLA Lightweight / PolyLight da Prusa (foaming): expande 2,3-3x, nozzle
+        recomendado 210-250°C. Flow reduzido controla a expansão. Reescrito para licença.
+      nozzle:
+        initial: 230
+        min: 210
+        max: 250
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 0.55
+      max_volumetric_speed: 7
+      density: 0.6
+      color: Natural
+      surface_finish: Matte
+      drying_temperature: 55
+      drying_time: 8.0
   PLA:
     profiles:
     - line: Precision Line
