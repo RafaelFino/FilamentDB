@@ -7,7 +7,7 @@
     "print_settings_id": "0.16mm LW-Structure @Creality K2 0.4 nozzle - PETG",
     "version": "26.4.28.18",
     "layer_height": "0.16",
-    "initial_layer_print_height": "0.2",
+    "initial_layer_print_height": "0.16",
     "inner_wall_speed": "216.0",
     "outer_wall_speed": "108.0",
     "sparse_infill_speed": "252.0",
