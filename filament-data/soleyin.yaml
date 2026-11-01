@@ -20,14 +20,20 @@ lines:
   color_options:
   - Black
   - White
-  - Grey
-  - Ocean Blue
-  - Greenery
+  - Gray
   - Pineapple Yellow
-  - Almond Purple
+  - Greenery
   - Light Green
+  - Ocean Blue
+  - Almond Purple
   - Rosehip
   - Strawberry Milk
+  - Matte Black
+  - Matte White
+  - Matte Gray
+  - Matte Fluonte
+  - Matte Moonstone
+  - Matte Rose Stone
 
 materials:
   PLA:
@@ -57,63 +63,111 @@ materials:
       drying_temperature: 55
       drying_time: 8.0
       variants:
+      # --- Sólidas / Brilhantes (10, SKU oficial Creality) ---
       - color_name: Black
-        hex: "#101010"
+        hex: "#000000"
+        rgb: [0, 0, 0]
         finish: Standard
         weight_g: 1000
         status: Active
         sku: "3301010608"
       - color_name: White
-        hex: "#F4F4F2"
+        hex: "#FFFFFF"
+        rgb: [255, 255, 255]
         finish: Standard
         weight_g: 1000
         status: Active
         sku: "3301010609"
-      - color_name: Grey
-        hex: "#8A8D8F"
+      - color_name: Gray
+        hex: "#BAC1CA"
+        rgb: [186, 193, 202]
         finish: Standard
         weight_g: 1000
         status: Active
         sku: "3301010606"
-      - color_name: Ocean Blue
-        hex: "#1F6FB2"
-        finish: Standard
-        weight_g: 1000
-        status: Active
-        sku: "3301010607"
-      - color_name: Greenery
-        hex: "#3C7A3E"
-        finish: Standard
-        weight_g: 1000
-        status: Active
-        sku: "3301010604"
       - color_name: Pineapple Yellow
-        hex: "#F4C430"
+        hex: "#FEF493"
+        rgb: [254, 244, 147]
         finish: Standard
         weight_g: 1000
         status: Active
         sku: "3301010605"
-      - color_name: Almond Purple
-        hex: "#9B8AA6"
+      - color_name: Greenery
+        hex: "#B2BA81"
+        rgb: [178, 186, 129]
         finish: Standard
         weight_g: 1000
         status: Active
-        sku: "3301010600"
+        sku: "3301010604"
       - color_name: Light Green
-        hex: "#9CCB7A"
+        hex: "#A3E3B2"
+        rgb: [163, 227, 178]
         finish: Standard
         weight_g: 1000
         status: Active
         sku: "3301010603"
+      - color_name: Ocean Blue
+        hex: "#2B6CB0"
+        rgb: [43, 108, 176]
+        finish: Standard
+        weight_g: 1000
+        status: Active
+        sku: "3301010607"
+      - color_name: Almond Purple
+        hex: "#D1C9DC"
+        rgb: [209, 201, 220]
+        finish: Standard
+        weight_g: 1000
+        status: Active
+        sku: "3301010600"
       - color_name: Rosehip
-        hex: "#B23A48"
+        hex: "#E25858"
+        rgb: [226, 88, 88]
         finish: Standard
         weight_g: 1000
         status: Active
         sku: "3301010601"
       - color_name: Strawberry Milk
-        hex: "#F2C6CE"
+        hex: "#F5C2C1"
+        rgb: [245, 194, 193]
         finish: Standard
         weight_g: 1000
         status: Active
         sku: "3301010602"
+      # --- Matte / Fosco (6) ---
+      - color_name: Matte Black
+        hex: "#1C1C1C"
+        rgb: [28, 28, 28]
+        finish: Matte
+        weight_g: 1000
+        status: Active
+      - color_name: Matte White
+        hex: "#F9F9F9"
+        rgb: [249, 249, 249]
+        finish: Matte
+        weight_g: 1000
+        status: Active
+      - color_name: Matte Gray
+        hex: "#9EAEB8"
+        rgb: [158, 174, 184]
+        finish: Matte
+        weight_g: 1000
+        status: Active
+      - color_name: Matte Fluonte
+        hex: "#7FE5A3"
+        rgb: [127, 229, 163]
+        finish: Matte
+        weight_g: 1000
+        status: Active
+      - color_name: Matte Moonstone
+        hex: "#709CB4"
+        rgb: [112, 156, 180]
+        finish: Matte
+        weight_g: 1000
+        status: Active
+      - color_name: Matte Rose Stone
+        hex: "#D99694"
+        rgb: [217, 150, 148]
+        finish: Matte
+        weight_g: 1000
+        status: Active
