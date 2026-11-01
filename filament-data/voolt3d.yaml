@@ -489,7 +489,7 @@ materials:
       flow_ratio: 0.98
       max_volumetric_speed: 20
       recommendation: >
-        PLA para quando o objetivo é tempo de impressão. MVS 25 sustenta perfis Fast
+        PLA para quando o objetivo é tempo de impressão. MVS 20 sustenta perfis Fast
         sem faltar fluxo. Acabamento e precisão cedem um pouco em troca de velocidade.
         Quando escolher: lotes, protótipos rápidos, peças grandes onde o relógio pesa
         mais que o detalhe. Para acabamento fino, prefira Velvet ou baixe o layer height.

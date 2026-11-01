@@ -15,7 +15,7 @@ O sistema adota uma separação clara entre **perfil de processo** e **perfil de
 - **Perfil de filamento** → define o que o *material* aguenta (`filament_max_volumetric_speed`)
 - **Slicer (Creality Print)** → combina os dois em runtime e aplica o menor limitador automaticamente
 
-Isso garante que filamentos premium (Voolt3D Velvet MVS=25, Sunlu HS MVS=22) aproveitam o máximo da K2, enquanto filamentos mais limitados (Silk MVS=12, PETG genérico MVS=12) são automaticamente contidos sem penalizar os demais.
+Isso garante que filamentos premium (Voolt3D Velvet MVS=20, Sunlu HS MVS=22) aproveitam o máximo da K2, enquanto filamentos mais limitados (Silk MVS=12, PETG genérico MVS=12) são automaticamente contidos sem penalizar os demais. Política: MVS sempre conservador — quando houver dúvida ou divergência entre fontes, usar o menor valor.
 
 **Nunca** limitar velocidades no perfil de processo com base no MVS do material. O cap volumétrico é responsabilidade exclusiva do filamento.
 
