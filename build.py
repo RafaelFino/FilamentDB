@@ -1366,7 +1366,12 @@ def export_processes():
         if row[80] and str(row[80]).strip() not in {"", "0"}:
             data["zaa_enabled"] = str(row[80])
             if row[81] is not None:
-                data["zaa_minimize_perimeter_height"] = str(row[81])
+                # O Creality Print nomeia este campo "zaa_wall_lowering_min_slope"
+                # (verificado gravando 55 na UI e lendo o preset salvo), NÃO
+                # "zaa_minimize_perimeter_height" (nome do lineage OrcaSlicer).
+                # Com o nome errado o CP ignora o valor e mostra o default 0.
+                # O Orca usa o nome original (ver export_orca_processes).
+                data["zaa_wall_lowering_min_slope"] = str(row[81])
             if row[82] is not None:
                 data["zaa_min_z"] = str(row[82])
 

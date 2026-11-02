@@ -80,7 +80,7 @@
     "prime_tower_enhance_type": "chamfer",
     "ooze_prevention": "0",
     "zaa_enabled": "1",
-    "zaa_minimize_perimeter_height": "55",
+    "zaa_wall_lowering_min_slope": "55",
     "zaa_min_z": "0.06",
     "ironing_pattern": "rectilinear",
     "ironing_angle": "90"
