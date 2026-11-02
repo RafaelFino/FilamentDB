@@ -1291,8 +1291,10 @@ def export_processes():
             continue
 
         data = {
+            "type": "process",
             "base_id": row[75] if row[75] else "GP004",
             "from": "User",
+            "instantiation": "true",
             "inherits": row[76] if row[76] else "0.20mm Standard @Creality K2 0.4 nozzle",
             "is_custom_defined": "0",
             "name": profile_name,

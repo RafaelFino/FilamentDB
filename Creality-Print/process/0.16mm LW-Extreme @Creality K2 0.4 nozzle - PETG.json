@@ -1,6 +1,8 @@
 {
+    "type": "process",
     "base_id": "GP004",
     "from": "User",
+    "instantiation": "true",
     "inherits": "0.16mm Standard @Creality K2 0.4 nozzle",
     "is_custom_defined": "0",
     "name": "0.16mm LW-Extreme @Creality K2 0.4 nozzle - PETG",
