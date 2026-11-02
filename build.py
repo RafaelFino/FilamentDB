@@ -1335,7 +1335,12 @@ def export_processes():
             (57, "enable_prime_tower"), (58, "prime_tower_width"),
             (59, "prime_tower_brim_width"), (60, "prime_volume"),
             (61, "flush_into_infill"), (62, "flush_into_objects"),
-            (63, "flush_into_support"), (64, "flush_multiplier"),
+            (63, "flush_into_support"),
+            # flush_multiplier (idx 64) NÃO é emitido no processo do Creality
+            # Print: o CP rejeita essa chave em presets de processo ("incorrect
+            # keys: flush_multiplier, which were removed") e INVALIDA o preset
+            # inteiro, fazendo nenhum processo aparecer na UI. É chave de
+            # filamento/gerenciada pelo slicer, não de processo no CP.
             (65, "single_extruder_multi_material_priming"),
             (66, "wiping_volumes_extruders"), (67, "wipe_tower_bridging"),
             (68, "wipe_tower_cone_angle"), (69, "wipe_tower_extra_spacing"),

@@ -70,7 +70,6 @@
     "flush_into_infill": "1",
     "flush_into_objects": "0",
     "flush_into_support": "1",
-    "flush_multiplier": "0.8",
     "single_extruder_multi_material_priming": "0",
     "wiping_volumes_extruders": "70,70,70,70,70,70,70,70,70,70",
     "wipe_tower_bridging": "10",
