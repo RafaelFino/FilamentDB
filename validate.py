@@ -155,16 +155,24 @@ def expected_profile_count(source_defs: dict) -> int:
 # =============================================================================
 
 def check_layer_multiple(item: GeneratedProfile) -> list[Violation]:
-    """initial_layer_print_height deve ser múltiplo inteiro de layer_height.
+    """Coerência entre initial_layer_print_height e layer_height.
 
-    INVARIANTE CRÍTICA (classe do bug do Safe). Valida o perfil GERADO — o valor
-    já reflete o override de adesão aplicado por build (ADHESION_OVERRIDE_FIELDS,
-    que promove o MAIOR valor entre layer_height e profile_type). Não reimportamos
-    essa constante; checamos o resultado final.
+    INVARIANTE CRÍTICA. Causa raiz verificada empiricamente no Creality Print:
+    quando a PRIME TOWER está ligada (nosso caso em 100% dos perfis), o slicer
+    deixa de reconhecer o multifilamento/CFS se a primeira camada difere da
+    altura de camada. Observado: 0.16 Detail (initial 0.16 == layer) reconhece
+    multicor; 0.12 Detail (initial 0.24 != layer 0.12) NÃO reconhece, apesar de
+    0.24/0.12=2 ser múltiplo inteiro. Logo "múltiplo inteiro" é fraco demais —
+    com prime tower a condição segura é ``initial == layer``.
 
-    Fonte citada: se o valor gerado coincide com o override do profile_type
-    (ex. o antigo bug do safe.json), cita o profile_type; senão cita o
-    layer_heights/<layer>.json.
+    Regra:
+      - prime tower ligada  → exige initial == layer_height (HIGH se diferir).
+      - prime tower desligada → piso mínimo: initial deve ser múltiplo inteiro
+        de layer_height (classe do bug do Safe / warning de altura de camada).
+
+    Valida o perfil GERADO (pós ADHESION_OVERRIDE_FIELDS). Fonte citada: se o
+    valor gerado coincide com o override do profile_type, cita o profile_type;
+    senão o layer_heights/<layer>.json.
     """
     profile = item.profile
     lh = _to_float(item.layer_height)
@@ -173,31 +181,56 @@ def check_layer_multiple(item: GeneratedProfile) -> list[Violation]:
     if lh is None or initial is None or lh <= 0:
         return violations
 
-    ratio = initial / lh
-    if abs(ratio - round(ratio)) > EPS:
-        # Decide a fonte: se o profile_type também define initial_layer_print_height
-        # igual ao gerado, a origem do desalinhamento é o profile_type.
-        pt_raw = _load_profile_type_raw(item.profile_type)
-        pt_initial = _to_float(pt_raw.get("initial_layer_print_height"))
-        if pt_initial is not None and abs(pt_initial - initial) <= EPS:
-            source = f"process-base/profile_types/{item.profile_type}.json"
-        else:
-            source = f"process-base/layer_heights/{item.layer_height}.json"
-        violations.append(
-            Violation(
-                severity="high",
-                source_path=source,
-                invariant="check_layer_multiple",
-                detail=(
-                    f"initial_layer_print_height ({initial}) não é múltiplo inteiro "
-                    f"de layer_height ({lh}); razão = {ratio:.4f}. Perfil "
-                    f"{profile.get('name', item.profile_type)} dispararia o warning "
-                    f"de altura de camada com a prime tower ligada."
-                ),
-                got=initial,
-                expected=f"múltiplo inteiro de {lh}",
+    # Fonte do desalinhamento (profile_type override vs layer_height).
+    pt_raw = _load_profile_type_raw(item.profile_type)
+    pt_initial = _to_float(pt_raw.get("initial_layer_print_height"))
+    if pt_initial is not None and abs(pt_initial - initial) <= EPS:
+        source = f"process-base/profile_types/{item.profile_type}.json"
+    else:
+        source = f"process-base/layer_heights/{item.layer_height}.json"
+
+    # Prime tower ligada? (string "1"/"true" ou número). Nosso default é ligada.
+    pt_flag = str(profile.get("enable_prime_tower", "")).strip().lower()
+    prime_tower_on = pt_flag in ("1", "true", "yes", "on")
+
+    if prime_tower_on:
+        if abs(initial - lh) > EPS:
+            violations.append(
+                Violation(
+                    severity="high",
+                    source_path=source,
+                    invariant="check_layer_multiple",
+                    detail=(
+                        f"Com a prime tower ligada, initial_layer_print_height "
+                        f"({initial}) deve ser IGUAL a layer_height ({lh}). "
+                        f"Diferença faz o Creality Print perder o reconhecimento "
+                        f"de multifilamento/CFS no perfil "
+                        f"{profile.get('name', item.profile_type)} (verificado: "
+                        f"0.12 Detail com initial 0.24 quebra; 0.16 com initial "
+                        f"igual ao layer funciona)."
+                    ),
+                    got=initial,
+                    expected=f"== layer_height ({lh})",
+                )
             )
-        )
+    else:
+        ratio = initial / lh
+        if abs(ratio - round(ratio)) > EPS:
+            violations.append(
+                Violation(
+                    severity="high",
+                    source_path=source,
+                    invariant="check_layer_multiple",
+                    detail=(
+                        f"initial_layer_print_height ({initial}) não é múltiplo "
+                        f"inteiro de layer_height ({lh}); razão = {ratio:.4f}. "
+                        f"Perfil {profile.get('name', item.profile_type)} "
+                        f"dispararia o warning de altura de camada."
+                    ),
+                    got=initial,
+                    expected=f"múltiplo inteiro de {lh}",
+                )
+            )
     return violations
 
 
