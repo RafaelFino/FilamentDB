@@ -355,7 +355,7 @@ class _BuildDBMixin:
 
 
 class ProcessCountTests(_BuildDBMixin, unittest.TestCase):
-    """Contrato de contagem: 51 processos no banco, factory ausente."""
+    """Contrato de contagem: 47 processos no banco, factory ausente."""
 
     @classmethod
     def setUpClass(cls):
@@ -370,7 +370,7 @@ class ProcessCountTests(_BuildDBMixin, unittest.TestCase):
         conn = sqlite3.connect(self.db_path)
         try:
             (total,) = conn.execute("SELECT COUNT(*) FROM process_profiles").fetchone()
-            self.assertEqual(total, 51, f"esperado 51 processos, obtido {total}")
+            self.assertEqual(total, 47, f"esperado 47 processos, obtido {total}")
             (factory,) = conn.execute(
                 "SELECT COUNT(*) FROM process_profiles WHERE profile_type='factory'"
             ).fetchone()

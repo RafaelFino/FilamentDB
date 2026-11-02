@@ -103,20 +103,20 @@ class LayerMultipleTests(unittest.TestCase):
         self.assertIn("profile_types/standard.json", violations[0].source_path)
 
     def test_valid_multiple_passes_prime_tower_off(self):
-        """0.16 @ 0.08 (2x) é múltiplo inteiro → sem violação SÓ com a prime
+        """0.24 @ 0.12 (2x) é múltiplo inteiro → sem violação SÓ com a prime
         tower desligada (piso mínimo = múltiplo inteiro). Com a prime tower
         ligada a regra endurecida exige igualdade estrita (coberto abaixo)."""
-        item = _valid_item(layer_height="0.08")
-        item.profile["initial_layer_print_height"] = "0.16"
+        item = _valid_item(layer_height="0.12")
+        item.profile["initial_layer_print_height"] = "0.24"
         item.profile["enable_prime_tower"] = "0"
         self.assertEqual(validate_mod.check_layer_multiple(item), [])
 
     def test_multiple_but_not_equal_is_high_with_prime_tower(self):
-        """INVARIANTE DO FIX CFS: 0.16 @ 0.08 (2x, múltiplo inteiro) ainda é
+        """INVARIANTE DO FIX CFS: 0.24 @ 0.12 (2x, múltiplo inteiro) ainda é
         HIGH quando a prime tower está ligada — a condição segura é
         initial == layer_height, não apenas múltiplo inteiro."""
-        item = _valid_item(layer_height="0.08")
-        item.profile["initial_layer_print_height"] = "0.16"
+        item = _valid_item(layer_height="0.12")
+        item.profile["initial_layer_print_height"] = "0.24"
         # prime tower ligada por default (base.json enable_prime_tower=1)
         violations = validate_mod.check_layer_multiple(item)
         highs = [v for v in violations if v.severity == "high"]
@@ -165,9 +165,9 @@ class CombinationsTests(unittest.TestCase):
         )
 
     def test_expected_count_derived_from_real_combinations(self):
-        """O total derivado da combinations.json real é o contrato atual (51)."""
+        """O total derivado da combinations.json real é o contrato atual (47)."""
         combos = _load_combinations()
-        self.assertEqual(validate_mod.expected_profile_count(combos), 51)
+        self.assertEqual(validate_mod.expected_profile_count(combos), 47)
 
     def test_missing_device_file_is_high(self):
         source_defs = {

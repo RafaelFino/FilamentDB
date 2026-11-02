@@ -66,7 +66,7 @@ Fast → Economy → Standard → Strong → Detail → Safe
 - **Factory** (ÓRFÃO — fora da matriz): perfil de fábrica conservador. Mantido como arquivo/multiplicador no repo, mas **não gerado** (removido de `combinations.json` no overhaul de perfis).
 - **Standard**: Equilíbrio geral, padrão de uso diário. 4 walls, 15% gyroid, outer-first, bom acabamento. Usa `quality_speed` **0.50** nos campos visíveis (outer/top/1ª camada/gap) — baixado de 0.60 para melhorar o acabamento das paredes externas. Tem **ironing leve** no top (`ironing_type=top`, `ironing_flow=7%`, `ironing_spacing=0.12`, `ironing_speed=30`) — mantém a intenção leve, **sem** `ironing_pattern`/`ironing_angle` (exclusivos do Detail). Nome obrigatório — Creality Print requer um perfil "Standard" para iniciar.
 - **Strong**: Resistência mecânica (6 walls, 50% infill gyroid). Mais lento, peças funcionais.
-- **Detail**: Qualidade visual máxima. Layer heights baixos (0.08-0.16mm), 5 walls, 20% infill. `quality_speed` 0.45.
+- **Detail**: Qualidade visual máxima. Layer heights baixos (0.12-0.16mm), 5 walls, 20% infill. `quality_speed` 0.45.
 - **Safe**: Ultra-conservador para primeira impressão ou materiais desconhecidos. Lento mas confiável.
 - **Detail**: Qualidade visual máxima. `quality_speed` 0.45. **Ironing completo (6 campos, Detail-only)**: `ironing_type=topmost`, `ironing_pattern=rectilinear` (**RESSALVA**: os presets stock do CP usam internamente `zig-zag`; o slicer pode normalizar/trocar o enum ao abrir o perfil — cosmético, o usuário confirma ao abrir), `ironing_speed=30`, `ironing_flow=50%` (acabamento mais pesado no top que o Standard 7%), `ironing_spacing=0.15`, `ironing_angle=90`. Só o `detail.json` declara `ironing_pattern`/`ironing_angle`; o export (CP e Orca) só os serializa dentro do guard de ironing ativo (`ironing_type != "no ironing"`). A coluna `ironing_flow` é **TEXT/percentual** (saiu de `FLOAT_COLUMNS` — `float("50%")` quebraria o build); `ironing_spacing` continua numérico e é emitido com 2 casas no Orca (o `set_val` padrão arredondaria a 1 casa e colapsaria 0.15→0.1). Habilita também **Z-layer anti-aliasing (ZAA / Z contouring)** — campo de qualidade **Detail-only**: `zaa_enabled=1`, `zaa_minimize_perimeter_height=55` (minimum surface slope for wall lowering, graus), `zaa_min_z=0.06` (offset do slice-plane, mm). Só o `detail.json` declara os `zaa_*`; nenhum outro profile type os emite (ausentes), e o export (CP e Orca) só serializa as chaves quando `zaa_enabled` é truthy.
 - **LW-Structure**: Peças leves de aeromodelo que ainda precisam de alguma resistência (fuselagem/corpo). 2 walls, 7% gyroid, top/bottom 3, inner-first, seam aligned, brim 5.0. Gerado só nos layer heights que fazem sentido (**0.16, 0.20**).
@@ -229,8 +229,8 @@ a `.capitalize()` (zero regressão). Isso evita o `str.capitalize()` quebrar
 
 | Profile type | Layer heights                      | Materiais        |
 |--------------|------------------------------------|------------------|
-| standard     | 0.08, 0.12, 0.16, 0.20, 0.24, 0.28 | PLA, PETG        |
-| detail       | 0.08, 0.12, 0.16, 0.20             | PLA, PETG        |
+| standard     | 0.12, 0.16, 0.20, 0.24, 0.28       | PLA, PETG        |
+| detail       | 0.12, 0.16, 0.20                   | PLA, PETG        |
 | strong       | 0.16, 0.20, 0.24, 0.28             | PLA, PETG        |
 | fast         | 0.16, 0.20                         | PLA, PETG        |
 | economy      | 0.20                               | PLA, PETG        |
@@ -240,11 +240,16 @@ a `.capitalize()` (zero regressão). Isso evita o `str.capitalize()` quebrar
 | standard     | 0.20                               | TPU, ABS, PLA-CF, PLA-LW, PETG-LW |
 | standard     | 0.20 (**device cc2**)              | PLA, PETG        |
 
-Total: **51** perfis de processo. Por tipo: standard 19 (12 PLA/PETG em 6 lh +
-5 especiais em 0.20 + 2 cc2); detail 8; strong 8; fast 4; economy 2; safe 2;
+Total: **47** perfis de processo. Por tipo: standard 17 (10 PLA/PETG em 5 lh +
+5 especiais em 0.20 + 2 cc2); detail 6; strong 8; fast 4; economy 2; safe 2;
 lw-structure 4; lw-extreme 4. `default_devices = ["k2"]`. O device cc2 é
-Orca-only, então o export **Creality Print tem 49 processos** (51 − 2 cc2) e o
-**Orca tem 51**.
+Orca-only, então o export **Creality Print tem 45 processos** (47 − 2 cc2) e o
+**Orca tem 47**.
+
+O layer height **0.08mm foi removido da matriz** por ser inseguro/marginal em
+bico de 0.4mm: fica abaixo do piso prático de ~25% do diâmetro do nozzle
+(≈0.10mm), com risco de sub-extrusão/fluxo baixo e ganho de detalhe
+negligenciável. Detail/Standard partem agora de 0.12mm.
 
 `factory` foi **removido da matriz** (arquivo/multiplicador órfãos, preservados).
 `PETG-CF` foi **removido da matriz de especiais** (arquivo preservado em
@@ -254,11 +259,11 @@ types) **só em 0.16/0.20**.
 
 ## Família de layer heights (`process-base/layer_heights/<lh>.json`)
 
-Os seis arquivos de layer height (0.08/0.12/0.16/0.20/0.24/0.28) formam uma
+Os cinco arquivos de layer height (0.12/0.16/0.20/0.24/0.28) formam uma
 **família consistente modelada no 0.16** (referência known-good). Regras:
 
 - **INVARIANTE (fix do bug CFS/multicolor)**: `initial_layer_print_height ==
-  layer_height` em **todos** os seis arquivos. Com a prime tower ligada
+  layer_height` em **todos** os cinco arquivos. Com a prime tower ligada
   (`enable_prime_tower=1` em `base.json`), o Creality Print **perde o
   reconhecimento de CFS/multifilamento** quando a altura da primeira camada
   difere da altura de camada. Sintoma verificado: 0.12 Detail perdia as cores,
@@ -268,14 +273,14 @@ Os seis arquivos de layer height (0.08/0.12/0.16/0.20/0.24/0.28) formam uma
   os profile types (Standard/Detail/Strong/Fast/Economy/Safe/LW-*). Nunca colocar
   tuning por tipo aqui — só o que escala legitimamente com a altura de camada
   (shells, distâncias de suporte, brim, `speed_scale`).
-- **Rule A — `support_interface_top_layers = 2` em toda a família** (0.08/0.12
-  baixaram de 3→2). Ancorado no 0.16; interface mais fácil de remover (ver
+- **Rule A — `support_interface_top_layers = 2` em toda a família** (0.12
+  baixou de 3→2). Ancorado no 0.16; interface mais fácil de remover (ver
   filosofia de suporte). A facilidade de remoção vem do gap vertical
   (`support_top_z_distance`, mantido ≥ layer e monotônico), não de empilhar mais
   camadas de interface.
 - **Rule B — sem overrides avulsos de velocidade nos arquivos de layer height**:
   `initial_layer_speed`, `outer_wall_speed`, `top_surface_speed` foram
-  **removidos** de 0.08/0.12/0.16. Velocidade de parede/primeira camada é
+  **removidos** de 0.12/0.16. Velocidade de parede/primeira camada é
   governada uniformemente por `material_base × profile_type.quality_speed`.
   Quality-first: paredes **nunca** mais rápidas do que o 0.16 de referência
   implica. (Esses campos atuavam como `min(computed, layer_value)` no `build.py`
@@ -285,13 +290,13 @@ Os seis arquivos de layer height (0.08/0.12/0.16/0.20/0.24/0.28) formam uma
   decisão do usuário): manter um único `outer_wall_speed=220` apenas em 0.16/0.20
   (onde Fast existe) e remover nos demais.
 - **Rule C — `top/bottom_shell_thickness` por arquivo e monotônico**, não forçado
-  igual ao 0.16. Progressão existente (0.08→0.64, 0.12→0.84, 0.16→0.96, 0.20→0.8,
+  igual ao 0.16. Progressão existente (0.12→0.84, 0.16→0.96, 0.20→0.8,
   0.24→0.96, 0.28→1.12) mantida; loose-coupled aos `shell_layers` do profile type,
   `check_shell_thickness` é MÉDIA (nunca falha o build).
 - **Rule D — suporte/brim ancorados no 0.16 e monotônicos**:
-  `support_top_z_distance` ≥ layer e crescente (0.20/0.22/0.24/0.25/0.27/0.30);
+  `support_top_z_distance` ≥ layer e crescente (0.22/0.24/0.25/0.27/0.30);
   `support_interface_spacing` 0.5→1.0; `support_object_xy_distance` 0.45→0.55;
-  `brim_width` 10/9/8 (só 0.08/0.12/0.16) e `brim_object_gap` atuam como piso de
+  `brim_width` 9/8 (só 0.12/0.16) e `brim_object_gap` atuam como piso de
   adesão (brim maior / gap menor vence em qualquer tipo).
 
 ## Defaults de Suporte e Multifilamento
@@ -317,7 +322,7 @@ purga por tool) e `single_extruder_multi_material_priming` — chegavam ao perfi
 resolução de herança no runtime do CP falhava (preset de sistema editado/ausente,
 divergência de nome após atualização do slicer, ordem de carga), o perfil ficava
 sem a matriz de purga e o CFS deixava de ser reconhecido. Detail era o mais
-exposto (único presente em 0.08/0.12, e o que mais diverge do preset de sistema).
+exposto (o mais fino, presente em 0.12, e o que mais diverge do preset de sistema).
 
 **Fix**: materializar os **9 campos de CFS** explicitamente em `base.json` (logo,
 no merge → banco → export de TODO perfil), sem depender de herança:

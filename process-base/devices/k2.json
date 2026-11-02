@@ -14,7 +14,6 @@
             "enabled": true,
             "compatible_printers": ["Creality K2 0.4 nozzle"],
             "process_inherits_by_layer": [
-                { "max": 0.10, "inherits": "0.08mm SuperDetail @Creality K2 0.4 nozzle" },
                 { "max": 0.14, "inherits": "0.12mm Detail @Creality K2 0.4 nozzle" },
                 { "max": 0.18, "inherits": "0.16mm Optimal @Creality K2 0.4 nozzle" },
                 { "max": 0.22, "inherits": "0.20mm Standard @Creality K2 0.4 nozzle" },

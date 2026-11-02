@@ -305,9 +305,7 @@ def build_orca_filament_payload(row):
 def _orca_process_inherits(layer_height):
     """Determina qual perfil built-in do Orca herdar baseado no layer height."""
     lh = float(layer_height) if layer_height else 0.2
-    if lh <= 0.10:
-        return "0.08mm SuperDetail @Creality K2 0.4 nozzle"
-    elif lh <= 0.14:
+    if lh <= 0.14:
         return "0.12mm Detail @Creality K2 0.4 nozzle"
     elif lh <= 0.18:
         return "0.16mm Optimal @Creality K2 0.4 nozzle"

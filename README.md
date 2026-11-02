@@ -908,7 +908,7 @@ graph LR
 | **Economy** | Economia de filamento | 2 | 8% grid | nearest | 1.00 | 1.00 | — |
 | **Standard** | Equilíbrio geral | 4 | 15% gyroid | aligned | 1.00 | 1.00 | — |
 | **Strong** | Resistência mecânica | 6 | 50% gyroid | aligned | 0.85 | 0.80 | — |
-| **Detail** | Qualidade visual (0.08-0.16mm) | 5 | 20% gyroid | back | 0.80 | 0.75 | 0.30 |
+| **Detail** | Qualidade visual (0.12-0.16mm) | 5 | 20% gyroid | back | 0.80 | 0.75 | 0.30 |
 | **Safe** | Ultra-conservador | 4 | 18% gyroid | back | 0.70 | 0.60 | 0.50 |
 
 **Quality ×** se aplica apenas a `outer_wall_speed`, `top_surface_speed`, `initial_layer_speed` e `gap_infill_speed` — campos que afetam diretamente a qualidade visual ou confiabilidade. Todos os outros campos (inner wall, infill, travel, support) usam o Speed × regular, permitindo imprimir rápido onde não importa. Esses multiplicadores estão em `build.py` → `PROFILE_MULTIPLIERS`.
@@ -986,7 +986,7 @@ Esses valores funcionam bem tanto para PLA quanto PETG. PLA não precisa de tant
 
 ```json
 {
-    "detail":    ["0.08", "0.12", "0.16", "0.20"] × [PLA, PETG],
+    "detail":    ["0.12", "0.16", "0.20"] × [PLA, PETG],
     "standard":  ["0.20", "0.28"] × [PLA, PETG],
     "standard":  ["0.20"] × [TPU, ABS, PLA-CF, PETG-CF],
     "economy":   ["0.20"] × [PLA, PETG],
@@ -999,7 +999,7 @@ Esses valores funcionam bem tanto para PLA quanto PETG. PLA não precisa de tant
 Definido em `process-base/combinations.json`.
 
 Racional:
-- **Detail** cobre os layer heights de qualidade visual (0.08-0.20)
+- **Detail** cobre os layer heights de qualidade visual (0.12-0.20)
 - **Standard 0.20** é o padrão de uso diário; **0.28** é draft rápido com qualidade aceitável
 - **Economy** só em 0.20 — se quer rápido E barato, use Fast 0.28
 - **Fast 0.20** = velocidade com qualidade; **Fast 0.28** = o mais rápido possível
