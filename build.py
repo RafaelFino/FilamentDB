@@ -834,6 +834,23 @@ def generate_process_profile(profile_type, layer_height, material_name, device):
     # Merge: base < layer_height < profile_type
     profile = {**base, **layer_data, **type_data}
 
+    # Overrides de PROCESSO específicos do material (aplicados APÓS o profile_type).
+    # Permite que um material ajuste campos estruturais/de acabamento que, por
+    # padrão, viriam do profile_type compartilhado — ex.: PETG com ironing mais
+    # leve e ZAA desligado (ajustes conservadores onde o comportamento do PLA
+    # não transfere). NÃO são velocidades (essas vêm do bloco de material abaixo);
+    # são chaves de processo como ironing_flow, zaa_enabled, etc.
+    # Fonte: materials/<material>.json -> "process_overrides": { ... }.
+    # Só se aplicam quando o profile_type realmente usa o recurso (ex.: ironing_*
+    # só tem efeito se ironing_type != "no ironing", garantido pelo type_data).
+    material_overrides = material_data.get("process_overrides", {})
+    for ov_key, ov_val in material_overrides.items():
+        # Só sobrescreve se o campo já existe no perfil (o recurso está ativo
+        # para este profile_type). Evita injetar ironing/ZAA em types que não os
+        # têm (ex.: Standard não ganha ZAA só porque o material define override).
+        if ov_key in profile:
+            profile[ov_key] = ov_val
+
     # Layer height overrides for adhesion-critical fields (brim, initial_layer_print_height)
     # take precedence over profile_type â thinner layers need more adhesion help regardless
     # of profile_type settings.

@@ -49,7 +49,7 @@
     "brim_object_gap": "0.1",
     "ironing_type": "topmost",
     "ironing_speed": "30.0",
-    "ironing_flow": "50%",
+    "ironing_flow": "10%",
     "ironing_spacing": "0.15",
     "seam_position": "back",
     "seam_gap": "15%",
@@ -79,9 +79,6 @@
     "wipe_tower_rotation_angle": "0",
     "prime_tower_enhance_type": "chamfer",
     "ooze_prevention": "0",
-    "zaa_enabled": "1",
-    "zaa_wall_lowering_min_slope": "55",
-    "zaa_min_z": "0.06",
     "ironing_pattern": "rectilinear",
     "ironing_angle": "90"
 }

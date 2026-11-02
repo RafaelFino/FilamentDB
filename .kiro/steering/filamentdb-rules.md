@@ -310,7 +310,25 @@ Todos os perfis de processo incluem por padrão:
   - `support_interface_top_layers`: 2 — menos camadas de interface = descola mais fácil
   - `support_object_xy_distance`: 0.5-0.55mm — distância lateral generosa
 - **Prime Tower (multifilamento)**: Habilitada com largura mínima de 35mm para reduzir desperdício.
-- **Flush/Purga**: `flush_multiplier = 0.8` (reduzido do padrão 1.3), `flush_into_infill = 1`, `flush_into_support = 1` — minimiza desperdício de material em trocas de cor.
+- **Flush/Purga**: `flush_multiplier = 0.8` (reduzido do padrão 1.3), `flush_into_infill = 1`, `flush_into_support = 1` — minimiza desperdício de material em trocas de cor. **Nota de compatibilidade:** `flush_multiplier` **não** é emitido no export de PROCESSO do Creality Print (o CP rejeita a chave em processo e invalida o preset) — ver steering `slicer-compat.md`.
+
+### Overrides de processo por material (`process_overrides`)
+
+Os arquivos `materials/<material>.json` podem conter uma chave
+`process_overrides` (dict) que sobrescreve campos de PROCESSO **após** o merge do
+profile_type. Serve para ajustes de acabamento/estrutura que dependem do material
+e que o valor compartilhado do profile_type não transfere bem. O build só aplica
+um override **se o campo já existe no perfil** (ou seja, o recurso está ativo
+para aquele profile_type) — isso evita injetar recursos em types que não os usam.
+
+- **PETG** — ajustes conservadores onde o comportamento do PLA não transfere:
+  - `ironing_flow: "10%"` (PLA usa 50%; PETG é viscoso e adere ao bico, flow alto
+    arrasta/cria textura em vez de alisar).
+  - `zaa_enabled: "0"` (Z contouring desligado no PETG — incerto com material
+    viscoso/stringing; conservador = off).
+- Regra geral: **PLA é o perfil de referência/agressivo; PETG recebe o ajuste
+  conservador onde há incerteza.** Novos ajustes material-específicos entram via
+  `process_overrides`, não duplicando profile_types.
 
 ### Materialização explícita do bloco CFS (fix de multifilamento)
 
