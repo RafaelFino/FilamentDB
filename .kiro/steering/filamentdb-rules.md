@@ -252,6 +252,48 @@ Orca-only, então o export **Creality Print tem 49 processos** (51 − 2 cc2) e 
 {TPU, ABS, PLA-CF, PLA-LW, PETG-LW}. Economy e Safe **só em 0.20**; LW (dois
 types) **só em 0.16/0.20**.
 
+## Família de layer heights (`process-base/layer_heights/<lh>.json`)
+
+Os seis arquivos de layer height (0.08/0.12/0.16/0.20/0.24/0.28) formam uma
+**família consistente modelada no 0.16** (referência known-good). Regras:
+
+- **INVARIANTE (fix do bug CFS/multicolor)**: `initial_layer_print_height ==
+  layer_height` em **todos** os seis arquivos. Com a prime tower ligada
+  (`enable_prime_tower=1` em `base.json`), o Creality Print **perde o
+  reconhecimento de CFS/multifilamento** quando a altura da primeira camada
+  difere da altura de camada. Sintoma verificado: 0.12 Detail perdia as cores,
+  0.16 funcionava. **Nunca** reintroduzir primeira camada dobrada. Travado por
+  `check_layer_multiple` no build.
+- **Compartilhamento total**: cada `layer_heights/<lh>.json` é usado por **todos**
+  os profile types (Standard/Detail/Strong/Fast/Economy/Safe/LW-*). Nunca colocar
+  tuning por tipo aqui — só o que escala legitimamente com a altura de camada
+  (shells, distâncias de suporte, brim, `speed_scale`).
+- **Rule A — `support_interface_top_layers = 2` em toda a família** (0.08/0.12
+  baixaram de 3→2). Ancorado no 0.16; interface mais fácil de remover (ver
+  filosofia de suporte). A facilidade de remoção vem do gap vertical
+  (`support_top_z_distance`, mantido ≥ layer e monotônico), não de empilhar mais
+  camadas de interface.
+- **Rule B — sem overrides avulsos de velocidade nos arquivos de layer height**:
+  `initial_layer_speed`, `outer_wall_speed`, `top_surface_speed` foram
+  **removidos** de 0.08/0.12/0.16. Velocidade de parede/primeira camada é
+  governada uniformemente por `material_base × profile_type.quality_speed`.
+  Quality-first: paredes **nunca** mais rápidas do que o 0.16 de referência
+  implica. (Esses campos atuavam como `min(computed, layer_value)` no `build.py`
+  — nos tipos de qualidade eram valores mortos; só limitavam o Fast em 0.16.)
+  Único delta visível: Fast PLA 0.16 (outer 220→225, 1ª camada 60→75) — aceitável
+  para o tipo speed-first. **Fallback documentado Rule B'** (não aplicado salvo
+  decisão do usuário): manter um único `outer_wall_speed=220` apenas em 0.16/0.20
+  (onde Fast existe) e remover nos demais.
+- **Rule C — `top/bottom_shell_thickness` por arquivo e monotônico**, não forçado
+  igual ao 0.16. Progressão existente (0.08→0.64, 0.12→0.84, 0.16→0.96, 0.20→0.8,
+  0.24→0.96, 0.28→1.12) mantida; loose-coupled aos `shell_layers` do profile type,
+  `check_shell_thickness` é MÉDIA (nunca falha o build).
+- **Rule D — suporte/brim ancorados no 0.16 e monotônicos**:
+  `support_top_z_distance` ≥ layer e crescente (0.20/0.22/0.24/0.25/0.27/0.30);
+  `support_interface_spacing` 0.5→1.0; `support_object_xy_distance` 0.45→0.55;
+  `brim_width` 10/9/8 (só 0.08/0.12/0.16) e `brim_object_gap` atuam como piso de
+  adesão (brim maior / gap menor vence em qualquer tipo).
+
 ## Defaults de Suporte e Multifilamento
 
 Todos os perfis de processo incluem por padrão:

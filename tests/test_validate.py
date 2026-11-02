@@ -102,11 +102,26 @@ class LayerMultipleTests(unittest.TestCase):
         self.assertEqual(len(violations), 1)
         self.assertIn("profile_types/standard.json", violations[0].source_path)
 
-    def test_valid_multiple_passes(self):
-        """0.16 @ 0.08 (2x) é múltiplo inteiro → sem violação."""
+    def test_valid_multiple_passes_prime_tower_off(self):
+        """0.16 @ 0.08 (2x) é múltiplo inteiro → sem violação SÓ com a prime
+        tower desligada (piso mínimo = múltiplo inteiro). Com a prime tower
+        ligada a regra endurecida exige igualdade estrita (coberto abaixo)."""
         item = _valid_item(layer_height="0.08")
         item.profile["initial_layer_print_height"] = "0.16"
+        item.profile["enable_prime_tower"] = "0"
         self.assertEqual(validate_mod.check_layer_multiple(item), [])
+
+    def test_multiple_but_not_equal_is_high_with_prime_tower(self):
+        """INVARIANTE DO FIX CFS: 0.16 @ 0.08 (2x, múltiplo inteiro) ainda é
+        HIGH quando a prime tower está ligada — a condição segura é
+        initial == layer_height, não apenas múltiplo inteiro."""
+        item = _valid_item(layer_height="0.08")
+        item.profile["initial_layer_print_height"] = "0.16"
+        # prime tower ligada por default (base.json enable_prime_tower=1)
+        violations = validate_mod.check_layer_multiple(item)
+        highs = [v for v in violations if v.severity == "high"]
+        self.assertEqual(len(highs), 1, f"esperado 1 HIGH, obtido {len(highs)}")
+        self.assertEqual(highs[0].invariant, "check_layer_multiple")
 
 
 class DeviceCapTests(unittest.TestCase):
