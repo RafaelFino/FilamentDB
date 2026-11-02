@@ -1205,9 +1205,12 @@ def export_filaments():
     info("Exportando filamentos para Creality-Print/filaments/...")
 
     # Limpa diretÃ³rio para evitar arquivos Ã³rfÃ£os de builds anteriores
+    # NOTA: remove apenas .json; .info sao PRESERVADOS para write_info_stable
+    # reusar o timestamp quando o conteudo nao muda (evita churn no git).
     if EXPORT_FILAMENTS_DIR.exists():
         for f in EXPORT_FILAMENTS_DIR.iterdir():
-            f.unlink()
+            if f.suffix == ".json":
+                f.unlink()
     EXPORT_FILAMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
     conn = sqlite3.connect(DB_PATH)
@@ -1283,9 +1286,12 @@ def export_processes():
     info("Exportando processos para Creality-Print/process/...")
 
     # Limpa diretÃ³rio para evitar arquivos Ã³rfÃ£os de builds anteriores
+    # NOTA: remove apenas .json; .info sao PRESERVADOS para write_info_stable
+    # reusar o timestamp quando o conteudo nao muda (evita churn no git).
     if EXPORT_PROCESS_DIR.exists():
         for f in EXPORT_PROCESS_DIR.iterdir():
-            f.unlink()
+            if f.suffix == ".json":
+                f.unlink()
     EXPORT_PROCESS_DIR.mkdir(parents=True, exist_ok=True)
 
     conn = sqlite3.connect(DB_PATH)
