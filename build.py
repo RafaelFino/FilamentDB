@@ -285,8 +285,10 @@ def create_schema():
         brim_object_gap REAL,
         ironing_type TEXT,
         ironing_speed REAL,
-        ironing_flow REAL,
+        ironing_flow TEXT,
         ironing_spacing REAL,
+        ironing_pattern TEXT,
+        ironing_angle TEXT,
         seam_position TEXT,
         seam_gap TEXT,
         seam_slope_type TEXT,
@@ -709,7 +711,7 @@ FLOAT_COLUMNS = {
     "travel_speed", "support_speed", "gap_infill_speed",
     "top_shell_thickness", "bottom_shell_thickness", "support_top_z_distance",
     "support_interface_spacing", "support_object_xy_distance", "brim_width", "brim_object_gap",
-    "flush_multiplier", "ironing_speed", "ironing_flow", "ironing_spacing",
+    "flush_multiplier", "ironing_speed", "ironing_spacing",
 }
 
 
@@ -1001,7 +1003,8 @@ def seed_processes(validate_profiles: bool = True):
         "support_interface_spacing", "support_interface_top_layers", "support_object_xy_distance",
         "support_xy_overrides_z", "support_critical_regions_only",
         "brim_width", "brim_object_gap", "ironing_type", "ironing_speed",
-        "ironing_flow", "ironing_spacing", "seam_position",
+        "ironing_flow", "ironing_spacing", "ironing_pattern", "ironing_angle",
+        "seam_position",
         "seam_gap", "seam_slope_type", "seam_slope_conditional", "seam_slope_entire_loop",
         "seam_slope_inner_walls", "seam_slope_min_length", "seam_slope_start_height", "seam_slope_steps",
         "staggered_inner_seams", "role_based_wipe_speed", "wipe_on_loops",
@@ -1268,7 +1271,8 @@ def export_processes():
             pp.prime_tower_enhance_type, pp.ooze_prevention,
             pp.printer_model, pp.base_id, pp.inherits, pp.version,
             m.name AS material_name, pp.device_id,
-            pp.zaa_enabled, pp.zaa_minimize_perimeter_height, pp.zaa_min_z
+            pp.zaa_enabled, pp.zaa_minimize_perimeter_height, pp.zaa_min_z,
+            pp.ironing_pattern, pp.ironing_angle
         FROM process_profiles pp
         JOIN materials m ON m.id = pp.material_id
         WHERE pp.active = 1
@@ -1358,6 +1362,15 @@ def export_processes():
                 data["zaa_minimize_perimeter_height"] = str(row[81])
             if row[82] is not None:
                 data["zaa_min_z"] = str(row[82])
+
+        # Ironing pattern/angle: só quando há ironing ativo (espelha o guard do
+        # ironing — types sem ironing não carregam pattern/angle órfãos).
+        # ironing_type = row[41].
+        if row[41] and str(row[41]).strip() != "no ironing":
+            if row[83] is not None:
+                data["ironing_pattern"] = str(row[83])
+            if row[84] is not None:
+                data["ironing_angle"] = str(row[84])
 
         file_base = profile_name
         json_path = EXPORT_PROCESS_DIR / f"{file_base}.json"
@@ -1588,7 +1601,8 @@ def export_orca_processes():
             pp.wipe_tower_no_sparse_layers, pp.wipe_tower_rotation_angle,
             pp.prime_tower_enhance_type, pp.ooze_prevention,
             m.name AS material_name, pp.device_id,
-            pp.zaa_enabled, pp.zaa_minimize_perimeter_height, pp.zaa_min_z
+            pp.zaa_enabled, pp.zaa_minimize_perimeter_height, pp.zaa_min_z,
+            pp.ironing_pattern, pp.ironing_angle
         FROM process_profiles pp
         JOIN materials m ON m.id = pp.material_id
         WHERE pp.active = 1
@@ -1615,7 +1629,8 @@ def export_orca_processes():
          wipe_tower_no_sparse_layers, wipe_tower_rotation_angle,
          prime_tower_enhance_type, ooze_prevention,
          material_name, device_id,
-         zaa_enabled, zaa_minimize_perimeter_height, zaa_min_z) = row
+         zaa_enabled, zaa_minimize_perimeter_height, zaa_min_z,
+         ironing_pattern, ironing_angle) = row
 
         # Resolve device: inherits e compatible_printers vêm da definição.
         device = load_device(device_id)
@@ -1705,8 +1720,18 @@ def export_orca_processes():
         if ironing_type and ironing_type != "no ironing":
             data["ironing_type"] = str(ironing_type)
             set_val("ironing_speed", ironing_speed)
-            set_val("ironing_flow", ironing_flow)
-            set_val("ironing_spacing", ironing_spacing)
+            # ironing_flow é string percentual ("50%"/"7%") — atribuir direto.
+            if ironing_flow is not None:
+                data["ironing_flow"] = str(ironing_flow)
+            # ironing_spacing: preservar 2 casas (set_val arredonda a 1 casa e
+            # colapsa 0.15→0.1 / 0.12→0.1 — corrupção silenciosa).
+            if ironing_spacing is not None:
+                sp = float(ironing_spacing)
+                data["ironing_spacing"] = str(int(sp)) if sp == int(sp) else str(round(sp, 2))
+            if ironing_pattern is not None:
+                data["ironing_pattern"] = str(ironing_pattern)
+            if ironing_angle is not None:
+                data["ironing_angle"] = str(ironing_angle)
 
         # ZAA (Z-layer anti-aliasing / Z contouring): só emitir quando ligado
         # (Detail). Espelha o guard do ironing — demais profile types não

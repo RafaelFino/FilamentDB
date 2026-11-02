@@ -307,6 +307,36 @@ class ZAADetailScopeTests(unittest.TestCase):
         self.assertNotIn("zaa_min_z", prof)
 
 
+class IroningDetailScopeTests(unittest.TestCase):
+    """Ironing completo (6 campos) é configuração Detail-only.
+
+    O Detail declara ironing_type=topmost / ironing_pattern=rectilinear /
+    ironing_speed=30 / ironing_flow=50% / ironing_spacing=0.15 /
+    ironing_angle=90. O Standard mantém seu ironing leve próprio
+    (ironing_type=top, ironing_flow=7%) SEM ironing_pattern/ironing_angle.
+    """
+
+    def test_detail_ironing(self):
+        device = build_mod.load_device("k2")
+        prof = build_mod.generate_process_profile("detail", "0.20", "PLA", device)
+        self.assertEqual(prof.get("ironing_type"), "topmost")
+        self.assertEqual(prof.get("ironing_pattern"), "rectilinear")
+        self.assertEqual(str(prof.get("ironing_flow")), "50%")
+        self.assertEqual(str(prof.get("ironing_angle")), "90")
+        self.assertAlmostEqual(float(prof.get("ironing_speed")), 30.0)
+        self.assertAlmostEqual(float(prof.get("ironing_spacing")), 0.15)
+
+    def test_standard_ironing_has_no_detail_fields(self):
+        device = build_mod.load_device("k2")
+        prof = build_mod.generate_process_profile("standard", "0.20", "PLA", device)
+        # Standard mantém seu ironing leve próprio.
+        self.assertEqual(prof.get("ironing_type"), "top")
+        self.assertEqual(str(prof.get("ironing_flow")), "7%")
+        # Mas NÃO carrega os campos exclusivos do Detail.
+        self.assertNotIn("ironing_pattern", prof)
+        self.assertNotIn("ironing_angle", prof)
+
+
 class _BuildDBMixin:
     """Build real (--only-db) em DB temporário, compartilhado entre testes."""
 
