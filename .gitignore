@@ -64,3 +64,5 @@ tempCodeRunnerFile.py
 
 # Agent workflow scratch (task/review tracking, not project source)
 .agents/
+
+.worktrees/
