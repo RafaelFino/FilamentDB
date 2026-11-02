@@ -10,7 +10,8 @@
 #      slicer e abrem o aplicativo.
 #
 # Os inicializadores gerados detectam SOZINHOS, em runtime:
-#   - Creality Print: a versão mais recente (sort -V) e o user id numérico.
+#   - Creality Print: TODAS as versões X.Y e TODAS as contas reais (ids
+#     numéricos + default) de cada versão.
 #   - Orca Slicer:     agrega a raiz (K2) + subpastas de device (cc2, ...).
 # Portanto este instalador não hardcoda versões — só resolve o binário/AppImage.
 #
@@ -195,7 +196,17 @@ write_creality_runner() {
 #!/bin/zsh
 #
 # run-creality-print.sh — Sincroniza perfis do FilamentDB e abre o Creality Print.
-# GERADO por install.sh. Detecta a versão e o user id em runtime.
+# GERADO por install.sh.
+#
+# Sincroniza para TODAS as versões X.Y instaladas e TODAS as contas reais de
+# cada versão (ids numéricos + `default`), em runtime. Cada alvo (versão, conta)
+# vira um espelho EXATO de ~/filament-db/creality-print/{filament,process}:
+# arquiva órfãos POR ALVO em ~/filament-db/diff/, apaga o destino e recopia.
+#
+# Regra de conta real (pula dirs de scratch como `Temp`): um subdir de
+# <versão>/user/ é alvo se já tiver um subdir `filament/` OU `process/`. Isso
+# casa com o que o slicer provisiona por conta e nunca cria pasta de perfil onde
+# o slicer não criou.
 #
 
 FILAMENT_SRC="${HOME}/filament-db/creality-print/filament"
@@ -210,45 +221,21 @@ info()  { echo -e "${GREEN}[OK]${NC} $*"; }
 warn()  { echo -e "${YELLOW}[!]${NC}  $*"; }
 err()   { echo -e "${RED}[ERRO]${NC} $*" >&2; }
 
-detect_cp_version() {
+enumerate_cp_versions() {
+    # Todas as versões X.Y instaladas (não só a mais recente).
     find "$CP_BASE" -maxdepth 1 -type d -regextype posix-extended \
-        -regex '.*/[0-9]+\.[0-9]+' -printf '%f\n' 2>/dev/null \
-        | sort -V | tail -1
+        -regex '.*/[0-9]+\.[0-9]+' -printf '%f\n' 2>/dev/null | sort -V
 }
-detect_cp_user() {
-    local user_base="$1"
-    find "$user_base" -maxdepth 1 -type d -regextype posix-extended \
-        -regex '.*/[0-9]+' -printf '%T@\t%f\n' 2>/dev/null \
-        | sort -rn | head -1 | cut -f2
+enumerate_cp_accounts() {
+    # Contas reais em <versão>/user/: subdir com filament/ OU process/.
+    # Pula scratch (Temp) e arquivos soltos (hints.cereal). Emite nomes.
+    local user_base="$1" d
+    for d in "$user_base"/*(N/); do
+        if [[ -d "${d}/filament" || -d "${d}/process" ]]; then
+            print -- "${d:t}"
+        fi
+    done
 }
-
-if [[ ! -d "$FILAMENT_SRC" ]]; then
-    err "$FILAMENT_SRC não encontrado. Rode publish.sh primeiro."
-    exit 1
-fi
-if [[ ! -d "$CP_BASE" ]]; then
-    err "Creality Print não encontrado em: $CP_BASE"
-    exit 1
-fi
-
-CP_VERSION=$(detect_cp_version)
-if [[ -z "$CP_VERSION" ]]; then
-    err "Nenhuma versão X.Y do Creality Print encontrada em $CP_BASE"
-    exit 1
-fi
-CP_USER_BASE="${CP_BASE}/${CP_VERSION}/user"
-CP_USER_ID=$(detect_cp_user "$CP_USER_BASE")
-if [[ -z "$CP_USER_ID" ]]; then
-    err "Nenhum user id numérico encontrado em $CP_USER_BASE"
-    exit 1
-fi
-
-CP_USER_DIR="${CP_USER_BASE}/${CP_USER_ID}"
-FILAMENT_DST="${CP_USER_DIR}/filament"
-PROCESS_DST="${CP_USER_DIR}/process"
-info "Creality Print alvo: versão ${CP_VERSION}, user ${CP_USER_ID}"
-
-mkdir -p "$FILAMENT_DST" "$PROCESS_DST" "$DIFF_DIR"
 
 archive_orphans() {
     local src_dir="$1" dst_dir="$2" label="$3" moved=0
@@ -263,16 +250,71 @@ archive_orphans() {
     (( moved > 0 )) && warn "${label}: ${moved} perfis órfãos arquivados em ~/filament-db/diff/"
 }
 
-archive_orphans "$FILAMENT_SRC" "$FILAMENT_DST" "Filamentos"
-archive_orphans "$PROCESS_SRC" "$PROCESS_DST" "Processos"
+sync_target() {
+    # Espelha a fonte única para o destino de UM alvo (versão, conta).
+    # archive_orphans é POR ALVO (dst distinto, mesma fonte) — nunca global.
+    local version="$1" account="$2"
+    local user_dir="${CP_BASE}/${version}/user/${account}"
+    local filament_dst="${user_dir}/filament"
+    local process_dst="${user_dir}/process"
 
-find "$FILAMENT_DST" -maxdepth 1 -type f \( -name "*.json" -o -name "*.info" \) -delete
-cp "$FILAMENT_SRC"/* "$FILAMENT_DST/"
-info "Filamentos: $(find "$FILAMENT_DST" -maxdepth 1 -name '*.json' -type f | wc -l) perfis sincronizados"
+    mkdir -p "$filament_dst" "$process_dst"
+    info "Alvo: versão ${version}, user ${account}"
 
-find "$PROCESS_DST" -maxdepth 1 -type f \( -name "*.json" -o -name "*.info" \) -delete
-cp "$PROCESS_SRC"/*.json "$PROCESS_DST/"
-info "Processos: $(find "$PROCESS_DST" -maxdepth 1 -name '*.json' -type f | wc -l) perfis sincronizados"
+    archive_orphans "$FILAMENT_SRC" "$filament_dst" "  Filamentos (${version}/${account})"
+    archive_orphans "$PROCESS_SRC" "$process_dst" "  Processos (${version}/${account})"
+
+    find "$filament_dst" -maxdepth 1 -type f \( -name "*.json" -o -name "*.info" \) -delete
+    cp "$FILAMENT_SRC"/* "$filament_dst/"
+    info "  Filamentos: $(find "$filament_dst" -maxdepth 1 -name '*.json' -type f | wc -l) perfis sincronizados"
+
+    find "$process_dst" -maxdepth 1 -type f \( -name "*.json" -o -name "*.info" \) -delete
+    cp "$PROCESS_SRC"/*.json "$process_dst/"
+    info "  Processos: $(find "$process_dst" -maxdepth 1 -name '*.json' -type f | wc -l) perfis sincronizados"
+}
+
+if [[ ! -d "$FILAMENT_SRC" ]]; then
+    err "$FILAMENT_SRC não encontrado. Rode publish.sh primeiro."
+    exit 1
+fi
+if [[ ! -d "$CP_BASE" ]]; then
+    err "Creality Print não encontrado em: $CP_BASE"
+    exit 1
+fi
+
+mkdir -p "$DIFF_DIR"
+
+CP_VERSIONS=("${(@f)$(enumerate_cp_versions)}")
+if [[ ${#CP_VERSIONS[@]} -eq 0 || -z "${CP_VERSIONS[1]}" ]]; then
+    err "Nenhuma versão X.Y do Creality Print encontrada em $CP_BASE"
+    exit 1
+fi
+
+targets_synced=0
+for version in "${CP_VERSIONS[@]}"; do
+    [[ -n "$version" ]] || continue
+    user_base="${CP_BASE}/${version}/user"
+    if [[ ! -d "$user_base" ]]; then
+        warn "versão ${version}: sem diretório user/ — pulando"
+        continue
+    fi
+    accounts=("${(@f)$(enumerate_cp_accounts "$user_base")}")
+    if [[ ${#accounts[@]} -eq 0 || -z "${accounts[1]}" ]]; then
+        warn "versão ${version}: nenhuma conta real (com filament/ ou process/) — pulando"
+        continue
+    fi
+    for account in "${accounts[@]}"; do
+        [[ -n "$account" ]] || continue
+        sync_target "$version" "$account"
+        targets_synced=$((targets_synced + 1))
+    done
+done
+
+if (( targets_synced == 0 )); then
+    err "Nenhum alvo (versão, conta) encontrado em $CP_BASE"
+    exit 1
+fi
+info "${targets_synced} alvo(s) (versão × conta) sincronizado(s)"
 
 echo ""
 info "Abrindo Creality Print..."
@@ -300,6 +342,10 @@ write_orca_runner() {
 #
 # run-orca-slicer.sh — Sincroniza perfis do FilamentDB e abre o Orca Slicer.
 # GERADO por install.sh. Agrega raiz (K2) + subpastas de device (cc2, ...).
+#
+# Orca usa um único diretório de usuário achatado (user/default) por design —
+# não tem árvore versionada por conta como o Creality Print. Por isso não há
+# enumeração multi-conta aqui; o alvo é sempre user/default.
 #
 
 ORCA_ROOT="\${HOME}/filament-db/orca"

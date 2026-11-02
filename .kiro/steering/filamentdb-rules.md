@@ -543,15 +543,15 @@ quebram a cada atualização do slicer.
 ### Creality Print
 
 - Script: `~/run-creality-print.sh`
-- Origem: `~/filament-db/creality-print/{filament,process}`
-- Destino: `~/.config/Creality/Creality Print/<versão>/user/<user_id>/{filament,process}`
-- **Detecção de versão**: o script lista os diretórios `X.Y` em `~/.config/Creality/Creality Print/` e escolhe o maior via `sort -V`. Segue automaticamente futuras atualizações do slicer (ex.: 7.0 → 7.3) sem edição manual.
-- **Detecção do user id**: pega o diretório numérico em `<versão>/user/`; se houver mais de um, usa o modificado mais recentemente. Nada de hardcode da conta.
-- Falha explícita (mensagem clara, exit 1) se não encontrar a base, nenhuma versão `X.Y` ou nenhum user id.
-- Loga o alvo escolhido no início: `Creality Print alvo: versão <v>, user <id>`.
+- Origem: `~/filament-db/creality-print/{filament,process}` (fonte única)
+- Destino: **todos** os `~/.config/Creality/Creality Print/<versão>/user/<conta>/{filament,process}`
+- **Sync em TODAS as versões × TODAS as contas reais**: o script enumera **todas** as versões `X.Y` instaladas (não só a mais recente) e, dentro de cada uma, **todas** as contas reais — ids numéricos **e** `default`. Evita perfil "lixo" preso numa versão antiga ou numa conta que não é a corrente.
+- **Regra de conta real (pula scratch)**: um subdir de `<versão>/user/` é alvo **se já tiver um subdir `filament/` OU `process/`**. Isso casa com o que o slicer provisiona por conta real, pula dirs de scratch como `Temp` (só `AIRecommendation`/`sync_data.json`) e arquivos soltos (`hints.cereal`), e nunca cria pasta de perfil onde o slicer não criou.
+- **Espelho exato por alvo**: para cada `(versão, conta)` o script arquiva órfãos **POR ALVO** (um perfil no destino que não exista na fonte vai para `~/filament-db/diff/` com sufixo de data), apaga o destino e recopia da fonte. Cada alvo vira um espelho **exato** de `~/filament-db/creality-print/{filament,process}`. O arquivamento de órfãos é sempre por `(versão, conta)` — **nunca** global.
+- **Erro só se não houver nenhum alvo**: falha explícita (exit 1) se a base do CP não existir, se a fonte não existir, se **nenhuma** versão `X.Y` for encontrada ou se **nenhum** alvo `(versão, conta)` qualificar. Uma versão sem contas reais é **aviso** (continua), não fatal.
+- Loga cada alvo sincronizado: `Alvo: versão <v>, user <conta>` + contagens de filamentos/processos, e no fim o total de alvos sincronizados.
 - `filament/` — recebe .json + .info
 - `process/` — recebe apenas .json
-- Versões antigas do slicer (ex.: 7.0 após migrar para 7.3) ficam intocadas — o script só mira a versão corrente.
 
 ### Orca Slicer
 
@@ -562,6 +562,7 @@ quebram a cada atualização do slicer.
 - **Sync agregado K2 + devices**: o Orca guarda todos os perfis achatados em um único diretório de usuário — ele distingue os perfis pelo nome (sufixo `@<device>`, ex.: `@CC2`) e pelo `compatible_printers`, não por subpasta. O script agrega a raiz (K2) e todas as subpastas de device (`orca/*/{filament,process}`) e copia tudo para o destino único.
 - **Arquivamento de órfãos ciente de todas as fontes**: um perfil no destino só é arquivado em `diff/` se não existir em **nenhuma** fonte (raiz nem devices). Isso evita arquivar perfis de device válidos (`@CC2`) a cada execução.
 - O destino do Orca não é versionado por pasta como o Creality — não precisa de detecção de versão.
+- **Conta única por design**: o Orca usa um único diretório de usuário achatado (`user/default`), sem árvore versionada por conta como o CP. Por isso **não há** enumeração multi-conta no runner do Orca (ao contrário do CP) — o alvo é sempre `user/default`.
 
 ## Estrutura de Dados
 
