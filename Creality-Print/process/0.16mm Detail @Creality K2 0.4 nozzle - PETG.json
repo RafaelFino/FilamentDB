@@ -51,7 +51,7 @@
     "ironing_spacing": "0.15",
     "seam_position": "back",
     "seam_gap": "15%",
-    "seam_slope_type": "external",
+    "seam_slope_type": "none",
     "seam_slope_conditional": "0",
     "seam_slope_entire_loop": "1",
     "seam_slope_inner_walls": "1",
