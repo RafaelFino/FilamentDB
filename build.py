@@ -1161,6 +1161,45 @@ def _export_allowed(export_enabled):
     return EXPORT_ALL or bool(export_enabled)
 
 
+def write_info_stable(info_path, sync_info, base_id):
+    """Escreve o .info do Creality Print preservando setting_id/updated_time
+    quando o conteúdo ESTÁVEL (sync_info, user_id, base_id) não mudou.
+
+    O Creality Print usa setting_id/updated_time só como carimbo; regenerá-los a
+    cada build (com time.time()) poluía o diff do git com churn de timestamp em
+    TODO .info a cada publish, mesmo sem mudança real. Aqui o timestamp só muda
+    quando algo estável muda — mantendo os .info versionados (proposital, ver
+    .gitignore) com diffs limpos.
+    """
+    user_id = "8401264742"
+    stable_now = f"sync_info = {sync_info}\nuser_id = {user_id}\nbase_id = {base_id}\n"
+
+    reuse_ts = None
+    if info_path.exists():
+        try:
+            existing = info_path.read_text(encoding="utf-8")
+            lines = dict(
+                l.split(" = ", 1) for l in existing.splitlines() if " = " in l
+            )
+            # Reconstrói o conteúdo estável do arquivo existente para comparar.
+            existing_stable = (
+                f"sync_info = {lines.get('sync_info','')}\n"
+                f"user_id = {lines.get('user_id','')}\n"
+                f"base_id = {lines.get('base_id','')}\n"
+            )
+            if existing_stable == stable_now and "updated_time" in lines:
+                reuse_ts = lines["updated_time"].strip()
+        except Exception:
+            reuse_ts = None
+
+    ts = reuse_ts if reuse_ts is not None else str(int(time.time()))
+    with open(info_path, "w", encoding="utf-8") as f:
+        f.write(
+            f"sync_info = {sync_info}\nuser_id = {user_id}\n"
+            f"setting_id = {ts}\nbase_id = {base_id}\nupdated_time = {ts}\n"
+        )
+
+
 def export_filaments():
     """Exporta perfis de filamento do banco para Creality-Print/filaments/."""
     info("Exportando filamentos para Creality-Print/filaments/...")
@@ -1227,9 +1266,7 @@ def export_filaments():
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=4)
 
-        now = int(time.time())
-        with open(info_path, "w", encoding="utf-8") as f:
-            f.write(f"sync_info = update\nuser_id = 8401264742\nsetting_id = {now}\nbase_id = GFSA04\nupdated_time = {now}\n")
+        write_info_stable(info_path, sync_info="update", base_id="GFSA04")
 
         exported += 1
 
@@ -1408,9 +1445,7 @@ def export_processes():
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
 
-        now = int(time.time())
-        with open(info_path, "w", encoding="utf-8") as f:
-            f.write(f"sync_info = \nuser_id = 8401264742\nsetting_id = {now}\nbase_id = {data.get('base_id', 'GP004')}\nupdated_time = {now}\n")
+        write_info_stable(info_path, sync_info="", base_id=data.get("base_id", "GP004"))
 
         exported += 1
 
