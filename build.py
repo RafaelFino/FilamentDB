@@ -480,12 +480,16 @@ def seed_filaments():
     def get_inherits_for_material(material_name):
         """Deriva o 'inherits' do Creality Print baseado no material."""
         mapping = {
+            # Os nomes DEVEM existir como preset de sistema do Creality Print
+            # (verificados em .../system/Creality/filament/). inherits para um
+            # preset inexistente => "can not find parent" no log e o filamento
+            # fica quarentenado/invisivel. Ver steering slicer-compat.md.
             "PLA": "Hyper PLA @Creality K2 0.4 nozzle",
             "PETG": "Hyper PETG @Creality K2 0.4 nozzle",
-            "PETG CF": "Hyper PETG CF @Creality K2 0.4 nozzle",
-            "ABS": "ABS @Creality K2 0.4 nozzle",
-            "ASA": "ASA @Creality K2 0.4 nozzle",
-            "TPU": "TPU @Creality K2 0.4 nozzle",
+            "PETG CF": "Hyper PETG-CF @Creality K2 0.4 nozzle",
+            "ABS": "CR-ABS @Creality K2 0.4 nozzle",
+            "ASA": "Generic ASA @Creality K2 0.4 nozzle",
+            "TPU": "CR-TPU @Creality K2 0.4 nozzle",
             "SUPPORT": "Generic Support @Creality K2 0.4 nozzle",
         }
         return mapping.get(material_name, "Hyper PLA @Creality K2 0.4 nozzle")

@@ -28,7 +28,7 @@
     "hot_plate_temp_initial_layer": [
         "105"
     ],
-    "inherits": "ABS @Creality K2 0.4 nozzle",
+    "inherits": "CR-ABS @Creality K2 0.4 nozzle",
     "is_custom_defined": "0",
     "name": "ABS - Voolt3D - Standard",
     "nozzle_temperature": [

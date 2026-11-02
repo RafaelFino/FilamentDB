@@ -54,9 +54,26 @@ reintroduzir primeira camada "dobrada" para adesão em perfis com prime tower.
 ## Herança de filamento (parent)
 
 Log `can not find parent for config .../<filamento>.json` = o `inherits` do
-nosso filamento aponta para um preset-pai que o slicer não tem (visto em ABS/TPU
-Voolt3D). O perfil fica quarentenado/invisível. Verificar que o `inherits` do
-filamento resolve para um preset de sistema existente no slicer alvo.
+nosso filamento aponta para um preset-pai que o slicer não tem. O perfil fica
+quarentenado/invisível. Verificar que o `inherits` resolve para um preset de
+sistema existente em `.../system/Creality/filament/`.
+
+Mapa `get_inherits_for_material` em `build.py` — nomes REAIS verificados no CP
+7.3 (os nomes "ABS @...", "TPU @...", "Hyper PETG CF @...", "ASA @..." eram
+INVENTADOS e quebravam):
+
+| Material | inherits correto (K2 0.4) |
+|----------|---------------------------|
+| PLA      | `Hyper PLA @Creality K2 0.4 nozzle` |
+| PETG     | `Hyper PETG @Creality K2 0.4 nozzle` |
+| PETG CF  | `Hyper PETG-CF @Creality K2 0.4 nozzle` (hífen!) |
+| ABS      | `CR-ABS @Creality K2 0.4 nozzle` |
+| ASA      | `Generic ASA @Creality K2 0.4 nozzle` |
+| TPU      | `CR-TPU @Creality K2 0.4 nozzle` |
+
+Ao adicionar material/inherits novo, CONFIRMAR o nome exato com
+`find ~/.config/Creality/"Creality Print"/<v>/system/Creality/filament/ -iname '*<mat>*K2 0.4*'`
+antes — não inventar o nome do pai.
 
 ## Export CP vs Orca — são blocos distintos no build.py
 

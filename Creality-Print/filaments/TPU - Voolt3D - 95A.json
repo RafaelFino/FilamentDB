@@ -28,7 +28,7 @@
     "hot_plate_temp_initial_layer": [
         "55"
     ],
-    "inherits": "TPU @Creality K2 0.4 nozzle",
+    "inherits": "CR-TPU @Creality K2 0.4 nozzle",
     "is_custom_defined": "0",
     "name": "TPU - Voolt3D - 95A",
     "nozzle_temperature": [
