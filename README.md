@@ -739,6 +739,76 @@ hardcoded que quebrariam a cada atualização do slicer:
 
 ---
 
+## Armadilhas conhecidas do Creality Print (troubleshooting)
+
+Lições aprendidas depurando "os perfis não aparecem" / "o lixo não sai" no
+Creality Print. Leia isto **antes** de investigar um sumiço de perfis.
+
+### 1. Chaves que o CP REJEITA em perfis de PROCESSO (invalidam o preset inteiro)
+
+O Creality Print valida as chaves de cada preset de processo contra um schema.
+Se encontra uma chave que não reconhece **naquele escopo**, remove a chave E
+**invalida o preset inteiro** — o perfil some da UI sem erro visível (o motivo
+só aparece no log de debug como `incorrect keys: <chave>, which were removed`).
+
+- **`flush_multiplier`** — é chave de **filamento**, não de processo, no CP. Se
+  emitida no processo, o CP descarta o preset. `build.py` **não** emite
+  `flush_multiplier` no export de processo do Creality Print (só os demais
+  `flush_into_*`). O volume de purga é gerido pelo filamento/slicer.
+- Sintoma: **nenhum** perfil de processo aparece na lista do CP, embora os
+  `.json` estejam corretos no disco do usuário.
+- Diagnóstico: ler o log mais recente em
+  `~/.config/Creality/Creality Print/<versão>/log/debug_*.log*` e procurar
+  `incorrect keys`.
+
+### 2. Campos OBRIGATÓRIOS para o CP listar um preset de usuário
+
+Um preset de processo só aparece como selecionável se tiver **`"type": "process"`**
+e **`"instantiation": "true"`**. Sem eles, o CP trata o preset como classe-base
+não-instanciável (invisível). `build.py` emite ambos no export de processo do CP
+(espelhando o que o filamento e o export Orca já faziam).
+
+### 3. Cloud preset sync — a nuvem SOBRESCREVE o disco
+
+O CP, quando **logado** na Creality Cloud, sincroniza os presets de usuário com
+a nuvem (`cloud.sync_user_preset`/`sync_system_preset` no `Creality.conf`, bloco
+`app`). Consequências:
+
+- Perfis antigos ("lixo") voltam do servidor a cada login, mesmo após limpar o
+  disco — a nuvem é a fonte da verdade quando o sync está ligado.
+- Editar `sync_user_preset=false` no `Creality.conf` **não persiste**: o CP
+  reescreve o conf ao abrir/fechar e pode re-ligar o sync.
+- Para a nuvem parar de interferir de vez: **deletar os perfis-lixo pela UI
+  logado** (remove da nuvem) ou **desligar o cloud preset sync nas Preferências
+  do CP** / usar deslogado. O FilamentDB (`publish.sh` + runners) é a fonte de
+  verdade local; a nuvem é redundante para o nosso fluxo.
+
+### 4. Lixo acumula em múltiplas versões × contas
+
+O CP mantém `user/<conta>/` por **versão** (`7.0/`, `7.3/`, ...) e por conta
+(id numérico, `default`, `Temp`). O runner inteligente sincroniza **todas** as
+versões e contas reais (ver `install.sh`), arquivando órfãos por alvo em
+`~/filament-db/diff/`. Uma versão/conta não sincronizada guarda matriz antiga.
+
+### 5. Primeira camada e multimaterial (CFS)
+
+Com a **prime tower ligada** (nosso padrão), o CP perde o reconhecimento de
+multifilamento/CFS se `initial_layer_print_height` **difere** de `layer_height`.
+Invariante travada no `validate.py` (`check_layer_multiple`): com prime tower,
+`initial_layer_print_height == layer_height`. Nunca usar primeira camada "dobrada"
+nos perfis com prime tower.
+
+### Método de diagnóstico (vale para qualquer sumiço de perfil)
+
+1. Confirmar que o `.json` no disco do usuário está correto (campos esperados).
+2. Ler o log de debug do CP (`.../log/debug_*.log*`) — ele diz exatamente qual
+   chave foi rejeitada ou qual parent não resolveu.
+3. Checar se o cloud sync está sobrescrevendo (comparar disco antes/depois de
+   abrir o CP logado).
+4. Só então mexer na fonte (`build.py` / `process-base/`) e rebuildar.
+
+---
+
 ## Desenvolvimento local
 
 ```bash
