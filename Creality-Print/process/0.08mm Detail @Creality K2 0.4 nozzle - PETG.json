@@ -77,5 +77,8 @@
     "wipe_tower_no_sparse_layers": "0",
     "wipe_tower_rotation_angle": "0",
     "prime_tower_enhance_type": "chamfer",
-    "ooze_prevention": "0"
+    "ooze_prevention": "0",
+    "zaa_enabled": "1",
+    "zaa_minimize_perimeter_height": "55",
+    "zaa_min_z": "0.06"
 }

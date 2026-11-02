@@ -316,6 +316,9 @@ def create_schema():
         wipe_tower_rotation_angle TEXT,
         prime_tower_enhance_type TEXT,
         ooze_prevention TEXT,
+        zaa_enabled TEXT,
+        zaa_minimize_perimeter_height TEXT,
+        zaa_min_z TEXT,
         printer_model TEXT DEFAULT 'Creality K2 Combo',
         nozzle_size REAL DEFAULT 0.4,
         base_id TEXT DEFAULT 'GP004',
@@ -1008,6 +1011,7 @@ def seed_processes(validate_profiles: bool = True):
         "wipe_tower_bridging", "wipe_tower_cone_angle", "wipe_tower_extra_spacing",
         "wipe_tower_no_sparse_layers", "wipe_tower_rotation_angle",
         "prime_tower_enhance_type", "ooze_prevention",
+        "zaa_enabled", "zaa_minimize_perimeter_height", "zaa_min_z",
         "printer_model", "nozzle_size", "base_id", "inherits", "version",
         "description", "notes", "active",
     ]
@@ -1263,7 +1267,8 @@ def export_processes():
             pp.wipe_tower_no_sparse_layers, pp.wipe_tower_rotation_angle,
             pp.prime_tower_enhance_type, pp.ooze_prevention,
             pp.printer_model, pp.base_id, pp.inherits, pp.version,
-            m.name AS material_name, pp.device_id
+            m.name AS material_name, pp.device_id,
+            pp.zaa_enabled, pp.zaa_minimize_perimeter_height, pp.zaa_min_z
         FROM process_profiles pp
         JOIN materials m ON m.id = pp.material_id
         WHERE pp.active = 1
@@ -1343,6 +1348,16 @@ def export_processes():
                     else:
                         val = round(val, 2)
                 data[key] = str(val)
+
+        # ZAA (Z-layer anti-aliasing / Z contouring): só emitir quando ligado
+        # (Detail). Espelha o tratamento condicional do ironing — demais profile
+        # types não declaram zaa_* e ficam sem as chaves.
+        if row[80] and str(row[80]).strip() not in {"", "0"}:
+            data["zaa_enabled"] = str(row[80])
+            if row[81] is not None:
+                data["zaa_minimize_perimeter_height"] = str(row[81])
+            if row[82] is not None:
+                data["zaa_min_z"] = str(row[82])
 
         file_base = profile_name
         json_path = EXPORT_PROCESS_DIR / f"{file_base}.json"
@@ -1572,7 +1587,8 @@ def export_orca_processes():
             pp.wipe_tower_bridging, pp.wipe_tower_cone_angle, pp.wipe_tower_extra_spacing,
             pp.wipe_tower_no_sparse_layers, pp.wipe_tower_rotation_angle,
             pp.prime_tower_enhance_type, pp.ooze_prevention,
-            m.name AS material_name, pp.device_id
+            m.name AS material_name, pp.device_id,
+            pp.zaa_enabled, pp.zaa_minimize_perimeter_height, pp.zaa_min_z
         FROM process_profiles pp
         JOIN materials m ON m.id = pp.material_id
         WHERE pp.active = 1
@@ -1598,7 +1614,8 @@ def export_orca_processes():
          wipe_tower_bridging, wipe_tower_cone_angle, wipe_tower_extra_spacing,
          wipe_tower_no_sparse_layers, wipe_tower_rotation_angle,
          prime_tower_enhance_type, ooze_prevention,
-         material_name, device_id) = row
+         material_name, device_id,
+         zaa_enabled, zaa_minimize_perimeter_height, zaa_min_z) = row
 
         # Resolve device: inherits e compatible_printers vêm da definição.
         device = load_device(device_id)
@@ -1690,6 +1707,14 @@ def export_orca_processes():
             set_val("ironing_speed", ironing_speed)
             set_val("ironing_flow", ironing_flow)
             set_val("ironing_spacing", ironing_spacing)
+
+        # ZAA (Z-layer anti-aliasing / Z contouring): só emitir quando ligado
+        # (Detail). Espelha o guard do ironing — demais profile types não
+        # declaram zaa_* e ficam sem as chaves.
+        if zaa_enabled and str(zaa_enabled).strip() not in {"", "0"}:
+            data["zaa_enabled"] = str(zaa_enabled)
+            set_val("zaa_minimize_perimeter_height", zaa_minimize_perimeter_height)
+            set_val("zaa_min_z", zaa_min_z)
 
         if infill_density:
             # Orca uses "15" not "15%"

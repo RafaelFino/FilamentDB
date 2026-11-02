@@ -25,5 +25,8 @@
     "ironing_type": "top",
     "ironing_speed": 30.0,
     "ironing_flow": 9.0,
-    "ironing_spacing": 0.1
+    "ironing_spacing": 0.1,
+    "zaa_enabled": "1",
+    "zaa_minimize_perimeter_height": "55",
+    "zaa_min_z": "0.06"
 }

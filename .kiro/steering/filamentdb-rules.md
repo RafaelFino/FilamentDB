@@ -68,7 +68,7 @@ Fast → Economy → Standard → Strong → Detail → Safe
 - **Strong**: Resistência mecânica (6 walls, 50% infill gyroid). Mais lento, peças funcionais.
 - **Detail**: Qualidade visual máxima. Layer heights baixos (0.08-0.16mm), 5 walls, 20% infill. `quality_speed` 0.45.
 - **Safe**: Ultra-conservador para primeira impressão ou materiais desconhecidos. Lento mas confiável.
-- **Detail**: Qualidade visual máxima. `quality_speed` 0.45, `ironing_flow` **9.0** (acima do Standard 7.0 — acabamento mais pesado no top).
+- **Detail**: Qualidade visual máxima. `quality_speed` 0.45, `ironing_flow` **9.0** (acima do Standard 7.0 — acabamento mais pesado no top). Habilita **Z-layer anti-aliasing (ZAA / Z contouring)** — campo de qualidade **Detail-only**: `zaa_enabled=1`, `zaa_minimize_perimeter_height=55` (minimum surface slope for wall lowering, graus), `zaa_min_z=0.06` (offset do slice-plane, mm). Só o `detail.json` declara os `zaa_*`; nenhum outro profile type os emite (ausentes), e o export (CP e Orca) só serializa as chaves quando `zaa_enabled` é truthy.
 - **LW-Structure**: Peças leves de aeromodelo que ainda precisam de alguma resistência (fuselagem/corpo). 2 walls, 7% gyroid, top/bottom 3, inner-first, seam aligned, brim 5.0. Gerado só nos layer heights que fazem sentido (**0.16, 0.20**).
 - **LW-Extreme**: Peças leves ao extremo (asas). 1 wall, 3% gyroid, top/bottom 1, inner-first, seam nearest, brim 4.0. Gerado só em **0.16 e 0.20**. Usar com PLA/PETG (ou os materiais de foaming PLA-LW/PETG-LW).
 

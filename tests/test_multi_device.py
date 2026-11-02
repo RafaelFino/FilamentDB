@@ -285,6 +285,28 @@ class MultiMaterialCFSTests(unittest.TestCase):
         self.assertEqual(missing, [], f"JSONs sem wiping_volumes_extruders: {missing}")
 
 
+class ZAADetailScopeTests(unittest.TestCase):
+    """ZAA (Z-layer anti-aliasing) é campo de qualidade Detail-only.
+
+    O Detail declara zaa_enabled=1 / zaa_minimize_perimeter_height=55 /
+    zaa_min_z=0.06; nenhum outro profile type os declara (ficam ausentes).
+    """
+
+    def test_detail_sets_zaa(self):
+        device = build_mod.load_device("k2")
+        prof = build_mod.generate_process_profile("detail", "0.20", "PLA", device)
+        self.assertEqual(prof.get("zaa_enabled"), "1")
+        self.assertEqual(prof.get("zaa_minimize_perimeter_height"), "55")
+        self.assertEqual(prof.get("zaa_min_z"), "0.06")
+
+    def test_standard_has_no_zaa(self):
+        device = build_mod.load_device("k2")
+        prof = build_mod.generate_process_profile("standard", "0.20", "PLA", device)
+        self.assertNotIn("zaa_enabled", prof)
+        self.assertNotIn("zaa_minimize_perimeter_height", prof)
+        self.assertNotIn("zaa_min_z", prof)
+
+
 class _BuildDBMixin:
     """Build real (--only-db) em DB temporário, compartilhado entre testes."""
 
