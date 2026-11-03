@@ -144,22 +144,24 @@ materials:
       profile_name: Voolt3D PLA Velvet
       export: true
       nozzle:
-        initial: 220
+        initial: 230
         min: 190
-        max: 230
+        max: 240
       bed:
         initial: 60
         temp: 60
       flow_ratio: 1.04
-      max_volumetric_speed: 20
+      max_volumetric_speed: 14
       density: 1.24
       glass_transition_temp: 55
       diameter_tolerance: 0.02
       recommendation: >
         Escolha para peças decorativas onde acabamento importa mais que resistência.
         O toque aveludado esconde linhas de camada e aceita lixamento/pintura.
-        MVS alto (25) aproveita bem a K2. Ponto fraco: é PLA — nada de calor ou impacto.
-        Quando escolher: modelos à mostra, action figures, peças pintadas.
+        Impressão a 230C e MVS 14 (conservador) por conta da sub-extrusao em
+        velocidade no setup DXC2 — ver GUIA-CALIBRACAO.md. Ponto fraco: é PLA —
+        nada de calor ou impacto. Quando escolher: modelos à mostra, action
+        figures, peças pintadas.
       color: Natural
       surface_finish: Velvet
       drying_temperature: 50
