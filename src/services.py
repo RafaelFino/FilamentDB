@@ -626,7 +626,7 @@ def _lh_finish_score(layer_height):
 
 
 def _calc_score(proc_dict, fil_dict, layer_height, mvs):
-    """Calculate speed, finish, confidence and overall scores for a combination."""
+    """Calculate speed, finish and overall scores for a combination (confidence is data only)."""
     max_speed_from_mvs = mvs / (layer_height * DEFAULT_LINE_WIDTH)
 
     # Speed score: average effective speed / 350 (reference high speed on K2)
@@ -659,8 +659,10 @@ def _calc_score(proc_dict, fil_dict, layer_height, mvs):
     # Confidence: from filament profile
     confidence = int(fil_dict.get("confidence") or 50)
 
-    # Overall: weighted average
-    overall = round(speed_score * 0.35 + finish_score * 0.40 + confidence * 0.25)
+    # Overall: media ponderada de speed e finish (proporcao 35:40). O confidence
+    # (completude do dado do perfil) NAO entra mais no overall; so ranking por
+    # especificacao. Mantem static/main.js::calcCombinationScore em sincronia.
+    overall = round(speed_score * (0.35 / 0.75) + finish_score * (0.40 / 0.75))
 
     return {
         "speed": speed_score,

@@ -374,10 +374,6 @@ def load_material_defs():
     return materials
 
 
-# Marcas de uso corrente do Fino (recebem bÃ´nus de confianÃ§a: perfis mais testados).
-CURRENT_USE_BRANDS = {"Voolt3D", "Sunlu", "Creality"}
-
-
 def skill_level_from_difficulty(difficulty):
     """Deriva skill_level normalizado a partir do difficulty (0-100) da linha.
 
@@ -398,16 +394,16 @@ def derive_confidence(material_name, manufacturer_name, profile, material_defs):
     """Deriva o confidence (0-100) de fatores objetivos e rastreÃ¡veis.
 
     confidence = base_material (maturidade/facilidade do polÃ­mero)
-               + bÃ´nus de marca de uso corrente (perfis mais rodados na K2)
-               + bÃ´nus/penalidade por riqueza de dados tÃ©cnicos (datasheet)
+               + bonus/penalidade por riqueza de dados tecnicos (datasheet)
 
-    Substitui a nota manual subjetiva por uma funÃ§Ã£o explicÃ¡vel. Clamp 40-95.
+    Semantica: completude/maturidade do DADO do perfil. NAO e exibido como
+    score de ranking e NAO entra no overall (ver src/services.py::_calc_score).
+    Sem fator subjetivo de marca: apenas maturidade do polimero + specs
+    presentes. manufacturer_name e mantido na assinatura (chamada posicional)
+    mas nao influencia o resultado. Clamp 40-95.
     """
     mdef = material_defs.get(material_name, {})
     base = mdef.get("confidence_base", 65)
-
-    # +7 se marca de uso corrente (perfis efetivamente testados na impressora)
-    brand_bonus = 7 if manufacturer_name in CURRENT_USE_BRANDS else 0
 
     # Riqueza de dados tÃ©cnicos: presenÃ§a de specs indica fonte confiÃ¡vel.
     tech_keys = ("density", "glass_transition_temp", "diameter_tolerance",
@@ -421,7 +417,7 @@ def derive_confidence(material_name, manufacturer_name, profile, material_defs):
     else:
         data_adj = 0
 
-    return max(40, min(95, base + brand_bonus + data_adj))
+    return max(40, min(95, base + data_adj))
 
 
 def seed_filaments():

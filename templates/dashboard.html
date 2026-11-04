@@ -332,11 +332,6 @@
         .chip-detail    { background:rgba(185,107,255,.16); color:#b96bff; }
         .chip-safe      { background:rgba(255,45,85,.14);   color:#ff2d55; }
 
-        /* ── Confidence bar ─────────────────────────────────────────────────── */
-        .conf-wrap { display:flex; align-items:center; gap:7px; }
-        .conf-bar  { width:60px; height:5px; background:var(--border); border-radius:99px; overflow:hidden; flex-shrink:0; }
-        .conf-fill { height:100%; border-radius:99px; }
-        .conf-val  { font-size:.78rem; color:var(--muted); }
 
         /* ── Temp range ─────────────────────────────────────────────────────── */
         .temp-range { font-size:.82rem; white-space:nowrap; }
@@ -1186,7 +1181,6 @@
                         <option value="overall">Score geral</option>
                         <option value="speed">Velocidade</option>
                         <option value="finish">Acabamento</option>
-                        <option value="confidence">Confiabilidade</option>
                     </select>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">

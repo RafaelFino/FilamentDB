@@ -184,7 +184,7 @@ Notas sobre as tabelas:
 
 - **`manufacturers`** — fabricantes de filamento. `name` é único. Todos entram no banco; só um subconjunto (Voolt3D, Sunlu, Creality) é *exportado* para os slicers.
 - **`materials`** — propriedades canônicas do polímero (não da marca). Vêm de `material-data/materials.yaml`. `difficulty` é derivado como `100 - confidence_base`. Cobre PLA, PETG, ABS, ASA, TPU e os CF (PLA-CF, PETG-CF), inclusive os que só existem em processo.
-- **`filament_profiles`** — o perfil de filamento em si. `profile_name` é único no formato `"Material - Fabricante - Linha"` (ex.: `PLA - Voolt3D - Velvet`). O campo crítico é `max_volumetric_speed` (MVS): é ele que o slicer usa para capar velocidade em runtime. `confidence` (0-100) é **derivado** de fatores objetivos (maturidade do polímero + bônus de marca de uso corrente + riqueza de datasheet), não de nota subjetiva. `inherits` aponta para o perfil built-in do Creality Print.
+- **`filament_profiles`** — o perfil de filamento em si. `profile_name` é único no formato `"Material - Fabricante - Linha"` (ex.: `PLA - Voolt3D - Velvet`). O campo crítico é `max_volumetric_speed` (MVS): é ele que o slicer usa para capar velocidade em runtime. `confidence` (0-100) é **derivado** de fatores objetivos (maturidade do polímero + completude do datasheet), sem bônus de marca nem nota subjetiva. Mede maturidade/completude do dado e **não** é componente do ranking nem exibido na UI. `inherits` aponta para o perfil built-in do Creality Print.
 - **`filament_variants`** — cada cor/SKU de um perfil (paleta). Tem cor (`hex_color` + RGB), acabamento (`finish`), peso e status.
 - **`process_profiles`** — os perfis de processo gerados por herança. `profile_name` único no formato `"0.20mm Standard @Creality K2 0.4 nozzle - PLA"`. Guarda o conjunto completo de velocidades, acelerações, estrutura (walls/infill), suporte, seam, prime tower e flush. Ver [formação dos perfis](#formação-dos-perfis-decisões-técnicas).
 
@@ -318,7 +318,7 @@ Todas as rotas de leitura são abertas. As rotas marcadas com 🔒 exigem `write
 |--------|------|-----------|
 | GET | `/api/simulate?process_id=&filament_id=` | Velocidades efetivas de uma combinação (aplica o cap MVS) |
 | GET | `/api/simulation-options` | Processos e filamentos disponíveis |
-| GET | `/api/ranking` | Ranking de todas as combinações (score de velocidade/acabamento/confiança) |
+| GET | `/api/ranking` | Ranking de todas as combinações (score de velocidade/acabamento) |
 
 **Downloads (ZIP)**
 | Método | Rota | Descrição |

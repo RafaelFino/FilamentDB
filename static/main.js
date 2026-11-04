@@ -44,15 +44,6 @@ function tempRange(min, ideal, max) {
            `${max?'/':''}${lim(max)}${max?'°C':''}</span>`;
 }
 
-function confBar(pct) {
-    if (!pct) return '—';
-    const color = pct >= 85 ? 'var(--green)' : pct >= 70 ? 'var(--yellow)' : 'var(--red)';
-    return `<div class="conf-wrap">
-        <div class="conf-bar"><div class="conf-fill" style="width:${pct}%;background:${color}"></div></div>
-        <span class="conf-val">${pct}%</span>
-    </div>`;
-}
-
 function scoreBar(val) {
     return `<div class="score-track"><div class="score-fill" style="width:${val||0}%"></div></div>
             <span class="score-val">${val||'—'}</span>`;
@@ -173,7 +164,6 @@ function renderDetailPanel(profile, material) {
                 <div class="info-cell"><span class="lbl">Cama texturizada</span><span class="v">${v(profile.textured_bed,'°C')}</span></div>
                 <div class="info-cell"><span class="lbl">Flow ratio</span><span class="v">${v(profile.flow_ratio)}</span></div>
                 <div class="info-cell"><span class="lbl">Vel. volumétrica máx.</span><span class="v">${v(profile.max_volumetric_speed,' mm³/s')}</span></div>
-                <div class="info-cell"><span class="lbl">Confiança do perfil</span><span class="v">${confBar(profile.confidence)}</span></div>
             </div>
         </div>
 
@@ -261,7 +251,6 @@ function renderTable(manufacturer) {
             <td class="muted-txt">${v(row.bed_temp,'°C')}</td>
             <td class="muted-txt">${v(row.flow_ratio)}</td>
             <td class="muted-txt">${v(row.max_volumetric_speed,' mm³/s')}</td>
-            <td>${confBar(row.confidence)}</td>
             <td class="muted-txt">${row.drying_temperature ? row.drying_temperature+'°C / '+row.drying_time+'h' : '—'}</td>
             <td><span class="muted-txt" style="font-size:.78rem">${varCount > 0 ? varCount+' cores' : '—'}</span></td>
             <td><a class="dl-link" href="${row.download_url}" onclick="event.stopPropagation()">↓ CP</a> · <a class="dl-link" href="${row.orca_download_url}" onclick="event.stopPropagation()">↓ Orca</a></td>
@@ -283,7 +272,6 @@ function renderTable(manufacturer) {
                 <th>Mesa</th>
                 <th>Flow</th>
                 <th>Vol. máx</th>
-                <th>Confiança</th>
                 <th>Secagem</th>
                 <th>Cores</th>
                 <th>Download</th>
@@ -375,7 +363,6 @@ const CMP_ROWS = [
     { sec:'Impressão',    lbl:'Mesa impressão',    fn: p => v(p.bed_temp,'°C') },
     { sec:'Impressão',    lbl:'Flow ratio',        fn: p => v(p.flow_ratio) },
     { sec:'Impressão',    lbl:'Vol. máx',          fn: p => v(p.max_volumetric_speed,' mm³/s') },
-    { sec:'Impressão',    lbl:'Confiança',         fn: p => confBar(p.confidence) },
 
     { sec:'Secagem',      lbl:'Temperatura',       fn: p => v(p.drying_temperature,'°C') },
     { sec:'Secagem',      lbl:'Tempo',             fn: p => v(p.drying_time,'h') },
@@ -1342,10 +1329,7 @@ function diffCell(valA, valB, field) {
 
 // ─── Score calculation for simulation combinations ──────────────────────────
 function calcCombinationScore(data) {
-    // 1. Confiabilidade (0-100): direto do perfil do filamento
-    const confidence = data.filament.confidence || 50;
-
-    // 2. Acabamento (0-100): altura de camada domina (rugosidade FDM escala com layer height).
+    // 1. Acabamento (0-100): altura de camada domina (rugosidade FDM escala com layer height).
     //    Layer height 65%, profile type 25%, wall sequence 10%.
     const profileTypeFinish = {
         detail: 100, safe: 85, standard: 70, strong: 60, economy: 45, fast: 30,
@@ -1365,14 +1349,15 @@ function calcCombinationScore(data) {
     // Baseado na proporção de velocidades efetivas vs. máximo da K2 (500 mm/s para extrusão)
     const speeds = data.simulation.speeds;
     const extrusionFields = Object.keys(speeds).filter(k => k !== 'travel_speed');
-    if (extrusionFields.length === 0) return { confidence, finish, speed: 50, overall: Math.round((confidence + finish + 50) / 3), material_usage: 40, strength: 50 };
+    if (extrusionFields.length === 0) return { finish, speed: 50, overall: Math.round((finish + 50) / 2), material_usage: 40, strength: 50 };
 
     const avgEffective = extrusionFields.reduce((sum, k) => sum + (speeds[k].effective || 0), 0) / extrusionFields.length;
     // Normalizar: 0 mm/s → 0, 350 mm/s → 100 (referência: velocidade média alta típica na K2)
     const speed = Math.min(100, Math.max(0, Math.round((avgEffective / 350) * 100)));
 
-    // Overall: média ponderada (velocidade 35%, acabamento 40%, confiabilidade 25%)
-    const overall = Math.round(speed * 0.35 + finish * 0.40 + confidence * 0.25);
+    // Overall: media ponderada de velocidade e acabamento (proporcao 35:40).
+    // Sem confidence (dado de completude, nao spec). Igual a src/services.py::_calc_score.
+    const overall = Math.round(speed * (0.35 / 0.75) + finish * (0.40 / 0.75));
 
     // 4. Uso de material relativo (0-100, onde menor = mais econômico)
     const walls = parseInt(data.process.wall_loops) || 4;
@@ -1401,7 +1386,7 @@ function calcCombinationScore(data) {
         (50 + lhStrengthBonus + patternBonus) * 0.10
     )));
 
-    return { confidence, finish, speed, overall, material_usage, strength };
+    return { finish, speed, overall, material_usage, strength };
 }
 
 function renderScoreCard(score, label, capInfo) {
@@ -1448,13 +1433,6 @@ function renderScoreCard(score, label, capInfo) {
                     <span style="font-size:.85rem; font-weight:600; color:${matColorFor(matScore)}">${matScore}</span>
                     <div style="width:100%; height:4px; border-radius:2px; background:var(--border);">
                         <div style="width:${matScore}%; height:100%; border-radius:2px; background:${matColorFor(matScore)};"></div>
-                    </div>
-                </div>
-                <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
-                    <span style="font-size:.68rem; color:var(--muted)">Confiança</span>
-                    <span style="font-size:.85rem; font-weight:600; color:${colorFor(score.confidence)}">${score.confidence}</span>
-                    <div style="width:100%; height:4px; border-radius:2px; background:var(--border);">
-                        <div style="width:${score.confidence}%; height:100%; border-radius:2px; background:${colorFor(score.confidence)};"></div>
                     </div>
                 </div>
             </div>
@@ -1792,7 +1770,6 @@ function renderRanking() {
             <td style="min-width:100px;">${rankingScoreBar(r.scores.overall)}</td>
             <td style="min-width:90px;">${rankingScoreBar(r.scores.speed)}</td>
             <td style="min-width:90px;">${rankingScoreBar(r.scores.finish)}</td>
-            <td style="min-width:90px;">${rankingScoreBar(r.scores.confidence)}</td>
             <td style="min-width:90px;">${rankingCapIndicator(r.scores.capped_count, r.scores.total_speeds)}</td>
             <td style="font-size:.78rem; color:var(--muted)">${r.scores.avg_effective_speed} mm/s</td>
             <td style="font-size:.78rem; color:var(--muted)">${r.mvs} mm³/s</td>
@@ -1810,7 +1787,6 @@ function renderRanking() {
             <th>Score</th>
             <th>Velocidade</th>
             <th>Acabamento</th>
-            <th>Confiança</th>
             <th>Limitações</th>
             <th>Vel. média</th>
             <th>MVS</th>
