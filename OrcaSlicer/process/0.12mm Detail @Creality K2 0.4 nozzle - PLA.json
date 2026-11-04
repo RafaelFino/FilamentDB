@@ -50,9 +50,6 @@
     "ironing_spacing": "0.15",
     "ironing_pattern": "rectilinear",
     "ironing_angle": "90",
-    "zaa_enabled": "1",
-    "zaa_minimize_perimeter_height": "55",
-    "zaa_min_z": "0.06",
     "sparse_infill_density": "20",
     "sparse_infill_pattern": "gyroid"
 }

@@ -15,7 +15,6 @@
     "outer_wall_acceleration": 5000,
     "top_surface_acceleration": 5000,
     "process_overrides": {
-        "ironing_flow": "10%",
-        "zaa_enabled": "0"
+        "ironing_flow": "10%"
     }
 }

@@ -151,15 +151,16 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.04
-      max_volumetric_speed: 14
+      max_volumetric_speed: 8
       density: 1.24
       glass_transition_temp: 55
       diameter_tolerance: 0.02
       recommendation: >
         Escolha para peças decorativas onde acabamento importa mais que resistência.
         O toque aveludado esconde linhas de camada e aceita lixamento/pintura.
-        Impressão a 230C e MVS 14 (conservador) por conta da sub-extrusao em
-        velocidade no setup DXC2 — ver GUIA-CALIBRACAO.md. Ponto fraco: é PLA —
+        Impressão a 230C e MVS 8 (bem conservador) — material Velvet aveludado tem
+        aditivo que causa sub-extrusao rapida; é o PLA "critico" do catalogo. Ver
+        GUIA-CALIBRACAO.md. Ponto fraco: é PLA —
         nada de calor ou impacto. Quando escolher: modelos à mostra, action
         figures, peças pintadas.
       color: Natural
@@ -344,7 +345,7 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.0
-      max_volumetric_speed: 20
+      max_volumetric_speed: 15
       recommendation: >
         PLA "faz-tudo" da Voolt3D para o dia a dia. Sem drama, custo equilibrado,
         MVS 20 dá boa velocidade na K2. Acabamento gloss comum, sem efeito especial.
@@ -489,9 +490,9 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 0.98
-      max_volumetric_speed: 20
+      max_volumetric_speed: 15
       recommendation: >
-        PLA para quando o objetivo é tempo de impressão. MVS 20 sustenta perfis Fast
+        PLA para quando o objetivo é tempo de impressão. MVS 15 sustenta perfis Fast
         sem faltar fluxo. Acabamento e precisão cedem um pouco em troca de velocidade.
         Quando escolher: lotes, protótipos rápidos, peças grandes onde o relógio pesa
         mais que o detalhe. Para acabamento fino, prefira Velvet ou baixe o layer height.
@@ -534,7 +535,7 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.02
-      max_volumetric_speed: 15
+      max_volumetric_speed: 10
       recommendation: >
         PLA silk com reflexo metálico (dourado/inox) para peças de vitrine.
         O brilho realça a geometria, mas também evidencia imperfeições e costuras —
@@ -581,7 +582,7 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.02
-      max_volumetric_speed: 18
+      max_volumetric_speed: 10
       density: 1.24
       recommendation: >
         PLA em tons pastel (macaron) com acabamento fosco suave. Foco estético para peças
@@ -631,13 +632,14 @@ materials:
         initial: 65
         temp: 60
       flow_ratio: 1.0
-      max_volumetric_speed: 20
+      max_volumetric_speed: 15
       density: 1.24
       glass_transition_temp: 55
       recommendation: >
         PLA premium a preço de outlet, para quem não se importa com a cor (ela é
-        imprevisível). Mesma base dos PLA tradicionais Voolt3D, MVS 25 aproveita a K2.
-        Quando escolher: protótipos e peças internas onde a cor não importa e o custo pesa.
+        imprevisível). Mesma base dos PLA tradicionais Voolt3D, MVS 15 (conservador,
+        foco em qualidade). Quando escolher: protótipos e peças internas onde a cor
+        não importa e o custo pesa.
       color: Indefinida
       surface_finish: Standard
       drying_temperature: 50
@@ -671,14 +673,14 @@ materials:
         initial: 65
         temp: 60
       flow_ratio: 1.0
-      max_volumetric_speed: 20
+      max_volumetric_speed: 15
       density: 1.24
       glass_transition_temp: 55
       recommendation: >
         PLA "Standard+": o meio-termo entre o Standard e os premium. Melhor adesão entre
         camadas que o PLA comum, o que dá peças mais resistentes, com baixo warping e
-        fluidez boa (MVS 25). Quando escolher: peças de uso diário que pedem um pouco mais
-        de robustez que o PLA Standard, sem precisar partir para PETG.
+        fluidez boa (MVS 15, conservador). Quando escolher: peças de uso diário que pedem
+        um pouco mais de robustez que o PLA Standard, sem precisar partir para PETG.
       color: Natural
       surface_finish: Standard
       drying_temperature: 50

@@ -285,19 +285,23 @@ class MultiMaterialCFSTests(unittest.TestCase):
         self.assertEqual(missing, [], f"JSONs sem wiping_volumes_extruders: {missing}")
 
 
-class ZAADetailScopeTests(unittest.TestCase):
-    """ZAA (Z-layer anti-aliasing) é campo de qualidade Detail-only.
+class ZAADisabledScopeTests(unittest.TestCase):
+    """ZAA (Z-layer anti-aliasing / Z contouring) NÃO é usado em nenhum perfil.
 
-    O Detail declara zaa_enabled=1 / zaa_minimize_perimeter_height=55 /
-    zaa_min_z=0.06; nenhum outro profile type os declara (ficam ausentes).
+    O Creality Print não aceita ZAA + ironing no mesmo objeto: com ambos ligados,
+    o fatiador desabilita o ZAA e cai para fatiamento planar, emitindo aviso
+    ("Object ... cannot use Z contouring because of IroningEnabled"). Como o Detail
+    prioriza ironing (ganho de qualidade maior e consistente em topos planos), o
+    ZAA foi removido do detail.json. Nenhum profile type declara zaa_* — o contrato
+    trava a ausência para evitar reintrodução acidental do conflito.
     """
 
-    def test_detail_sets_zaa(self):
+    def test_detail_has_no_zaa(self):
         device = build_mod.load_device("k2")
         prof = build_mod.generate_process_profile("detail", "0.20", "PLA", device)
-        self.assertEqual(prof.get("zaa_enabled"), "1")
-        self.assertEqual(prof.get("zaa_minimize_perimeter_height"), "55")
-        self.assertEqual(prof.get("zaa_min_z"), "0.06")
+        self.assertNotIn("zaa_enabled", prof)
+        self.assertNotIn("zaa_minimize_perimeter_height", prof)
+        self.assertNotIn("zaa_min_z", prof)
 
     def test_standard_has_no_zaa(self):
         device = build_mod.load_device("k2")

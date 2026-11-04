@@ -57,6 +57,31 @@ lines:
   - Klein Blue
   - Lavender Purple
   - Mocha Mousse
+- name: High Speed Matte Line
+  description: High-flow PLA with matte finish, optimized for high-speed printing
+  positioning: performance_plus
+  difficulty: 40
+  target_use: high_speed_aesthetic
+  tier: premium
+  tracking: true
+  category: high_speed
+  finish: matte
+  notes: >
+    Specs oficiais do datasheet Sunlu: density 1.22 g/cm³, HDT 56.5°C, Vicat 54°C,
+    tensile 50±4 MPa, flexural 73±5 MPa, IZOD impact 6±2 kJ/m², elongation 15±5%,
+    MFI 10.2±3 g/10min (fluxo alto). Nozzle 200-215°C @50-150mm/s ou 215-230°C
+    @150-300mm/s; bed 50-60°C. Secar 50-55°C por 6-8h. Acabamento matte uniforme
+    que disfarça linhas de camada, mantido mesmo em alta velocidade. Suporta até
+    600mm/s. Combo tipo (High Speed Matte) + cor nas variantes.
+  color_options:
+  - Black
+  - White
+  - Grey
+  - Cherry Red
+  - Sky Blue
+  - Sunny Orange
+  - Olive Green
+  - Sakura Pink
 - name: Meta Line
   description: Advanced PLA with improved flow and surface finish
   positioning: performance_plus
@@ -309,6 +334,59 @@ materials:
         hex: "#9C64D6"
       - color: Mocha Mousse
         hex: "#A67B5B"
+    - line: High Speed Matte Line
+      commercial_name: PLA High Speed Matte
+      profile_name: Sunlu PLA High Speed Matte
+      export: true
+      notes: >
+        PLA de alto fluxo com acabamento matte (combo High Speed + Matte). Specs
+        oficiais Sunlu: density 1.22, HDT 56.5°C, MFI 10.2 g/10min, tensile 50 MPa.
+        Nozzle escala por velocidade (200-215°C @50-150mm/s, 215-230°C @150-300mm/s).
+      nozzle:
+        initial: 220
+        min: 200
+        max: 230
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 0.98
+      max_volumetric_speed: 15
+      density: 1.22
+      glass_transition_temp: 54
+      heat_deflection_temp: 56.5
+      tensile_strength_mpa: 50
+      flexural_strength_mpa: 73
+      impact_strength_kj_m2: 6
+      elongation_at_break_pct: 15
+      mfi_g_10min: 10.2
+      diameter_tolerance: "1.75±0.02mm"
+      drying_temperature: 50
+      drying_time: 8.0
+      recommendation: >
+        PLA high speed com acabamento matte uniforme — junta velocidade (MFI 10.2,
+        datasheet cita até 600mm/s) com visual fosco que disfarça camadas, sem o
+        aditivo "crítico" tipo Velvet. MVS 15 conservador na K2 (teto de qualidade).
+        Tensile 50 MPa é bom para a classe. Quando escolher: peças à mostra em preto/
+        cinza foscos impressas rápido. Equivalente em PLA ao PETG HS Matte da Sunlu.
+      color: Black
+      surface_finish: Matte
+      variants:
+      - color: Black
+        hex: "#1C1C1C"
+      - color: White
+        hex: "#F5F5F5"
+      - color: Grey
+        hex: "#63666A"
+      - color: Cherry Red
+        hex: "#DC143C"
+      - color: Sky Blue
+        hex: "#87CEEB"
+      - color: Sunny Orange
+        hex: "#FF6E31"
+      - color: Olive Green
+        hex: "#808000"
+      - color: Sakura Pink
+        hex: "#FF91A4"
     - line: Meta Line
       commercial_name: PLA Meta
       profile_name: Sunlu PLA Meta

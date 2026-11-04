@@ -27,8 +27,5 @@
     "ironing_speed": 30,
     "ironing_flow": "50%",
     "ironing_spacing": 0.15,
-    "ironing_angle": "90",
-    "zaa_enabled": "1",
-    "zaa_minimize_perimeter_height": "55",
-    "zaa_min_z": "0.06"
+    "ironing_angle": "90"
 }
