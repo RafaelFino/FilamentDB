@@ -5,7 +5,37 @@ saturação do motor, vazão, temperatura) e calibrar o fluxo na ordem correta.
 Escrito para o setup real: **Creality K2 (Klipper) com extrusora DXC2**. Os configs
 vivem em `~/git/CrealityK2-PrinterConfig/` (`default/` = stock, `DXC2/` = atual).
 
-> **TL;DR do caso deste setup:**
+> ## ✅ RESOLVIDO (nov/2026)
+>
+> **Causa real:** combinação de **(1) tensão do idler da extrusora mal regulada** e
+> **(2) filamento inadequado** (não era um filamento premium de verdade). Juntos,
+> causaram a sub-extrusão, a patinagem e o pó de filamento observados.
+>
+> **Correção:** trocar para um **filamento premium de verdade** e **regular a
+> tensão do idler** (e o restante da extrusora). Resultado: **impressão perfeita**.
+>
+> **Valor final de `rotation_distance`: 6.86** (o nominal recomendado pelo fabricante
+> da DXC2). Após a correção da causa real, a calibração confirmou 6.86 — **não
+> precisou de ajuste**, e as impressões estão ótimas. Os valores intermediários
+> (6.35 e 4.97) eram artefatos de medição contaminada pelo problema físico, não
+> ajustes legítimos.
+>
+> **Lições:**
+> - Antes de mexer em `rotation_distance`, temperatura, MVS ou flow ratio, **elimine
+>   as causas básicas**: tensão do idler e qualidade/estado do filamento.
+> - Filamento de qualidade duvidosa (diâmetro irregular, umidade, composição) produz
+>   sintomas idênticos a defeito mecânico/de calibração. **Teste sempre com um
+>   filamento de referência** antes de concluir que a máquina está errada.
+> - Os paliativos aplicados durante o diagnóstico (Velvet a 230 °C, MVS 14, rd
+>   alterada) foram resposta ao sintoma, não à causa; reavalie/reverta-os se ainda
+>   estiverem ativos (ver checklist).
+>
+> O restante deste guia (diagnóstico, hipóteses A–E, testes escalonados) fica como
+> **registro histórico** do processo e como metodologia para casos futuros.
+> Os itens abaixo marcados como "causa provável" refletem o raciocínio **antes** da
+> resolução, não o desfecho.
+
+> **TL;DR do caso deste setup (histórico, pré-resolução):**
 > - **Fato medido:** a extrusão entrega menos filamento que o pedido, déficit
 >   **cresce com a velocidade** (90/70/20 mm para 100 pedidos a 1/6/16,8 mm/s);
 >   **pó de filamento** na extrusora (patinagem real).
@@ -508,7 +538,12 @@ Com os valores calibrados (faixa 0.95–1.05 esperada):
 
 ## Checklist rápido
 
-- [ ] Etapa 1: `rotation_distance` confirmada a **1 mm/s**; `mm_reais` 99–101 mm (valor nominal: 6.86).
+> **Status: problema RESOLVIDO** — causa foi tensão do idler + filamento inadequado;
+> com filamento premium e tudo regulado, a impressão ficou perfeita. O checklist
+> abaixo é o roteiro de diagnóstico, mantido para referência futura. Para um caso
+> novo, comece por: **filamento de referência + tensão do idler**.
+
+- [x] Etapa 1: `rotation_distance` confirmada em **6.86** (nominal) após a correção da causa real; impressões ótimas.
 - [ ] `DXC2/printer.cfg` com rd=6.86 + `FIRMWARE_RESTART` (reverter o 4.97 se ainda estiver gravado).
 - [ ] **Etapa 2.2 — teste de rotação livre da engrenagem** (sentir ponto de arrasto) → diagnostica hipótese E.
 - [ ] **Solução Phaetus (se E):** afrouxar os 2 parafusos, girar a engrenagem até suave, reapertar; reapertar os parafusos da montagem (afrouxam com o calor).
