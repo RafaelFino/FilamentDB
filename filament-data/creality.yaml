@@ -128,7 +128,12 @@ materials:
       export: true
       notes: >
         Specs oficiais confirmadas: nozzle 190-230°C, bed 25-60°C, speed 40-600mm/s,
-        density 1.24 g/cm³, tensile 52.99 MPa, elongation 6.3%, tolerância ±0.02mm.
+        tensile 52.99 MPa, elongation 6.3%.
+        Auditoria de specs: density e diameter_tolerance alinhados à Open Filament Database
+        (Creality / PLA / Hyper PLA: density 1.25 g/cm³, tolerância ±0.03mm; antes 1.24 e
+        ±0.02mm). OFDB não traz data_sheet_url para este item. Temperaturas nozzle/bed já
+        coincidem com a OFDB (190-230 / 25-60). Fonte:
+        https://api.openfilamentdatabase.org/api/v1/brands/creality/materials/PLA/filaments/hyper_pla/index.json
       nozzle:
         initial: 220
         min: 190
@@ -138,10 +143,10 @@ materials:
         temp: 60
       flow_ratio: 1.0
       max_volumetric_speed: 20
-      density: 1.24
+      density: 1.25
       tensile_strength_mpa: 52.99
       elongation_at_break_pct: 6.3
-      diameter_tolerance: "1.75±0.02mm"
+      diameter_tolerance: "1.75±0.03mm"
       recommendation: >
         PLA de referência da Creality, feito para a própria K2 (datasheet cita 600mm/s; MVS 23).
         Perfil de fábrica bem calibrado, tende a "só funcionar". Bom tensile para PLA (53 MPa).
@@ -287,15 +292,23 @@ materials:
       commercial_name: CR PETG
       profile_name: Creality CR PETG
       export: true
+      notes: >
+        Auditoria de specs (Open Filament Database, Creality / PETG / CR-PETG: nozzle
+        230-250°C, bed 60-100°C, density 1.24 g/cm³, tolerância ±0.02mm). nozzle.max
+        255 -> 250 (acima da faixa OFDB); density e diameter_tolerance preenchidos.
+        OFDB sem data_sheet_url. Fonte:
+        https://api.openfilamentdatabase.org/api/v1/brands/creality/materials/PETG/filaments/cr_petg/index.json
       nozzle:
         initial: 245
         min: 235
-        max: 255
+        max: 250
       bed:
         initial: 80
         temp: 80
       flow_ratio: 0.98
       max_volumetric_speed: 15
+      density: 1.24
+      diameter_tolerance: "1.75±0.02mm"
       recommendation: >
         PETG padrão da Creality (linha CR) para peças mecânicas. Fluxo comum (MVS 15),
         confiável e sem surpresas. Gruda em suporte como todo PETG — use gaps generosos.
@@ -352,6 +365,12 @@ materials:
       commercial_name: Hyper PETG
       profile_name: Creality Hyper PETG
       export: true
+      notes: >
+        Auditoria de specs (Open Filament Database, Creality / PETG / Hyper PETG): OFDB
+        traz apenas density 1.27 g/cm³ e tolerância ±0.05mm, sem faixa de temperatura
+        de nozzle/bed e sem data_sheet_url. Temperaturas mantidas (sem fonte para
+        corrigir); density e diameter_tolerance preenchidos. Fonte:
+        https://api.openfilamentdatabase.org/api/v1/brands/creality/materials/PETG/filaments/hyper_petg/index.json
       nozzle:
         initial: 250
         min: 240
@@ -361,6 +380,8 @@ materials:
         temp: 80
       flow_ratio: 0.97
       max_volumetric_speed: 18
+      density: 1.27
+      diameter_tolerance: "1.75±0.05mm"
       recommendation: >
         PETG de alta velocidade da Creality (MVS 23) — aproveita a K2 para peças funcionais rápidas.
         Mesma resistência do CR PETG, mas com fluxo bem maior. Requer bed mais quente (85°C).

@@ -279,6 +279,13 @@ materials:
       commercial_name: PLA High Speed
       profile_name: Sunlu PLA High Speed
       export: true
+      notes: >
+        Auditoria de specs: OFDB (Sunlu / PLA / High Speed PLA: nozzle 210-230, bed
+        50-60, density 1.28, tolerância ±0.02mm) e TDS oficial (nozzle 210-230°C até
+        250 mm/s, plate 50-60°C, secagem 50°C) coincidem com este perfil; drying_temperature
+        50 preenchido a partir do TDS. TDS:
+        https://media.sunlu.com/prod/20260330/b129fd4c-7d50-46be-874e-84e0bb6ff1ae.pdf?filename=TDS
+      drying_temperature: 50
       nozzle:
         initial: 220
         min: 210
@@ -340,8 +347,14 @@ materials:
       export: true
       notes: >
         PLA de alto fluxo com acabamento matte (combo High Speed + Matte). Specs
-        oficiais Sunlu: density 1.22, HDT 56.5°C, MFI 10.2 g/10min, tensile 50 MPa.
+        oficiais Sunlu: HDT 56.5°C, MFI 10.2 g/10min, tensile 50 MPa (valores de
+        página de produto; o TDS ISO traz valores diferentes: tensile 27±4 MPa,
+        HDT 55±3°C, MFR 6±2 — não alterados nesta auditoria).
         Nozzle escala por velocidade (200-215°C @50-150mm/s, 215-230°C @150-300mm/s).
+        Auditoria de specs: density 1.22 -> 1.36 g/cm³ conforme TDS oficial (ISO 1183)
+        e OFDB (Sunlu / PLA / High Speed Matte PLA: 1.36; nozzle 200-260, bed 50-60,
+        ±0.02mm); temperaturas já dentro da faixa. TDS:
+        https://media.sunlu.com/prod/20260330/689d1925-acad-4de8-9079-c8eee9c3081e.pdf?filename=TDS
       nozzle:
         initial: 220
         min: 200
@@ -351,7 +364,7 @@ materials:
         temp: 55
       flow_ratio: 0.98
       max_volumetric_speed: 15
-      density: 1.22
+      density: 1.36
       glass_transition_temp: 54
       heat_deflection_temp: 56.5
       tensile_strength_mpa: 50
@@ -472,16 +485,24 @@ materials:
       commercial_name: PLA Matte
       profile_name: Sunlu PLA Matte
       export: true
+      notes: >
+        Auditoria de specs: OFDB (Sunlu / PLA / PLA Matte: nozzle 205-245, bed 50-60,
+        density 1.31, tolerância ±0.02mm, max_dry 55°C) e TDS oficial (nozzle 205-215°C
+        @50-100mm/s, 215-245°C @100-230mm/s; plate 50-60°C; secagem 50°C). nozzle.min
+        195 -> 205 (abaixo da faixa), density 1.24 -> 1.31, diameter_tolerance
+        preenchido. TDS:
+        https://media.sunlu.com/prod/20260330/b42c1ff4-b3d1-42e4-82a3-b85523647407.pdf?filename=TDS
       nozzle:
         initial: 210
-        min: 195
+        min: 205
         max: 225
       bed:
         initial: 55
         temp: 55
       flow_ratio: 1.01
       max_volumetric_speed: 14
-      density: 1.24
+      density: 1.31
+      diameter_tolerance: "1.75±0.02mm"
       recommendation: >
         PLA fosco da Sunlu: acabamento matte uniforme que disfarça linhas de camada, sem brilho.
         Fácil de imprimir como PLA comum. Quando escolher: peças à mostra que pedem visual discreto
@@ -528,18 +549,23 @@ materials:
       export: true
       notes: >
         PETG de alto fluxo com acabamento matte. MFR 4.4 g/10min — fluxo muito superior
-        ao PETG padrão. Sensível à umidade: secar a 50°C, manter <20% RH.
-        Nozzle escala por velocidade: 240-250°C @100-200mm/s, 260-270°C @300-600mm/s.
+        ao PETG padrão. Sensível à umidade: manter <20% RH.
+        Nozzle escala por velocidade: 240-250°C @100-200mm/s, 260-270°C @300-600mm/s
+        (valores de página de produto; o TDS oficial limita a 240-260°C até 400 mm/s).
+        Auditoria de specs: nozzle.max 270 -> 260 (TDS + OFDB Sunlu / PETG / High Speed
+        Matte PETG: 240-260, bed 70-80), density 1.26 -> 1.28 (OFDB), drying_temperature
+        50 -> 60 (TDS: 60-65°C, menor valor). OFDB tolerância ±0.02mm. TDS:
+        https://media.sunlu.com/prod/20260330/ccf53a55-5b58-49fa-b1d9-08f94c0a4b28.pdf?filename=TDS
       nozzle:
         initial: 250
         min: 240
-        max: 270
+        max: 260
       bed:
         initial: 70
         temp: 70
       flow_ratio: 0.97
       max_volumetric_speed: 18
-      density: 1.26
+      density: 1.28
       heat_deflection_temp: 70
       melting_point: 128
       mfi_g_10min: 4.4
@@ -549,7 +575,7 @@ materials:
       impact_strength_kj_m2: 4.1
       elongation_at_break_pct: 33
       diameter_tolerance: "1.75±0.02mm"
-      drying_temperature: 50
+      drying_temperature: 60
       drying_time: 6.0
       recommendation: >
         O melhor PETG da Sunlu: alto fluxo (MVS 18, MFR 4.4) para velocidade + acabamento matte

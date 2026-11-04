@@ -45,6 +45,11 @@ materials:
       notes: >
         Specs conferidas em páginas de produto: nozzle 190-230°C, bed 45-60°C,
         velocidade 30-300 mm/s, multi-material (CFS). Reescrito para licença.
+        Auditoria de specs (Open Filament Database, Creality / PLA / Soleyin Ultra PLA:
+        nozzle 190-230, bed 45-60, density 1.25 g/cm³, tolerância ±0.02mm): temperaturas
+        já coincidem; density 1.24 -> 1.25 e diameter_tolerance preenchido. OFDB sem
+        data_sheet_url. Fonte:
+        https://api.openfilamentdatabase.org/api/v1/brands/creality/materials/PLA/filaments/soleyin_ultra_pla/index.json
       nozzle:
         initial: 210
         min: 190
@@ -54,7 +59,8 @@ materials:
         temp: 60
       flow_ratio: 1.0
       max_volumetric_speed: 8
-      density: 1.24
+      density: 1.25
+      diameter_tolerance: "1.75±0.02mm"
       recommendation: >
         PLA Ultra da Soleyin (sub-marca Creality), feito para troca de cor no CFS
         da K2. Fluxo moderado (MVS 8). Quando escolher: impressões multicolor na

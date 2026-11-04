@@ -26,25 +26,25 @@
         "235"
     ],
     "nozzle_temperature_range_high": [
-        "255"
+        "250"
     ],
     "hot_plate_temp": [
-        "80"
+        "70"
     ],
     "hot_plate_temp_initial_layer": [
-        "85"
+        "75"
     ],
     "textured_plate_temp": [
-        "80"
+        "70"
     ],
     "textured_plate_temp_initial_layer": [
-        "85"
+        "75"
     ],
     "cool_plate_temp": [
-        "80"
+        "70"
     ],
     "cool_plate_temp_initial_layer": [
-        "85"
+        "75"
     ],
     "compatible_printers": [
         "Creality K2 0.4 nozzle"

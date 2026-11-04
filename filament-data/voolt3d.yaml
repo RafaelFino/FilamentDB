@@ -143,10 +143,16 @@ materials:
       commercial_name: PLA Velvet
       profile_name: Voolt3D PLA Velvet
       export: true
+      notes: >
+        Auditoria de specs (ficha oficial no site do fabricante: nozzle 190-230°C, mesa
+        50-70°C, Tg ~55°C, density 1.24 g/cm³, ±0.02mm, velocidade volumétrica "até 25 mm³/s").
+        nozzle.max 240 -> 230 (acima da faixa oficial). MVS mantido em 8 (política de MVS
+        conservador; o fabricante declara até 25 como teto, não como valor sustentado).
+        Fonte: https://voolt3d.com.br/produtos/filamento-pla-amarelo-velvet-premium
       nozzle:
         initial: 230
         min: 190
-        max: 240
+        max: 230
       bed:
         initial: 60
         temp: 60
@@ -482,15 +488,23 @@ materials:
       commercial_name: PLA High Speed
       profile_name: Voolt3D PLA High Speed
       export: true
+      notes: >
+        Auditoria de specs (ficha oficial do fabricante, PLA sólido High Speed: nozzle
+        190-230°C, mesa 50-70°C, density 1.24 g/cm³, ±0.02mm). nozzle.max 240 -> 230
+        (acima da faixa oficial); density e diameter_tolerance preenchidos. MVS mantido
+        em 15 (fabricante declara "até 25 mm³/s"; política de MVS conservador).
+        Fonte: https://voolt3d.com.br/produtos/filamento-pla-rosa-premium
       nozzle:
         initial: 225
         min: 215
-        max: 240
+        max: 230
       bed:
         initial: 60
         temp: 60
       flow_ratio: 0.98
       max_volumetric_speed: 15
+      density: 1.24
+      diameter_tolerance: "1.75±0.02mm"
       recommendation: >
         PLA para quando o objetivo é tempo de impressão. MVS 15 sustenta perfis Fast
         sem faltar fluxo. Acabamento e precisão cedem um pouco em troca de velocidade.
@@ -527,6 +541,12 @@ materials:
       commercial_name: PLA V-Silk
       profile_name: Voolt3D PLA V-Silk
       export: true
+      notes: >
+        Auditoria de specs (ficha oficial do fabricante, V-Silk: nozzle 190-230°C, mesa
+        50-70°C, density 1.24 g/cm³, ±0.02mm). Temperaturas já dentro da faixa; density e
+        diameter_tolerance preenchidos. MVS mantido em 10 (fabricante declara "até 25
+        mm³/s"; política de MVS conservador).
+        Fonte: https://voolt3d.com.br/produtos/filamento-pla-vermelho-v-silk-high-speed-premium-1kg
       nozzle:
         initial: 220
         min: 210
@@ -536,6 +556,8 @@ materials:
         temp: 60
       flow_ratio: 1.02
       max_volumetric_speed: 10
+      density: 1.24
+      diameter_tolerance: "1.75±0.02mm"
       recommendation: >
         PLA silk com reflexo metálico (dourado/inox) para peças de vitrine.
         O brilho realça a geometria, mas também evidencia imperfeições e costuras —
@@ -574,6 +596,12 @@ materials:
       commercial_name: PLA Macaron
       profile_name: Voolt3D PLA Macaron
       export: true
+      notes: >
+        Auditoria de specs (ficha oficial do fabricante, Macaron Velvet: nozzle 190-230°C,
+        mesa 50-70°C, density 1.24 g/cm³, ±0.02mm). Temperaturas e density já conferem;
+        diameter_tolerance preenchido. MVS mantido em 10 (fabricante declara "até 25
+        mm³/s"; política de MVS conservador).
+        Fonte: https://voolt3d.com.br/produtos/filamento-pla-azul-macaron-velvet-premium
       nozzle:
         initial: 215
         min: 205
@@ -584,6 +612,7 @@ materials:
       flow_ratio: 1.02
       max_volumetric_speed: 10
       density: 1.24
+      diameter_tolerance: "1.75±0.02mm"
       recommendation: >
         PLA em tons pastel (macaron) com acabamento fosco suave. Foco estético para peças
         decorativas em cores delicadas. É PLA — sem calor nem esforço mecânico.
@@ -624,6 +653,11 @@ materials:
         qualquer linha Voolt3D). Mesma base dos PLA tradicionais, posicionado como
         premium. Linhas com aditivos (Stone/Wood/Cosmos) podem pedir bico >= 0.6mm;
         o default do catálogo permanece 0.4mm.
+        Auditoria de specs (ficha oficial do fabricante, PLA Outlet: nozzle 190-230°C,
+        mesa 50-70°C, density 1.24 g/cm³, ±0.02mm): temperaturas e density já conferem;
+        diameter_tolerance preenchido. MVS mantido em 15 (fabricante declara "até 25
+        mm³/s"; política de MVS conservador).
+        Fonte: https://voolt3d.com.br/produtos/filamento-pla-outlet
       nozzle:
         initial: 220
         min: 190
@@ -634,6 +668,7 @@ materials:
       flow_ratio: 1.0
       max_volumetric_speed: 15
       density: 1.24
+      diameter_tolerance: "1.75±0.02mm"
       glass_transition_temp: 55
       recommendation: >
         PLA premium a preço de outlet, para quem não se importa com a cor (ela é
@@ -665,6 +700,11 @@ materials:
         PLA Standard+ com formulação para maior aderência e resistência entre camadas
         (peças mais resistentes), baixo warping e boa fluidez. Compatível com impressoras
         convencionais e High Speed. Specs oficiais Voolt3D (bico 0.4mm de referência).
+        Auditoria de specs (ficha oficial: nozzle 190-230°C, mesa 50-70°C, Tg ~55°C,
+        density 1.24 g/cm³, ±0.02mm): temperaturas e density já conferem;
+        diameter_tolerance preenchido. MVS mantido em 15 (fabricante declara "até 25
+        mm³/s"; política de MVS conservador).
+        Fonte: https://voolt3d.com.br/produtos/filamento-pla-branco-off-white-evo-1kg
       nozzle:
         initial: 215
         min: 190
@@ -675,6 +715,7 @@ materials:
       flow_ratio: 1.0
       max_volumetric_speed: 15
       density: 1.24
+      diameter_tolerance: "1.75±0.02mm"
       glass_transition_temp: 55
       recommendation: >
         PLA "Standard+": o meio-termo entre o Standard e os premium. Melhor adesão entre
@@ -703,16 +744,25 @@ materials:
       commercial_name: PETG HF
       profile_name: Voolt3D PETG HF
       export: true
-      notes: High Fluidity - linha PETG otimizada para fluxo alto
+      notes: >
+        High Fluidity - linha PETG otimizada para fluxo alto.
+        Auditoria de specs (ficha oficial do fabricante, PETG HF: nozzle 220-250°C, mesa
+        70°C, Tg 75-80°C, density 1.27 g/cm³, ±0.02mm, velocidade volumétrica 20 mm³/s).
+        nozzle.max 255 -> 250 e bed 80 -> 70 (fora da ficha oficial); density e
+        diameter_tolerance preenchidos. MVS mantido em 15 (declarado 20; política de MVS
+        conservador: em divergência, menor valor).
+        Fonte: https://voolt3d.com.br/produtos/filamento-petg-hf-preto-high-fluidity-premium-1kg
       nozzle:
         initial: 245
         min: 235
-        max: 255
+        max: 250
       bed:
-        initial: 80
-        temp: 80
+        initial: 70
+        temp: 70
       flow_ratio: 0.98
       max_volumetric_speed: 15
+      density: 1.27
+      diameter_tolerance: "1.75±0.02mm"
       recommendation: >
         PETG principal para peças funcionais: tenaz, resiste a calor moderado e químicos.
         A variante HF (High Fluidity) flui melhor que PETG comum, ajudando na velocidade.
@@ -1006,6 +1056,12 @@ materials:
       commercial_name: ABS Standard
       profile_name: Voolt3D ABS
       export: true
+      notes: >
+        Auditoria de specs (ficha oficial do fabricante, ABS: nozzle 230-265°C, mesa
+        100-120°C, Tg 85-95°C, density 1.04 g/cm³, ±0.02mm, velocidade volumétrica "até 20
+        mm³/s"). Temperaturas já dentro da faixa; density e diameter_tolerance
+        preenchidos. MVS mantido em 10 (declarado até 20; política de MVS conservador).
+        Fonte: https://voolt3d.com.br/produtos/filamento-abs-vermelho-premium/
       nozzle:
         initial: 250
         min: 240
@@ -1015,6 +1071,8 @@ materials:
         temp: 100
       flow_ratio: 1.0
       max_volumetric_speed: 10
+      density: 1.04
+      diameter_tolerance: "1.75±0.02mm"
       recommendation: >
         ABS para peças que enfrentam calor (~100°C) e precisam de tenacidade. Na K2 exige
         câmara fechada e cama a 100°C — sem isso, warping e delaminação são quase certos.

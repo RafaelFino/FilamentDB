@@ -28,6 +28,7 @@ materials:
     temp_resist: 20       # Tg ~55-60°C, deforma em carro/sol
     uv_resist: 25         # amarela e fragiliza com UV
     confidence_base: 85   # o material mais previsível e fácil
+    mvs_default: 12       # MVS default conservador por material (bico 0.4mm) - fabricante nao declara. Fonte: presets base do OrcaSlicer 2.4 (OrcaFilamentLibrary) (fdm_filament_pla); so vale onde o perfil nao declara MVS
     food_safe: 0
     indoor: 1
     outdoor: 0
@@ -46,6 +47,7 @@ materials:
     temp_resist: 45       # Tg ~80°C, tolera calor moderado
     uv_resist: 55         # razoável ao tempo, melhor que PLA
     confidence_base: 76   # fácil, mas stringing e cooling exigem calibração
+    mvs_default: 10       # MVS default conservador por material (bico 0.4mm) - fabricante nao declara. Fonte: presets base do OrcaSlicer 2.4 (OrcaFilamentLibrary) (fdm_filament_pet); so vale onde o perfil nao declara MVS
     food_safe: 0          # depende de aditivos/cor; não garantir por padrão
     indoor: 1
     outdoor: 1
@@ -64,6 +66,7 @@ materials:
     temp_resist: 75       # Tg ~105°C, serve para peças quentes
     uv_resist: 30         # degrada ao sol (usar ASA para externo)
     confidence_base: 62   # warping e delaminação; precisa enclosure e cama quente
+    mvs_default: 12       # MVS default conservador por material (bico 0.4mm) - fabricante nao declara. Fonte: presets base do OrcaSlicer 2.4 (OrcaFilamentLibrary) (fdm_filament_abs); so vale onde o perfil nao declara MVS
     food_safe: 0
     indoor: 1
     outdoor: 0
@@ -82,6 +85,7 @@ materials:
     temp_resist: 75       # semelhante ao ABS
     uv_resist: 92         # excelente ao tempo — feito para exterior
     confidence_base: 60   # mesmos desafios do ABS (warping, enclosure)
+    mvs_default: 12       # MVS default conservador por material (bico 0.4mm) - fabricante nao declara. Fonte: presets base do OrcaSlicer 2.4 (OrcaFilamentLibrary) (fdm_filament_asa); so vale onde o perfil nao declara MVS
     food_safe: 0
     indoor: 1
     outdoor: 1
@@ -100,6 +104,7 @@ materials:
     temp_resist: 40       # varia com a dureza (Shore); moderado
     uv_resist: 45
     confidence_base: 55   # exige velocidade baixa e retração cuidadosa
+    mvs_default: 3.2       # MVS default conservador por material (bico 0.4mm) - fabricante nao declara. Fonte: presets base do OrcaSlicer 2.4 (OrcaFilamentLibrary) (fdm_filament_tpu); so vale onde o perfil nao declara MVS
     food_safe: 0
     indoor: 1
     outdoor: 1
@@ -118,6 +123,7 @@ materials:
     temp_resist: 30       # a fibra ajuda um pouco vs PLA puro
     uv_resist: 30
     confidence_base: 62   # abrasivo (exige bico endurecido), tende a entupir
+    mvs_default: 12       # MVS default conservador por material (bico 0.4mm) - fabricante nao declara. Fonte: presets base do OrcaSlicer 2.4 (OrcaFilamentLibrary) (Generic PLA-CF (herda fdm_filament_pla)); so vale onde o perfil nao declara MVS
     food_safe: 0
     indoor: 1
     outdoor: 0
@@ -136,6 +142,7 @@ materials:
     temp_resist: 50       # um pouco acima do PETG puro
     uv_resist: 55
     confidence_base: 60   # abrasivo + desafios do PETG (cooling, stringing)
+    mvs_default: 11.5       # MVS default conservador por material (bico 0.4mm) - fabricante nao declara. Fonte: presets base do OrcaSlicer 2.4 (OrcaFilamentLibrary) (Generic PETG-CF); so vale onde o perfil nao declara MVS
     food_safe: 0
     indoor: 1
     outdoor: 1

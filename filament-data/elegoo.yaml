@@ -346,9 +346,15 @@ materials:
       commercial_name: PLA+
       profile_name: Elegoo PLA+
       export: true
+      notes: >
+        Auditoria de specs (Open Filament Database, Elegoo / PLA / "PLA Plus": nozzle
+        200-230°C, bed 35-65°C, density 1.3 g/cm³, tolerância ±0.02mm). nozzle.min
+        190 -> 200 e density 1.26 -> 1.3. Casamento por nome ("PLA+" = "PLA Plus");
+        OFDB sem data_sheet_url. Fonte:
+        https://api.openfilamentdatabase.org/api/v1/brands/elegoo/materials/PLA/filaments/pla_plus/index.json
       nozzle:
         initial: 220
-        min: 190
+        min: 200
         max: 230
       bed:
         initial: 50
@@ -358,7 +364,7 @@ materials:
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
-      density: 1.26
+      density: 1.3
       glass_transition_temp: 63
       diameter_tolerance: "1.75±0.02mm"
       recommendation: Mais resistente que PLA padrão, specs verificadas no site oficial
@@ -403,15 +409,23 @@ materials:
       commercial_name: PLA Pro
       profile_name: Elegoo PLA Pro
       export: true
+      notes: >
+        Auditoria de specs (Open Filament Database, Elegoo / PLA / "PLA PRO": nozzle
+        180-210°C, bed 50-65°C, density 1.24 g/cm³, tolerância ±0.02mm). nozzle.max
+        215 -> 210 (acima da faixa OFDB); density e diameter_tolerance preenchidos.
+        OFDB sem data_sheet_url. Fonte:
+        https://api.openfilamentdatabase.org/api/v1/brands/elegoo/materials/PLA/filaments/pla_pro/index.json
       nozzle:
         initial: 200
         min: 190
-        max: 215
+        max: 210
       bed:
         initial: 60
         temp: 60
       flow_ratio: 1.02
       max_volumetric_speed: 16
+      density: 1.24
+      diameter_tolerance: "1.75±0.02mm"
       diameter: 1.75
       drying_temperature: 50
       drying_time: 8.0
