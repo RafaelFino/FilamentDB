@@ -1,0 +1,44 @@
+manufacturer:
+  name: Futer3D
+  # país e website: NÃO ENCONTRADOS (busca web em 2026 não retornou site/loja/TDS da marca;
+  # futer3d.com e futer3d.com.br não resolvem DNS). Preencher quando houver fonte.
+  notes: >
+    Marca citada pelo usuário (Rafael), produto PETG Basic comprado em estoque físico.
+    Nenhuma ficha técnica (TDS) pública foi localizada na pesquisa web.
+lines:
+# Campos opcionais sem fonte (positioning, difficulty, tier, category, finish, target_use)
+# omitidos de propósito: não há dado do fabricante e não inventamos classificação.
+- name: Basic Line
+  description: Linha PETG Basic da Futer3D
+  notes: Specs de fabricante não encontradas.
+  color_options: []
+materials:
+  PETG:
+    profiles:
+    - line: Basic Line
+      commercial_name: PETG Basic
+      profile_name: Futer3D PETG Basic
+      export: true
+      notes: >
+        Produto comprado pelo usuário. Pesquisa web (remote_web_search, web_fetch) não
+        localizou site oficial, loja nem TDS da Futer3D. Faixas de bico (230-270) e mesa
+        (70-90) informadas pelo usuário. Fluxo e MVS são da CLASSE PETG adotada no projeto,
+        NÃO do fabricante. Não encontrado: país,
+        site, diâmetro/tolerância, peso, densidade, secagem, ventilação, cor, acabamento,
+        preço, URL.
+      nozzle:
+        initial: 240
+        min: 230
+        max: 270
+      # Faixas informadas pelo usuário (fonte: rótulo/página do produto): bico 230-270, mesa 70-90.
+      # initial = escolha conservadora dentro da faixa (bico 240; mesa 80 = ponto médio).
+      bed:
+        initial: 80
+        temp: 80
+      flow_ratio: 0.98
+      # MVS: fabricante não declara (sem TDS); 11 = classe PETG do projeto (teto 12), menor valor por política de dúvida
+      max_volumetric_speed: 11
+      recommendation: >
+        Sem datasheet público do fabricante, os parâmetros seguem a classe PETG conservadora
+        do projeto (MVS 11). Seque o carretel antes de usar para evitar stringing. Calibrar
+        flow e confirmar temperaturas pelo rótulo.

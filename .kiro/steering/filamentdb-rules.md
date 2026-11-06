@@ -427,7 +427,7 @@ perfil de filamento decide se é exportado via a flag `export: true` no YAML
 curadoria junto da fonte de verdade e evita listas paralelas hardcoded.
 
 Produtos atualmente habilitados para exportação (curadoria deliberada, baseada
-no estoque físico real — **20 produtos**; contagem validada contra as flags
+no estoque físico real — **21 produtos**; contagem validada contra as flags
 `export: true` dos YAMLs).
 
 **Decisão (2026-11-06): Sunlu é a marca primária.** Após os problemas com a
@@ -460,6 +460,7 @@ priorizar calibração, preferir Sunlu.
 | Elegoo PLA+ | PLA | elegoo |
 | Elegoo PLA Pro | PLA | elegoo |
 | Soleyin Ultra PLA | PLA | soleyin |
+| Futer3D PETG Basic | PETG | futer3d |
 
 ### MVS dos produtos exportados (auditoria profile-speed-realism)
 
