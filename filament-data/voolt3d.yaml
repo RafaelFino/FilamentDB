@@ -1016,6 +1016,52 @@ materials:
         dry_hours: 8.0
         recommended_use: Mechanical parts
         status: Discontinued
+    - line: Outlet Line
+      commercial_name: PETG Outlet
+      profile_name: Voolt3D PETG Outlet
+      export: true
+      notes: >
+        PETG de troca de cor (outlet): cada rolo é único, resultado da troca de cor na
+        linha de produção. Perfil SEPARADO do PETG HF porque os carretéis outlet/troca de
+        cor se comportam de forma variável por lote (sub-extrusão observada) e não como o
+        HF (High Fluidity) do catálogo.
+        Origem dos valores: nozzle initial/max 260 = decisão do usuário (máximo impresso na
+        caixa do carretel; a ficha do site diz 220-245°C); nozzle min 220 = ficha do site;
+        MVS 10 = decisão do usuário (ficha declara 20 mm³/s); bed 70, density 1.27, Tg 75-80,
+        tolerância ±0.02mm = ficha do site; flow_ratio 0.98 = SEM FONTE (igual ao HF),
+        calibrar. Secagem não encontrada na ficha (campos omitidos).
+        Fonte: https://www.voolt3d.com.br/filamentos/outlet/filamento-petg-outlet
+        (SKU PG-HF-OT-1, R$80,00 / R$76,00 / R$72,20 Pix na consulta).
+      nozzle:
+        initial: 260
+        min: 220
+        max: 260
+      bed:
+        initial: 70
+        temp: 70
+      flow_ratio: 0.98
+      # MVS 10: decisão do usuário — carretéis outlet/troca de cor variam por lote; pior caso conservador (classe PETG ≤ 12)
+      max_volumetric_speed: 10
+      density: 1.27
+      diameter_tolerance: "1.75±0.02mm"
+      glass_transition_temp: 75
+      recommendation: >
+        PETG de troca de cor a preço de outlet; a cor é imprevisível e o comportamento
+        varia por lote, por isso MVS 10 e bico a 260°C (decisão do usuário). Quando
+        escolher: peças onde a cor não importa e o custo pesa.
+      color: Indefinida
+      surface_finish: Standard
+      variants:
+      - sku: VLT-POG-IND-1K
+        color_name: Indefinida
+        hex: '#9E9E9E'
+        rgb: [158, 158, 158]
+        finish: Variable
+        diameter_mm: 1.75
+        weight_g: 1000
+        recommended_use: General purpose
+        notes: Cor de troca de produção, imprevisível
+        status: Active
     - line: Engineering Line
       commercial_name: PETG CF
       profile_name: Voolt3D PETG CF

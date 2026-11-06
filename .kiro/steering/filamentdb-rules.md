@@ -427,7 +427,7 @@ perfil de filamento decide se é exportado via a flag `export: true` no YAML
 curadoria junto da fonte de verdade e evita listas paralelas hardcoded.
 
 Produtos atualmente habilitados para exportação (curadoria deliberada, baseada
-no estoque físico real — **21 produtos**; contagem validada contra as flags
+no estoque físico real — **22 produtos**; contagem validada contra as flags
 `export: true` dos YAMLs).
 
 **Decisão (2026-11-06): Sunlu é a marca primária.** Após os problemas com a
@@ -448,6 +448,7 @@ priorizar calibração, preferir Sunlu.
 | Voolt3D PLA EVO | PLA | voolt3d |
 | Voolt3D PLA CF | PLA-CF | voolt3d |
 | Voolt3D PETG HF | PETG | voolt3d |
+| Voolt3D PETG Outlet | PETG | voolt3d |
 | Voolt3D ABS | ABS | voolt3d |
 | Voolt3D TPU | TPU | voolt3d |
 | Sunlu PLA High Speed | PLA | sunlu |
@@ -467,6 +468,7 @@ priorizar calibração, preferir Sunlu.
 | Produto | MVS | Racional |
 |---------|-----|----------|
 | Voolt3D PETG HF | 12 (era 15) | Fabricante declara 20; 15 sem fonte coincidiu com sub-extrusão no Strong |
+| Voolt3D PETG Outlet | 10 (novo) | Decisão do usuário: carretéis outlet/troca de cor variam por lote; pior caso conservador (ficha declara 20). Bico 260 (caixa do carretel) |
 | Voolt3D TPU | 4 (era 8) | Orca TPU 3.2; sem TDS |
 | Sunlu PETG HS | 12 (era 18) | Sem MVS declarado (só 600 mm/s de marketing) |
 | Creality CR PETG | 11 (era 15) | Sem fonte; classe PETG 10-12 |
