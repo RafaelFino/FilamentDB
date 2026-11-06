@@ -443,5 +443,96 @@ class BuildDeviceColumnTests(unittest.TestCase):
             conn.close()
 
 
+class VolumetricFlowRealismTests(unittest.TestCase):
+    """Fluxo volumétrico ALVO (velocidade × largura × altura) do processo.
+
+    O número do perfil é a velocidade real; o MVS é exclusivo do filamento (o
+    processo nunca é clampado por ele). Estes tetos travam que nenhum tipo volte
+    a pedir fluxo irreal (causa-raiz do sub-extrusão no Strong PETG: outer
+    102 mm/s = 9.2 mm³/s, 1.7x o Standard). Largura = DEFAULT_LINE_WIDTH.
+    """
+    VISIBLE = ["outer_wall_speed", "top_surface_speed"]
+    STRUCTURAL = ["inner_wall_speed", "sparse_infill_speed",
+                  "internal_solid_infill_speed"]
+    # Tetos em mm³/s. Visíveis: Standard K2 PLA 0.20 = 6.8, PETG 0.20 = 5.4
+    # (0.24 = 5.51, medido; teto 5.6 reflete a medição do Standard validado).
+    # PLA: Standard 0.28 = 7.09 (medido, validado pelo usuário) -> teto 7.1.
+    # PETG: Standard 0.28 = 5.67 (medido) -> teto 5.7.
+    VISIBLE_CAP = {"PLA": 7.1, "PETG": 5.7}
+    FAST_VISIBLE_CAP = {"PLA": 10.5, "PETG": 8.5}
+    # Estrutural (Strong/Safe/LW). PETG 0.28 Strong = 13.61 (medido).
+    STRUCT_CAP = {"PLA": 17.5, "PETG": 14.0}
+    STRUCT_TYPES = ("strong", "safe", "lw-structure", "lw-extreme")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.device = build_mod.load_device("k2")
+        combos = _load_combinations()["combinations"]
+        cls.rows = []  # (pt, lh, mat, profile)
+        for combo in combos:
+            if "k2" not in combo.get("devices", ["k2"]):
+                continue
+            for lh in combo["layer_heights"]:
+                for mat in combo["materials"]:
+                    if mat not in ("PLA", "PETG"):
+                        continue
+                    prof = build_mod.generate_process_profile(
+                        combo["profile_type"], lh, mat, cls.device)
+                    cls.rows.append((combo["profile_type"], float(lh), mat, prof))
+
+    @staticmethod
+    def _flow(prof, field, lh):
+        return float(prof[field]) * build_mod.DEFAULT_LINE_WIDTH * lh
+
+    def test_matrix_not_empty(self):
+        self.assertGreaterEqual(len(self.rows), 30)
+
+    def test_visible_fields_under_ceiling(self):
+        for pt, lh, mat, prof in self.rows:
+            cap = (self.FAST_VISIBLE_CAP if pt == "fast" else self.VISIBLE_CAP)[mat]
+            for field in self.VISIBLE:
+                self.assertLessEqual(
+                    self._flow(prof, field, lh), cap,
+                    f"{pt} {lh} {mat} {field} acima do teto {cap} mm³/s")
+
+    def test_structural_fields_under_ceiling(self):
+        for pt, lh, mat, prof in self.rows:
+            if pt not in self.STRUCT_TYPES:
+                continue
+            for field in self.STRUCTURAL:
+                self.assertLessEqual(
+                    self._flow(prof, field, lh), self.STRUCT_CAP[mat],
+                    f"{pt} {lh} {mat} {field} acima do teto {self.STRUCT_CAP[mat]} mm³/s")
+
+    def test_economy_visible_equals_standard(self):
+        eco = build_mod.generate_process_profile("economy", "0.20", "PETG", self.device)
+        std = build_mod.generate_process_profile("standard", "0.20", "PETG", self.device)
+        for field in ("outer_wall_speed", "top_surface_speed",
+                      "initial_layer_speed", "gap_infill_speed"):
+            self.assertEqual(eco[field], std[field], field)
+
+    def test_no_type_except_fast_has_visible_faster_than_standard(self):
+        std = {}
+        for pt, lh, mat, prof in self.rows:
+            if pt == "standard":
+                std[(lh, mat)] = prof
+        for pt, lh, mat, prof in self.rows:
+            if pt in ("standard", "fast") or (lh, mat) not in std:
+                continue
+            for field in ("outer_wall_speed", "top_surface_speed",
+                          "initial_layer_speed"):
+                self.assertLessEqual(
+                    float(prof[field]), float(std[(lh, mat)][field]) + 1e-9,
+                    f"{pt} {lh} {mat} {field} mais rápido que Standard")
+
+    def test_process_generation_ignores_filament_mvs(self):
+        # O processo é função só de device/tipo/lh/material: não lê MVS.
+        code = build_mod.generate_process_profile.__code__
+        names = set(code.co_names) | {c for c in code.co_consts if isinstance(c, str)}
+        for n in names:
+            self.assertNotIn(n.lower(), ("max_volumetric_speed", "mvs",
+                                         "filament_max_volumetric_speed"))
+
+
 if __name__ == "__main__":
     unittest.main()

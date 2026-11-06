@@ -641,16 +641,24 @@ def seed_filaments():
 # =============================================================================
 
 PROFILE_MULTIPLIERS = {
-    "fast": {"speed": 1.50, "accel": 1.50},
-    "economy": {"speed": 1.0, "accel": 1.0},
+    # Todos os tipos (exceto o órfão factory) têm quality_speed: os campos
+    # visíveis (outer/top/1ª camada/gap) nunca ficam mais rápidos que o Standard,
+    # exceto Fast. field_multipliers sobrescreve o multiplicador de um campo
+    # específico (sparse: maior consumidor de volume em Strong/Safe/LW).
+    "fast": {"speed": 1.15, "accel": 1.25, "quality_speed": 0.75},
+    "economy": {"speed": 1.0, "accel": 1.0, "quality_speed": 0.5},
     "standard": {"speed": 1.0, "accel": 1.0, "quality_speed": 0.5},
-    "strong": {"speed": 0.85, "accel": 0.80},
+    "strong": {"speed": 0.60, "accel": 0.75, "quality_speed": 0.45,
+               "field_multipliers": {"sparse_infill_speed": 0.50}},
     "detail": {"speed": 0.80, "accel": 0.75, "quality_speed": 0.45},
-    "safe": {"speed": 0.70, "accel": 0.60, "quality_speed": 0.50},
+    "safe": {"speed": 0.55, "accel": 0.60, "quality_speed": 0.40,
+             "field_multipliers": {"sparse_infill_speed": 0.45}},
     # Aeromodel-oriented types: leves, estrutura reduzida. Mesma velocidade
-    # moderada (sem quality_speed) — a diferença está na estrutura (walls/infill).
-    "lw-extreme": {"speed": 0.90, "accel": 0.85},
-    "lw-structure": {"speed": 0.90, "accel": 0.85},
+    # realista do Strong; a diferença está na estrutura (walls/infill).
+    "lw-extreme": {"speed": 0.60, "accel": 0.75, "quality_speed": 0.50,
+                   "field_multipliers": {"sparse_infill_speed": 0.50}},
+    "lw-structure": {"speed": 0.60, "accel": 0.75, "quality_speed": 0.50,
+                     "field_multipliers": {"sparse_infill_speed": 0.50}},
     # Factory: perfil de fábrica conservador, velocidade reduzida.
     "factory": {"speed": 0.65, "accel": 0.65},
 }
@@ -669,7 +677,7 @@ def profile_type_display(pt):
     return PROFILE_TYPE_DISPLAY.get(pt) or "-".join(s.capitalize() for s in pt.split("-"))
 
 # Fields where lower speed actually improves visible quality or print reliability.
-# These use 'quality_speed' multiplier when available (Detail/Safe).
+# These use 'quality_speed' multiplier when available (todos os tipos exceto o órfão factory).
 # All other speed fields use the regular 'speed' multiplier.
 QUALITY_SPEED_FIELDS = {
     "outer_wall_speed", "top_surface_speed", "initial_layer_speed",
@@ -891,8 +899,11 @@ def generate_process_profile(profile_type, layer_height, material_name, device):
 
     for field in SPEED_FIELDS:
         if field in material_data:
-            # Use quality_speed multiplier for fields that affect visible quality
-            if field in QUALITY_SPEED_FIELDS and "quality_speed" in mult:
+            # Multiplicador por campo tem prioridade; depois quality_speed para
+            # campos que afetam qualidade visível; senão o speed regular.
+            if field in mult.get("field_multipliers", {}):
+                speed_mult = mult["field_multipliers"][field]
+            elif field in QUALITY_SPEED_FIELDS and "quality_speed" in mult:
                 speed_mult = mult["quality_speed"]
             else:
                 speed_mult = mult["speed"]

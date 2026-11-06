@@ -415,7 +415,8 @@ materials:
         initial: 55
         temp: 55
       flow_ratio: 1.01
-      max_volumetric_speed: 18
+      # MVS 18 -> 15: sem fonte de MVS; classe do material (Orca mvs_default), política do menor valor
+      max_volumetric_speed: 15
       density: 1.21
       glass_transition_temp: 54
       heat_deflection_temp: 57
@@ -564,7 +565,8 @@ materials:
         initial: 70
         temp: 70
       flow_ratio: 0.97
-      max_volumetric_speed: 18
+      # MVS 18 -> 12: anuncia 50-600 mm/s (sunlu.com) mas não declara MVS; 18 sem fonte; alinhado ao Voolt3D PETG HF
+      max_volumetric_speed: 12
       density: 1.28
       heat_deflection_temp: 70
       melting_point: 128
@@ -578,7 +580,7 @@ materials:
       drying_temperature: 60
       drying_time: 6.0
       recommendation: >
-        O melhor PETG da Sunlu: alto fluxo (MVS 18, MFR 4.4) para velocidade + acabamento matte
+        O melhor PETG da Sunlu: alto fluxo (MVS 12 auditado, MFR 4.4) para velocidade + acabamento matte
         elegante que esconde camadas. Equivalente direto ao Voolt3D PETG HF. Melhores números
         mecânicos da linha (tensile 48, flexural 78 MPa). Ponto crítico: MUITO sensível à umidade —
         stringing severo se não estiver seco (<20% RH). Quando escolher: peças funcionais que
@@ -650,10 +652,11 @@ materials:
         initial: 50
         temp: 50
       flow_ratio: 1.05
-      max_volumetric_speed: 8
+      # MVS 8 -> 4: sem fonte; Orca fdm_filament_tpu = 3.2 mm³/s
+      max_volumetric_speed: 4
       recommendation: >
         TPU 95A flexível da Sunlu para juntas, protetores e peças que dobram. Velocidade baixa
-        obrigatória (MVS 8) — o Direct Drive da K2 ajuda, mas force pouco. Retração mínima para
+        obrigatória (MVS 4) — o Direct Drive da K2 ajuda, mas force pouco. Retração mínima para
         evitar oozing. Seque bem antes: TPU absorve umidade e bolha. Quando escolher: qualquer peça
         elástica. Dureza 95A é firme-flexível (não é mole tipo borracha).
       color: Natural

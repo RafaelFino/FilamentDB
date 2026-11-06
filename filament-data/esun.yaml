@@ -223,7 +223,8 @@ materials:
       nozzle: {initial: 215, min: 210, max: 230}
       bed: {initial: 60, temp: 60}
       flow_ratio: 1.0
-      max_volumetric_speed: 20
+      # MVS 20 -> 15: sem fonte de MVS; classe do material (Orca mvs_default), política do menor valor
+      max_volumetric_speed: 15
       density: 1.24
       color: Grey
       surface_finish: Standard
@@ -235,7 +236,8 @@ materials:
       nozzle: {initial: 220, min: 210, max: 230}
       bed: {initial: 55, temp: 55}
       flow_ratio: 1.0
-      max_volumetric_speed: 18
+      # MVS 18 -> 15: sem fonte de MVS; classe do material (Orca mvs_default), política do menor valor
+      max_volumetric_speed: 15
       density: 1.24
       color: Black
       surface_finish: Standard
@@ -247,7 +249,8 @@ materials:
       nozzle: {initial: 220, min: 210, max: 230}
       bed: {initial: 55, temp: 55}
       flow_ratio: 1.0
-      max_volumetric_speed: 24
+      # MVS 24 -> 18: sem fonte de MVS; classe do material (Orca mvs_default), política do menor valor
+      max_volumetric_speed: 18
       density: 1.24
       color: Pine Green
       surface_finish: Standard
@@ -259,7 +262,8 @@ materials:
       nozzle: {initial: 210, min: 190, max: 230}
       bed: {initial: 50, temp: 50}
       flow_ratio: 1.0
-      max_volumetric_speed: 16
+      # MVS 16 -> 15: sem fonte de MVS; classe do material (Orca mvs_default), política do menor valor
+      max_volumetric_speed: 15
       density: 1.329
       color: Dark Grey
       surface_finish: Matte
@@ -269,7 +273,8 @@ materials:
       nozzle: {initial: 215, min: 190, max: 230}
       bed: {initial: 55, temp: 55}
       flow_ratio: 1.0
-      max_volumetric_speed: 15
+      # MVS 15 -> 12: sem fonte de MVS; classe do material (Orca mvs_default), política do menor valor
+      max_volumetric_speed: 12
       color: Black
       surface_finish: Matte
       drying_temperature: 50
@@ -294,7 +299,8 @@ materials:
       nozzle: {initial: 245, min: 220, max: 260}
       bed: {initial: 80, temp: 80}
       flow_ratio: 0.98
-      max_volumetric_speed: 18
+      # MVS 18 -> 12: sem fonte de MVS; classe do material (Orca mvs_default), política do menor valor
+      max_volumetric_speed: 12
       color: Green
       surface_finish: Standard
       drying_temperature: 55

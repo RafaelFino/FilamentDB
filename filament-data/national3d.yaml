@@ -81,7 +81,8 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.0
-      max_volumetric_speed: 29
+      # MVS 29 -> 18: 29 sem fonte e com nozzle initial 200 °C; teto PLA high-speed sem TDS = 18
+      max_volumetric_speed: 18
       density: 1.24
       diameter_tolerance: "1.75±0.03mm"
       recommendation: >

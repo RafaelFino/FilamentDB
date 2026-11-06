@@ -15,7 +15,7 @@ O sistema adota uma separação clara entre **perfil de processo** e **perfil de
 - **Perfil de filamento** → define o que o *material* aguenta (`filament_max_volumetric_speed`)
 - **Slicer (Creality Print)** → combina os dois em runtime e aplica o menor limitador automaticamente
 
-Isso garante que filamentos premium (Voolt3D Velvet MVS=20, Sunlu HS MVS=22) aproveitam o máximo da K2, enquanto filamentos mais limitados (Silk MVS=12, PETG genérico MVS=12) são automaticamente contidos sem penalizar os demais. Política: MVS sempre conservador — quando houver dúvida ou divergência entre fontes, usar o menor valor.
+Isso garante que filamentos premium (Sunlu HS MVS=22; Voolt3D Velvet fica em MVS=8 por decisão de hardware, ver GUIA-CALIBRACAO) aproveitam o máximo da K2, enquanto filamentos mais limitados (Silk MVS=12, PETG genérico MVS=12) são automaticamente contidos sem penalizar os demais. Política: MVS = **menor valor entre fabricante, classe do material (Orca `mvs_default`) e histórico de impressão** — quando houver dúvida ou divergência entre fontes, usar o menor valor. MVS são **inteiros** (o export Orca faz `int()`). Valores acima da classe só com fonte registrada no YAML (hoje: Sunlu PLA HS 22 e Creality Hyper PLA 20). Tetos por classe travados em `tests/test_filament_mvs.py`: PLA ≤ 18, PETG ≤ 12 (Creality Hyper PETG 14), TPU ≤ 6, ABS/ASA/PLA-CF ≤ 12.
 
 **Nunca** limitar velocidades no perfil de processo com base no MVS do material. O cap volumétrico é responsabilidade exclusiva do filamento.
 
@@ -61,13 +61,13 @@ Fast → Economy → Standard → Strong → Detail → Safe
 > `process-base/profile_types/factory.json` e a entrada em `PROFILE_MULTIPLIERS`
 > **permanecem no repo** (órfãos, não referenciados) para não perder a fonte.
 
-- **Fast**: Velocidade máxima. O mais rápido possível — aceita redução de qualidade em troca de tempo. 3 walls, 12% infill grid, inner-first.
-- **Economy**: Economia de filamento. Estrutura mínima viável — 2 walls, 8% grid, inner-first. Velocidade igual Standard — a economia vem da estrutura reduzida, não da velocidade. Ideal para protótipos descartáveis e peças não-estruturais.
+- **Fast**: o mais rápido relativo, dentro do que a K2 entrega (speed 1.15×, accel 1.25×, visíveis 0.75×) — aceita redução de qualidade em troca de tempo. 3 walls, 12% infill grid, inner-first.
+- **Economy**: Economia de filamento. Estrutura mínima viável — 2 walls, 8% grid, inner-first. Velocidade igual Standard (inclusive nos campos visíveis, `quality_speed` 0.50) — a economia vem da estrutura reduzida, não da velocidade. Ideal para protótipos descartáveis e peças não-estruturais.
 - **Factory** (ÓRFÃO — fora da matriz): perfil de fábrica conservador. Mantido como arquivo/multiplicador no repo, mas **não gerado** (removido de `combinations.json` no overhaul de perfis).
 - **Standard**: Equilíbrio geral, padrão de uso diário. 4 walls, 15% gyroid, outer-first, bom acabamento. Usa `quality_speed` **0.50** nos campos visíveis (outer/top/1ª camada/gap) — baixado de 0.60 para melhorar o acabamento das paredes externas. Tem **ironing leve** no top (`ironing_type=top`, `ironing_flow=7%`, `ironing_spacing=0.12`, `ironing_speed=30`) — mantém a intenção leve, **sem** `ironing_pattern`/`ironing_angle` (exclusivos do Detail). Nome obrigatório — Creality Print requer um perfil "Standard" para iniciar.
-- **Strong**: Resistência mecânica (6 walls, 50% infill gyroid). Mais lento, peças funcionais.
+- **Strong**: Resistência mecânica (6 walls, 50% infill gyroid). Mais lento (speed 0.60×, visíveis 0.45×, sparse 0.50×), peças funcionais. PETG 0.20: outer 54, inner 144, sparse 140 mm/s (fluxo alvo 13.0 mm³/s).
 - **Detail**: Qualidade visual máxima. Layer heights baixos (0.12-0.16mm), 5 walls, 20% infill. `quality_speed` 0.45.
-- **Safe**: Ultra-conservador para primeira impressão ou materiais desconhecidos. Lento mas confiável.
+- **Safe**: Ultra-conservador para primeira impressão ou materiais desconhecidos (speed 0.55×, visíveis 0.40×, sparse 0.45×). Lento mas confiável; o mais lento de todos nos campos visíveis.
 - **Detail**: Qualidade visual máxima. `quality_speed` 0.45. **Ironing completo (6 campos, Detail-only)**: `ironing_type=topmost`, `ironing_pattern=rectilinear` (**RESSALVA**: os presets stock do CP usam internamente `zig-zag`; o slicer pode normalizar/trocar o enum ao abrir o perfil — cosmético, o usuário confirma ao abrir), `ironing_speed=30`, `ironing_flow=50%` (acabamento mais pesado no top que o Standard 7%), `ironing_spacing=0.15`, `ironing_angle=90`. Só o `detail.json` declara `ironing_pattern`/`ironing_angle`; o export (CP e Orca) só os serializa dentro do guard de ironing ativo (`ironing_type != "no ironing"`). A coluna `ironing_flow` é **TEXT/percentual** (saiu de `FLOAT_COLUMNS` — `float("50%")` quebraria o build); `ironing_spacing` continua numérico e é emitido com 2 casas no Orca (o `set_val` padrão arredondaria a 1 casa e colapsaria 0.15→0.1). **ZAA / Z contouring foi REMOVIDO do Detail** (antes `zaa_enabled=1`): o Creality Print não aceita ZAA + ironing no mesmo objeto — com ambos ligados, o fatiador desabilita o ZAA e cai para fatiamento planar, emitindo aviso (`Object ... cannot use Z contouring because of IroningEnabled`). Como o ironing dá ganho de qualidade maior e consistente em topos planos (foco do Detail) e o ZAA nunca chegava a atuar (sempre perdia para o ironing), optou-se por manter ironing e remover os `zaa_*` do `detail.json`. Nenhum profile type declara `zaa_*`; o build mantém as colunas/guards `zaa_*` (serializam só se `zaa_enabled` truthy), mas na prática ficam sempre ausentes. Travado por teste (`ZAADisabledScopeTests` em `tests/test_multi_device.py`): Detail e Standard **não** emitem ZAA.
 - **LW-Structure**: Peças leves de aeromodelo que ainda precisam de alguma resistência (fuselagem/corpo). 2 walls, 7% gyroid, top/bottom 3, inner-first, seam aligned, brim 5.0. Gerado só nos layer heights que fazem sentido (**0.16, 0.20**).
 - **LW-Extreme**: Peças leves ao extremo (asas). 1 wall, 3% gyroid, top/bottom 1, inner-first, seam nearest, brim 4.0. Gerado só em **0.16 e 0.20**. Usar com PLA/PETG (ou os materiais de foaming PLA-LW/PETG-LW).
@@ -78,16 +78,37 @@ build mapeia para o display `LW-Extreme`/`LW-Structure`.
 ### Multiplicadores por Profile Type
 
 ```
-Fast:         speed=1.50x  accel=1.50x
-Economy:      speed=1.00x  accel=1.00x  (economia via estrutura, não velocidade)
+Fast:         speed=1.15x  accel=1.25x  quality_speed=0.75x
+Economy:      speed=1.00x  accel=1.00x  quality_speed=0.50x  (economia via estrutura; visíveis = Standard)
 Factory:      speed=0.65x  accel=0.65x  (ÓRFÃO — fora da matriz)
 Standard:     speed=1.00x  accel=1.00x  quality_speed=0.50x (outer/top/1st layer/gap)
-Strong:       speed=0.85x  accel=0.80x
+Strong:       speed=0.60x  accel=0.75x  quality_speed=0.45x  sparse=0.50x
 Detail:       speed=0.80x  accel=0.75x  quality_speed=0.45x (outer/top/1st layer/gap)
-Safe:         speed=0.70x  accel=0.60x  quality_speed=0.50x (outer/top/1st layer/gap)
-LW-Structure: speed=0.90x  accel=0.85x
-LW-Extreme:   speed=0.90x  accel=0.85x
+Safe:         speed=0.55x  accel=0.60x  quality_speed=0.40x  sparse=0.45x
+LW-Structure: speed=0.60x  accel=0.75x  quality_speed=0.50x  sparse=0.50x
+LW-Extreme:   speed=0.60x  accel=0.75x  quality_speed=0.50x  sparse=0.50x
 ```
+
+`sparse=` é um `field_multipliers` (campo específico em `PROFILE_MULTIPLIERS`)
+que sobrescreve o multiplicador de `sparse_infill_speed`: a base de sparse
+(PETG 280) é maior que a de inner (240) e o gyroid contínuo é o maior consumidor
+de volume em Strong/Safe/LW. `validate.py` (`check_multiplier_math`) conhece o
+`field_multipliers`.
+
+### Extensão da recalibração aos demais tipos (profile-speed-realism)
+
+Standard e Detail foram validados em impressão na K2 (quality_speed baixo +
+`speed_scale`). A causa-raiz do **sub-extrusão no Strong PETG** (Voolt3D HF) foi
+o Strong não ter recebido essa recalibração: sem `quality_speed`, outer/top
+rodavam a 0.85× da base (PETG 0.20: outer 102 mm/s = 9.2 mm³/s, 1.7× o Standard)
+e o estrutural ficava sustentado no teto do MVS (6 walls + 50% gyroid). Mesma
+visão aplicada a Fast, Economy, Safe e LW: **nenhum tipo (exceto Fast) tem
+outer/top/1ª camada mais rápidos que o Standard**, e o fluxo volumétrico ALVO
+(velocidade × 0.45 × altura) respeita tetos travados em
+`VolumetricFlowRealismTests`: visíveis ≤ 7.1 mm³/s (PLA) / 5.7 (PETG), Fast
+≤ 10.5 / 8.5, estrutural de Strong/Safe/LW ≤ 17.5 / 14.0. Bases PLA/PETG e
+`speed_scale` (0.85/0.75) **não mudaram**. O número do perfil continua sendo a
+velocidade real; nenhum clamp por MVS no processo.
 
 ### Redução de velocidade por altura de camada (`speed_scale`)
 
@@ -108,13 +129,12 @@ camada: +20% a 0.24, +40% a 0.28), **nunca** pelo MVS do material — o cap
 volumétrico continua exclusivo do filamento. Ex. PLA 0.24 Standard inner = 300 ×
 0.85 = 255; 0.28 = 300 × 0.75 = 225; travel permanece 700 nos dois.
 
-Standard, Detail e Safe usam multiplicadores **assimétricos**: campos que afetam
+Todos os tipos (exceto o órfão Factory) usam multiplicadores **assimétricos**: campos que afetam
 qualidade visual (outer wall, top surface, primeira camada, gap infill) recebem o
 `quality_speed` mais baixo, enquanto campos internos (inner wall, infill, travel,
 support) usam o `speed` regular mais alto. Isso permite imprimir rápido onde não
-importa e lento apenas onde melhora a qualidade ou confiabilidade. Os LW não usam
-`quality_speed` — a diferença entre eles está na estrutura (walls/infill), não na
-velocidade.
+importa e lento apenas onde melhora a qualidade ou confiabilidade. A diferença
+entre os tipos está na estrutura (walls/infill) e no fator de velocidade.
 
 `QUALITY_SPEED_FIELDS = {outer_wall_speed, top_surface_speed, initial_layer_speed, gap_infill_speed}`.
 
@@ -407,7 +427,16 @@ perfil de filamento decide se é exportado via a flag `export: true` no YAML
 curadoria junto da fonte de verdade e evita listas paralelas hardcoded.
 
 Produtos atualmente habilitados para exportação (curadoria deliberada, baseada
-no estoque físico real — 19 produtos):
+no estoque físico real — **20 produtos**; contagem validada contra as flags
+`export: true` dos YAMLs).
+
+**Decisão (2026-11-06): Sunlu é a marca primária.** Após os problemas com a
+Voolt3D (MVS sem embasamento, sub-extrusão), o usuário passou a tratar a Sunlu
+como marca principal. Os 4 produtos Sunlu (PLA High Speed, PLA High Speed Matte,
+PLA Matte, PETG HS) ficam exportados — o `Sunlu PLA High Speed Matte` foi
+confirmado explicitamente. Os produtos Voolt3D seguem exportados por enquanto,
+mas com MVS conservador. Ao escolher filamento de referência/default ou ao
+priorizar calibração, preferir Sunlu.
 
 | Produto | Material | YAML |
 |---------|----------|------|
@@ -422,6 +451,7 @@ no estoque físico real — 19 produtos):
 | Voolt3D ABS | ABS | voolt3d |
 | Voolt3D TPU | TPU | voolt3d |
 | Sunlu PLA High Speed | PLA | sunlu |
+| Sunlu PLA High Speed Matte | PLA | sunlu |
 | Sunlu PLA Matte | PLA | sunlu |
 | Sunlu PETG HS (High Speed Matte) | PETG | sunlu |
 | Creality Hyper PLA | PLA | creality |
@@ -431,12 +461,27 @@ no estoque físico real — 19 produtos):
 | Elegoo PLA Pro | PLA | elegoo |
 | Soleyin Ultra PLA | PLA | soleyin |
 
+### MVS dos produtos exportados (auditoria profile-speed-realism)
+
+| Produto | MVS | Racional |
+|---------|-----|----------|
+| Voolt3D PETG HF | 12 (era 15) | Fabricante declara 20; 15 sem fonte coincidiu com sub-extrusão no Strong |
+| Voolt3D TPU | 4 (era 8) | Orca TPU 3.2; sem TDS |
+| Sunlu PETG HS | 12 (era 18) | Sem MVS declarado (só 600 mm/s de marketing) |
+| Creality CR PETG | 11 (era 15) | Sem fonte; classe PETG 10-12 |
+| Creality Hyper PETG | 14 (era 18) | Perfil de fábrica da K2; sem fonte para 18 |
+| Elegoo PLA Pro | 14 (era 16) | Sem fonte; nozzle initial 200 °C |
+| Sunlu PLA High Speed | 22 (inalterado) | TDS; filamento premium validado pelo usuário |
+| Creality Hyper PLA 20, Voolt3D PLA Velvet 8, Soleyin 8, demais PLA/ABS/CF | inalterados | Dentro da classe |
+
+Cada YAML alterado traz um comentário `# MVS A -> B: <fonte/justificativa>` acima do valor.
+
 Nota: a restrição de materiais especiais (PLA-CF/ABS/TPU só geram **processo**
 em 0.20mm Standard) aplica-se ao processo; não impede a exportação do
 **filamento** (Voolt3D PLA CF, ABS e TPU são exportados como filamento).
 
 **Soleyin** é sub-marca da Creality; o produto **Soleyin Ultra PLA** (linha Ultra,
-compatível com CFS) é o 19º produto exportado (`filament-data/soleyin.yaml`,
+compatível com CFS) é um dos produtos exportados (`filament-data/soleyin.yaml`,
 `export: true`). Perfis de filamento **LW/foaming** foram adicionados a
 eSUN (ePLA-LW), Sunlu (PLA Lightweight) e Prusament (PLA Lightweight / PolyLight)
 mapeados para o material `PLA-LW`, todos `export: false` (ficam no banco para

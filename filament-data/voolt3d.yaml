@@ -354,7 +354,7 @@ materials:
       max_volumetric_speed: 15
       recommendation: >
         PLA "faz-tudo" da Voolt3D para o dia a dia. Sem drama, custo equilibrado,
-        MVS 20 dá boa velocidade na K2. Acabamento gloss comum, sem efeito especial.
+        MVS 15 dá boa velocidade na K2. Acabamento gloss comum, sem efeito especial.
         Quando escolher: protótipos, peças de encaixe, uso interno sem exigência estética
         ou mecânica. É o default seguro quando você não precisa de nada específico.
       color: Natural
@@ -561,7 +561,7 @@ materials:
       recommendation: >
         PLA silk com reflexo metálico (dourado/inox) para peças de vitrine.
         O brilho realça a geometria, mas também evidencia imperfeições e costuras —
-        capriche no seam e na primeira camada. MVS 15 pede velocidade moderada.
+        capriche no seam e na primeira camada. MVS 10 pede velocidade moderada.
         Quando escolher: troféus, enfeites, presentes. Não é para peça funcional.
       color: Natural
       surface_finish: Silk
@@ -749,8 +749,8 @@ materials:
         Auditoria de specs (ficha oficial do fabricante, PETG HF: nozzle 220-250°C, mesa
         70°C, Tg 75-80°C, density 1.27 g/cm³, ±0.02mm, velocidade volumétrica 20 mm³/s).
         nozzle.max 255 -> 250 e bed 80 -> 70 (fora da ficha oficial); density e
-        diameter_tolerance preenchidos. MVS mantido em 15 (declarado 20; política de MVS
-        conservador: em divergência, menor valor).
+        diameter_tolerance preenchidos. MVS reduzido 15 -> 12 (declarado 20; política de MVS
+        conservador: em divergência, menor valor; 15 coincidiu com sub-extrusão no Strong 0.20).
         Fonte: https://voolt3d.com.br/produtos/filamento-petg-hf-preto-high-fluidity-premium-1kg
       nozzle:
         initial: 245
@@ -760,7 +760,8 @@ materials:
         initial: 70
         temp: 70
       flow_ratio: 0.98
-      max_volumetric_speed: 15
+      # MVS 15 -> 12: fabricante declara até 20 mm³/s (voolt3d.com.br, tecnocubo.com.br); 15 não tinha fonte e coincidiu com sub-extrusão no Strong 0.20; 12 = topo da faixa PETG (10-12)
+      max_volumetric_speed: 12
       density: 1.27
       diameter_tolerance: "1.75±0.02mm"
       recommendation: >
@@ -1144,10 +1145,11 @@ materials:
         initial: 50
         temp: 50
       flow_ratio: 1.05
-      max_volumetric_speed: 8
+      # MVS 8 -> 4: sem fonte/TDS; Orca fdm_filament_tpu = 3.2 mm³/s; inteiro por causa do int() do export Orca
+      max_volumetric_speed: 4
       recommendation: >
         TPU 95A para peças flexíveis (juntas, protetores, pés antiderrapantes). A K2 é
-        Direct Drive, o que facilita, mas ainda pede velocidade baixa (MVS 8) e retração mínima
+        Direct Drive, o que facilita, mas ainda pede velocidade baixa (MVS 4) e retração mínima
         para evitar oozing. Quando escolher: qualquer peça que precise dobrar/amortecer.
         Não serve para nada rígido. Seque bem — TPU absorve umidade rápido.
       color: Natural
