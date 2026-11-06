@@ -198,7 +198,8 @@ materials:
         initial: 50
         temp: 50
       flow_ratio: 1.05
-      max_volumetric_speed: 8
+      # MVS 8 -> 4: sem fonte; Orca fdm_filament_tpu = 3.2 mm³/s
+      max_volumetric_speed: 4
       recommendation: TPU flexível padrão. Velocidade baixa obrigatória.
       color: Black
       surface_finish: Flexible

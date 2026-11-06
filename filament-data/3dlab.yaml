@@ -517,9 +517,10 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 0.99
-      max_volumetric_speed: 22
+      # MVS 22 -> 18: sem fonte de MVS; classe do material (Orca mvs_default), política do menor valor
+      max_volumetric_speed: 18
       recommendation: >
-        PLA de alta velocidade da 3DLab (MVS 22) para produção rápida mantendo a qualidade de fio
+        PLA de alta velocidade da 3DLab (MVS 18 auditado) para produção rápida mantendo a qualidade de fio
         da marca. Acabamento e resistência comuns de PLA. Quando escolher: lotes e peças grandes
         onde tempo pesa mais que detalhe, sem abrir mão de tolerância dimensional decente.
         Para acabamento fino, baixe o layer height ou use um silk/cetim da própria 3DLab.
@@ -777,10 +778,11 @@ materials:
         initial: 50
         temp: 50
       flow_ratio: 1.05
-      max_volumetric_speed: 8
+      # MVS 8 -> 4: sem fonte; Orca fdm_filament_tpu = 3.2 mm³/s
+      max_volumetric_speed: 4
       recommendation: >
         TPU 98A da 3DLab — bem flexível (98A é mais macio que o 95A comum), para peças que dobram
-        bastante. MVS 8, velocidade baixa obrigatória mesmo com o Direct Drive da K2. Seque antes.
+        bastante. MVS 4, velocidade baixa obrigatória mesmo com o Direct Drive da K2. Seque antes.
         Quando escolher: juntas maleáveis, protetores, peças elásticas. Para algo mais firme que
         ainda flexione, use o Semi Flex 65D da própria 3DLab.
       color: Natural
@@ -822,11 +824,12 @@ materials:
         initial: 55
         temp: 55
       flow_ratio: 1.02
-      max_volumetric_speed: 10
+      # MVS 10 -> 6: sem fonte; 65D é mais rígido que 95A (Orca TPU 3.2), 6 por política do menor valor
+      max_volumetric_speed: 6
       recommendation: >
         TPU Semi Flex 65D: bem mais rígido que o 98A, flexiona pouco e aguenta mais carga mecânica.
         Um meio-termo entre TPU flexível e material rígido. Imprime um pouco mais fácil que o 98A
-        (MVS 10). Quando escolher: peças que precisam ceder levemente sob esforço mas manter forma —
+        (MVS 6). Quando escolher: peças que precisam ceder levemente sob esforço mas manter forma —
         buchas, batentes, engates. Para algo que dobra de verdade, use o Flex 98A.
       color: Natural
       surface_finish: Flexible

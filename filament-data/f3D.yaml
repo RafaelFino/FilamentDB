@@ -289,7 +289,8 @@ materials:
         initial: 50
         temp: 50
       flow_ratio: 1.05
-      max_volumetric_speed: 8
+      # MVS 8 -> 4: sem fonte; Orca fdm_filament_tpu = 3.2 mm³/s
+      max_volumetric_speed: 4
       recommendation: >
         TPU 95A da F3D para peças flexíveis (juntas, protetores, pés). Velocidade baixa obrigatória (MVS 8) e retração mínima — o Direct Drive da K2 ajuda, mas não force. Seque antes: TPU pega umidade e bolha. Quando escolher: qualquer peça que precise dobrar/amortecer. Firme-flexível (95A), não é mole tipo borracha.
       color: Natural

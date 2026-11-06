@@ -388,7 +388,9 @@ def check_multiplier_math(item: GeneratedProfile) -> list[Violation]:
         if field not in material_base:
             continue
         base_val = _to_float(material_base.get(field))
-        if field in build.QUALITY_SPEED_FIELDS and "quality_speed" in mult:
+        if field in mult.get("field_multipliers", {}):
+            multiplier = mult["field_multipliers"][field]
+        elif field in build.QUALITY_SPEED_FIELDS and "quality_speed" in mult:
             multiplier = mult["quality_speed"]
         else:
             multiplier = mult["speed"]

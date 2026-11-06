@@ -148,7 +148,7 @@ materials:
       elongation_at_break_pct: 6.3
       diameter_tolerance: "1.75±0.03mm"
       recommendation: >
-        PLA de referência da Creality, feito para a própria K2 (datasheet cita 600mm/s; MVS 23).
+        PLA de referência da Creality, feito para a própria K2 (datasheet cita 600mm/s; MVS 20, abaixo dos ~23 do preset de fábrica).
         Perfil de fábrica bem calibrado, tende a "só funcionar". Bom tensile para PLA (53 MPa).
         Quando escolher: default de produção rápida na K2 quando você quer o menor atrito possível.
         Continua PLA — sem calor. Para acabamento estético, prefira um matte/velvet de outra marca.
@@ -306,11 +306,12 @@ materials:
         initial: 80
         temp: 80
       flow_ratio: 0.98
-      max_volumetric_speed: 15
+      # MVS 15 -> 11: sem fonte; classe PETG comum 10-12 (Orca mvs_default 10)
+      max_volumetric_speed: 11
       density: 1.24
       diameter_tolerance: "1.75±0.02mm"
       recommendation: >
-        PETG padrão da Creality (linha CR) para peças mecânicas. Fluxo comum (MVS 15),
+        PETG padrão da Creality (linha CR) para peças mecânicas. Fluxo comum (MVS 11),
         confiável e sem surpresas. Gruda em suporte como todo PETG — use gaps generosos.
         Quando escolher: peças funcionais utilitárias sem pressa. Se quiser velocidade,
         o Hyper PETG entrega quase o dobro de fluxo.
@@ -379,11 +380,12 @@ materials:
         initial: 80
         temp: 80
       flow_ratio: 0.97
-      max_volumetric_speed: 18
+      # MVS 18 -> 14: TDS cita até 300 mm/s (marketing); 18 sem fonte; perfil de fábrica da K2, fica acima do PETG comum mas pelo menor valor defensável
+      max_volumetric_speed: 14
       density: 1.27
       diameter_tolerance: "1.75±0.05mm"
       recommendation: >
-        PETG de alta velocidade da Creality (MVS 23) — aproveita a K2 para peças funcionais rápidas.
+        PETG de alta velocidade da Creality (MVS 14, auditado: 18/23 sem fonte) — aproveita a K2 para peças funcionais rápidas.
         Mesma resistência do CR PETG, mas com fluxo bem maior. Requer bed mais quente (85°C).
         Quando escolher: peças mecânicas em série ou grandes onde você quer PETG sem perder tempo.
         Seque antes: PETG úmido faz stringing e perde qualidade.
@@ -537,9 +539,10 @@ materials:
         initial: 50
         temp: 50
       flow_ratio: 1.05
-      max_volumetric_speed: 10
+      # MVS 10 -> 4: sem fonte; Orca fdm_filament_tpu = 3.2 mm³/s
+      max_volumetric_speed: 4
       recommendation: >
-        TPU 95A da Creality para peças flexíveis. MVS 10 (um pouco acima de outros TPU),
+        TPU 95A da Creality para peças flexíveis. MVS 4 (classe TPU, Orca 3.2),
         o Direct Drive da K2 ajuda, mas ainda pede velocidade baixa e retração mínima.
         Quando escolher: juntas, protetores, amortecedores, pés. Seque antes — TPU pega umidade
         rápido e bolha. Firme-flexível (95A), não é mole tipo borracha.

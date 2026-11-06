@@ -406,7 +406,8 @@ déficit: exige vazão que o conjunto não entrega, aumentando a contrapressão.
 | Material | MVS anterior (Velvet) | MVS conservador (DXC2 + bico stock) |
 |----------|-----------------------|-------------------------------------|
 | PLA      | 20 → **14** (em teste) | 10–14                               |
-| PETG     | 15–20                 | 8–12                                |
+| PETG     | 15–20                 | 8–12 (Voolt3D PETG HF: **12**, antes 15) |
+| TPU      | 8–10                  | 4 (Orca fdm_filament_tpu 3.2)       |
 
 > **Limitação deste paliativo neste setup:** o déficit já aparece a 1 mm/s
 > (≈ 2,4 mm³/s para 1.75 mm: `π × 0.875² × 1 ≈ 2,4`). Se até 2,4 mm³/s já há ~10% de

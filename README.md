@@ -881,32 +881,30 @@ flowchart LR
 
 | Componente | Responsabilidade | Exemplo |
 |------------|------------------|---------|
-| **Perfil de Processo** | Velocidades alvo da *impressora* + estrutura da peça | 600 mm/s inner wall no Fast |
-| **Perfil de Filamento** | Limite de fluxo do *material* (`filament_max_volumetric_speed`) | Voolt3D Velvet: 25 mm³/s |
+| **Perfil de Processo** | Velocidades alvo da *impressora* + estrutura da peça | Fast PETG 0.20: inner 276 mm/s (alvo) |
+| **Perfil de Filamento** | Limite de fluxo do *material* (`filament_max_volumetric_speed`) | Sunlu PLA HS: 22 mm³/s (Voolt3D Velvet: 8) |
 | **Slicer** | Combina os dois em runtime, aplica o menor limitador | `max_speed = MVS / (layer_height × line_width)` |
 
 ### Por que essa abordagem?
 
-Perfis de processo que limitam velocidades com base no material penalizam filamentos premium. Um PLA Silk (MVS=12) e um PLA High Speed (MVS=25) teriam o mesmo perfil de processo, mas capacidades completamente diferentes.
+Perfis de processo que limitam velocidades com base no material penalizam filamentos premium. Um PLA Silk (MVS=12) e um PLA High Speed (MVS=22) teriam o mesmo perfil de processo, mas capacidades completamente diferentes.
 
 Com a separação:
 - O perfil de processo define o **potencial máximo da máquina** para cada profile type
 - O filamento define o **limite real do material**
 - Filamentos premium aproveitam 100% da K2 (600mm/s), filamentos lentos são contidos automaticamente sem configuração extra
 
-### Por que Standard e Strong não são lentos?
+### Por que o número do perfil é a velocidade real?
 
-A K2 tem **Input Shaping** (compensação de vibração) e estrutura **CoreXY rígida**. Isso significa que imprimir a 450mm/s e 300mm/s produz qualidade visual praticamente idêntica nas inner walls. A diferença real entre perfis vem da **estrutura** (mais walls, mais infill), não da velocidade baixa.
+Input Shaping e CoreXY rígido deixam a K2 mecanicamente capaz de velocidades altas, mas o que limita a qualidade é o **fluxo volumétrico** (velocidade × largura × altura): acima do que o hotend entrega, aparece sub-extrusão. Por isso os perfis foram recalibrados para valores conservadores e realistas, e **todos os tipos** recebem `quality_speed` (campos visíveis mais lentos que os estruturais). No Strong PETG com Voolt3D HF, outer a 102 mm/s (9.2 mm³/s, 1.7× o Standard) causou sub-extrusão; hoje o Strong PETG 0.20 roda outer 54, inner 144 e sparse 140 mm/s (fluxo alvo 13.0 mm³/s).
 
-- **Strong a 382mm/s** produz peças tão resistentes quanto Strong a 200mm/s — a resistência vem dos 6 walls e 50% infill, não da velocidade
-- **Standard a 450mm/s** com input shaping tem acabamento equivalente a 300mm/s sem input shaping
-- Reduzir velocidade só faz sentido se houver ganho mensurável de qualidade — na K2 com input shaping, esse ganho é mínimo acima de ~150mm/s
-
-O leve conservadorismo no Strong (0.85x em vez de 1.0x) existe para dar mais tempo de cooling entre layers grossos (6 walls + 50% infill geram muito calor localizado), não por limitação mecânica.
+- A resistência do Strong vem dos 6 walls e 50% infill, não da velocidade
+- Nenhum tipo (exceto Fast) imprime outer/top/1ª camada mais rápido que o Standard
+- O processo nunca é clampado por MVS; o cap volumétrico é do filamento
 
 ### Racional de Velocidades — Empurrando os Limites da K2
 
-A Creality K2 é especificada para **600 mm/s** de velocidade de impressão e **800 mm/s** de travel. Os perfis de processo definem velocidades que empurram esses limites mecânicos. A proteção real vem do MVS do filamento:
+A Creality K2 é especificada para **600 mm/s** de velocidade de impressão e **800 mm/s** de travel (caps do device). Os perfis de processo usam velocidades alvo conservadoras e realistas; o MVS do filamento limita em runtime:
 
 ```
 velocidade_real = min(velocidade_processo, MVS / (layer_height × line_width))
@@ -916,14 +914,13 @@ Para 0.20mm layer height e 0.45mm line width:
 
 | Filamento | MVS | Velocidade máxima real |
 |-----------|-----|----------------------|
-| Voolt3D Velvet | 25 mm³/s | **277 mm/s** |
-| Creality Hyper PLA | 23 mm³/s | **255 mm/s** |
 | Sunlu High Speed | 22 mm³/s | **244 mm/s** |
-| Voolt3D Standard | 20 mm³/s | **222 mm/s** |
-| Sunlu PLA+ | 15 mm³/s | **166 mm/s** |
-| CR-PLA genérico | 12 mm³/s | **133 mm/s** |
+| Creality Hyper PLA | 20 mm³/s | **222 mm/s** |
+| Voolt3D PLA High Speed | 15 mm³/s | **166 mm/s** |
+| Voolt3D PETG HF | 12 mm³/s | **133 mm/s** |
+| Voolt3D Velvet | 8 mm³/s | **88 mm/s** |
 
-Se o processo pede 600mm/s mas o filamento aguenta 277mm/s, o slicer reduz automaticamente. Filamentos premium aproveitam o máximo que conseguem, filamentos budget são protegidos sem penalizar os demais.
+Se o processo pede mais do que o filamento aguenta, o slicer reduz automaticamente. Filamentos premium aproveitam o máximo que conseguem, filamentos budget são protegidos sem penalizar os demais.
 
 ## Devices (múltiplos alvos de impressão)
 
@@ -958,11 +955,11 @@ A CC2 é **Orca-only** (`creality_print.enabled = false`) — o Creality Print n
 
 ```mermaid
 graph LR
-    F[Fast<br/>1.50x] --> E[Economy<br/>1.00x]
+    F[Fast<br/>1.15x] --> E[Economy<br/>1.00x]
     E --> S[Standard<br/>1.00x]
-    S --> ST[Strong<br/>0.85x]
+    S --> ST[Strong<br/>0.60x]
     S --> D[Detail<br/>0.80x]
-    S --> SA[Safe<br/>0.70x]
+    S --> SA[Safe<br/>0.55x]
 
     style F fill:#50e8a0,color:#000
     style E fill:#a0e850,color:#000
@@ -974,14 +971,14 @@ graph LR
 
 | Profile Type | Foco | Walls | Infill | Seam | Speed × | Accel × | Quality × |
 |--------------|------|-------|--------|------|---------|---------|-----------|
-| **Fast** | Velocidade máxima | 3 | 12% grid | nearest | 1.50 | 1.50 | — |
-| **Economy** | Economia de filamento | 2 | 8% grid | nearest | 1.00 | 1.00 | — |
-| **Standard** | Equilíbrio geral | 4 | 15% gyroid | aligned | 1.00 | 1.00 | — |
-| **Strong** | Resistência mecânica | 6 | 50% gyroid | aligned | 0.85 | 0.80 | — |
-| **Detail** | Qualidade visual (0.12-0.16mm) | 5 | 20% gyroid | back | 0.80 | 0.75 | 0.30 |
-| **Safe** | Ultra-conservador | 4 | 18% gyroid | back | 0.70 | 0.60 | 0.50 |
+| **Fast** | Mais rápido relativo | 3 | 12% grid | nearest | 1.15 | 1.25 | 0.75 |
+| **Economy** | Economia de filamento | 2 | 8% grid | nearest | 1.00 | 1.00 | 0.50 |
+| **Standard** | Equilíbrio geral | 4 | 15% gyroid | aligned | 1.00 | 1.00 | 0.50 |
+| **Strong** | Resistência mecânica | 6 | 50% gyroid | aligned | 0.60 (sparse 0.50) | 0.75 | 0.45 |
+| **Detail** | Qualidade visual (0.12-0.16mm) | 5 | 20% gyroid | back | 0.80 | 0.75 | 0.45 |
+| **Safe** | Ultra-conservador | 4 | 18% gyroid | back | 0.55 (sparse 0.45) | 0.60 | 0.40 |
 
-**Quality ×** se aplica apenas a `outer_wall_speed`, `top_surface_speed`, `initial_layer_speed` e `gap_infill_speed` — campos que afetam diretamente a qualidade visual ou confiabilidade. Todos os outros campos (inner wall, infill, travel, support) usam o Speed × regular, permitindo imprimir rápido onde não importa. Esses multiplicadores estão em `build.py` → `PROFILE_MULTIPLIERS`.
+LW-Structure e LW-Extreme usam Speed 0.60 (sparse 0.50), Accel 0.75, Quality 0.50. **Quality ×** se aplica apenas a `outer_wall_speed`, `top_surface_speed`, `initial_layer_speed` e `gap_infill_speed` — campos que afetam diretamente a qualidade visual ou confiabilidade. Todos os outros campos (inner wall, infill, travel, support) usam o Speed × regular, permitindo imprimir rápido onde não importa. Esses multiplicadores estão em `build.py` → `PROFILE_MULTIPLIERS`.
 
 ### Materiais Especiais (apenas 0.20mm Standard)
 
@@ -998,8 +995,8 @@ As velocidades base representam o alvo **Standard** (multiplier 1.0x) para cada 
 
 | Material | inner_wall | outer_wall | infill | Racional |
 |----------|-----------|-----------|--------|----------|
-| **PLA** | 450 | 350 | 500 | K2 a pleno — MVS do filamento é o limitador real |
-| **PETG** | 380 | 300 | 430 | Levemente conservador por cooling/stringing |
+| **PLA** | 300 | 150 | 350 | Recalibrado conservador (qualidade antes de velocidade); MVS do filamento limita em runtime |
+| **PETG** | 240 | 120 | 280 | Conservador por cooling/stringing e sub-extrusão |
 | **ABS** | 300 | 200 | 300 | Menor por warping — temperatura, não velocidade |
 | **PLA-CF** | 280 | 180 | 300 | Rigidez da fibra + desgaste do nozzle |
 | **PETG-CF** | 240 | 160 | 260 | Fibra + PETG — material mais difícil |
@@ -1081,19 +1078,19 @@ Racional:
 
 | Filamento | MVS (mm³/s) | Cap @0.20mm | Cap @0.28mm |
 |-----------|-------------|-------------|-------------|
-| Voolt3D Velvet | 25 | 277 mm/s | 198 mm/s |
-| Voolt3D PLA HS | 25 | 277 mm/s | 198 mm/s |
-| Creality Hyper PLA | 23 | 255 mm/s | 182 mm/s |
-| Sunlu PLA HS | 22 | 244 mm/s | 174 mm/s |
-| Creality Hyper PETG | 23 | 255 mm/s | 182 mm/s |
-| Voolt3D PLA Standard | 20 | 222 mm/s | 158 mm/s |
-| Sunlu PLA Meta | 18 | 199 mm/s | 142 mm/s |
-| Sunlu PLA+ | 15 | 166 mm/s | 119 mm/s |
+| Sunlu PLA HS | 22 | 244 mm/s | 175 mm/s |
+| Creality Hyper PLA | 20 | 222 mm/s | 159 mm/s |
+| Voolt3D PLA HS | 15 | 167 mm/s | 119 mm/s |
+| Sunlu PLA Meta | 15 | 167 mm/s | 119 mm/s |
+| Sunlu PLA+ | 15 | 167 mm/s | 119 mm/s |
+| Creality Hyper PETG | 14 | 156 mm/s | 111 mm/s |
 | Creality CR PLA | 12 | 133 mm/s | 95 mm/s |
 | Voolt3D PETG HF | 12 | 133 mm/s | 95 mm/s |
-| Sunlu PETG | 12 | 133 mm/s | 95 mm/s |
+| Sunlu PETG HS | 12 | 133 mm/s | 95 mm/s |
+| Creality CR PETG | 11 | 122 mm/s | 87 mm/s |
 | Voolt3D PETG CF | 10 | 111 mm/s | 79 mm/s |
-| TPU 95A | 8-10 | 88-111 mm/s | 63-79 mm/s |
+| Voolt3D Velvet | 8 | 89 mm/s | 63 mm/s |
+| TPU 95A | 4 | 44 mm/s | 32 mm/s |
 
 *Cap = MVS / (layer_height × 0.45)*
 
@@ -1105,7 +1102,7 @@ flowchart TD
     LH[layer_heights/*.json<br/>shell thickness, support distances] --> MERGE
     PT[profile_types/*.json<br/>walls, infill, seam] --> MERGE
     MAT[materials/*.json<br/>velocidades base, acelerações] --> MERGE[Merge por herança]
-    MULT[PROFILE_MULTIPLIERS<br/>Fast=1.50x, Economy=1.00x...] --> CALC[Aplica multiplicadores]
+    MULT[PROFILE_MULTIPLIERS<br/>Fast=1.15x, Economy=1.00x...] --> CALC[Aplica multiplicadores]
     MERGE --> CALC
     CALC --> CAP[Cap: 600mm/s extrusão, 800mm/s travel, 20000mm/s² accel]
     CAP --> PROFILE[Perfil Final JSON]
