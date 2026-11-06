@@ -1,0 +1,8 @@
+{
+  "_comment": "EXEMPLO. Uso: reclassify_inventory.py --overrides este-arquivo.json. Chaves iniciadas por '_' são ignoradas. Override tem precedência sobre as regras, mas o profile_name ainda é validado contra o catálogo (e fabricante/material/cor precisam bater). Itens já classificados nunca são sobrescritos.",
+  "_exemplo_decisao_pendente": "Os 4 uids abaixo são os Voolt3D PETG HF com nota 'Troca de Cor'. Só use este arquivo se a decisão for que são o Outlet; a alternativa sem arquivo é a flag --troca-de-cor-petg=outlet|hf.",
+  "a8a46e11-755c-418b-88a4-e186f256a8c7": "PETG - Voolt3D - Outlet",
+  "d3b66999-bfb8-4e1a-a1fb-c165639751ec": "PETG - Voolt3D - Outlet",
+  "ca643a96-51c7-48cc-9853-d4d72cef5cbc": "PETG - Voolt3D - Outlet",
+  "7fed7142-df4d-40d5-962a-455697229291": "PETG - Voolt3D - Outlet"
+}
