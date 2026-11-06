@@ -427,8 +427,16 @@ perfil de filamento decide se é exportado via a flag `export: true` no YAML
 curadoria junto da fonte de verdade e evita listas paralelas hardcoded.
 
 Produtos atualmente habilitados para exportação (curadoria deliberada, baseada
-no estoque físico real — **20 produtos** no banco atual: os 19 originais
-+ `Sunlu PLA High Speed Matte`, que já estava `export: true` e faltava na tabela):
+no estoque físico real — **20 produtos**; contagem validada contra as flags
+`export: true` dos YAMLs).
+
+**Decisão (2026-11-06): Sunlu é a marca primária.** Após os problemas com a
+Voolt3D (MVS sem embasamento, sub-extrusão), o usuário passou a tratar a Sunlu
+como marca principal. Os 4 produtos Sunlu (PLA High Speed, PLA High Speed Matte,
+PLA Matte, PETG HS) ficam exportados — o `Sunlu PLA High Speed Matte` foi
+confirmado explicitamente. Os produtos Voolt3D seguem exportados por enquanto,
+mas com MVS conservador. Ao escolher filamento de referência/default ou ao
+priorizar calibração, preferir Sunlu.
 
 | Produto | Material | YAML |
 |---------|----------|------|
