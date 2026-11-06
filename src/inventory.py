@@ -681,7 +681,8 @@ def add_item(data, validate_catalog=True):
 
     Campos aceitos em `data`:
       material (obrigatório), manufacturer (obrigatório), color_name (obrigatório),
-      profile_name (tipo; opcional, mas se vier é validado contra o catálogo),
+      profile_name (tipo; OBRIGATÓRIO na criação, validado contra o catálogo;
+      ausente/vazio -> TypeColorError code=profile_required),
       hex_color, finish, weight_g, spools, status, variant_id, sku, notes
 
     `validate_catalog=False` é de uso interno (clonar rolo existente sem
@@ -692,6 +693,10 @@ def add_item(data, validate_catalog=True):
         data.pop("weight_g", None)
     _apply_palette(data)
     if validate_catalog:
+        profile = data.get("profile_name")
+        if not isinstance(profile, str) or not profile.strip():
+            raise TypeColorError("Escolha o tipo (produto) do filamento.",
+                                 "profile_required")
         _validate_fields(data)
         validate_type_color(data)
     elif not (data.get("profile_name") or "").strip():

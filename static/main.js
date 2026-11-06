@@ -2667,7 +2667,7 @@ function invShowErrors(errs) {
 // Mapeia um erro do servidor ({error, code}) para o campo correspondente.
 function invServerErrorField(err) {
     const c = err.code;
-    if (['type_mismatch', 'profile_not_found', 'catalog_unavailable'].includes(c)) return 'type';
+    if (['type_mismatch', 'profile_not_found', 'profile_required', 'catalog_unavailable'].includes(c)) return 'type';
     if (['color_invalid', 'color_incompatible', 'color_required'].includes(c)) return 'color';
     const m = String(err.error || '').toLowerCase();
     if (m.includes('weight') || m.includes('peso')) return 'weight';

@@ -75,6 +75,13 @@ class TypeColorBase(unittest.TestCase):
         payload.update(kw)
         return self.client.post("/api/inventory", json=payload)
 
+    def legacy(self, **kw):
+        """Item legado (sem profile_name): só existe via dado antigo/import,
+        não mais pelo POST (profile_name é obrigatório na criação)."""
+        data = {"material": "PETG", "manufacturer": "Futer3D", "color_name": "Verde Maçã"}
+        data.update(kw)
+        return self.inventory.add_item(data, validate_catalog=False)
+
     def create(self, **kw):
         r = self.post(**kw)
         self.assertEqual(r.status_code, 201, r.get_data(as_text=True))
@@ -123,11 +130,43 @@ class ModelAndValidationTests(TypeColorBase):
     def test_tipo_sem_variantes_aceita_so_paleta(self):
         self.assertEqual(self.post(profile_name=OUTLET).status_code, 400)
 
+    def test_post_sem_profile_name_400_profile_required(self):
+        for body in ({"color_name": "Preto"},
+                     {"color_name": "Preto", "profile_name": ""},
+                     {"color_name": "Preto", "profile_name": "   "},
+                     {"color_name": "Preto", "profile_name": None},
+                     {"color_name": "Preto", "profile_name": 5},
+                     {"material": "PETG", "manufacturer": "Futer3D", "color_name": "Verde"}):
+            r = self.client.post("/api/inventory", json=body)
+            self.assertEqual(r.status_code, 400, body)
+            j = r.get_json()
+            self.assertEqual(j["code"], "profile_required", body)
+            self.assertIn("tipo", j["error"].lower())
+        self.assertEqual(self.items(), [])
+
+    def test_post_com_profile_valido_201(self):
+        r = self.post()
+        self.assertEqual(r.status_code, 201, r.get_data(as_text=True))
+        self.assertEqual(r.get_json()["profile_name"], HF)
+
+    def test_patch_item_legado_sem_tipo_continua_editavel(self):
+        iid = self.legacy()["id"]
+        r = self.patch(iid, weight_g=500)
+        self.assertEqual(r.status_code, 200, r.get_data(as_text=True))
+        self.assertEqual(r.get_json()["weight_g"], 500)
+        self.assertIsNone(r.get_json()["profile_name"])
+        r = self.patch(iid, color_id="azul")
+        self.assertEqual(r.status_code, 200, r.get_data(as_text=True))
+        self.assertIn("type_missing", r.get_json()["needs_review"])
+        r = self.client.patch("/api/inventory/bulk", json={"ids": [iid], "weight_g": 300})
+        self.assertEqual(r.status_code, 200, r.get_data(as_text=True))
+        self.assertIsNone(self.get(iid)["profile_name"])
+        # add-spool de item legado também segue funcionando (clona o existente)
+        r = self.client.post(f"/api/inventory/{iid}/add-spool")
+        self.assertEqual(r.status_code, 201, r.get_data(as_text=True))
+
     def test_legado_sem_profile_name(self):
-        r = self.client.post("/api/inventory", json={
-            "material": "PETG", "manufacturer": "Futer3D", "color_name": "Verde Maçã"})
-        self.assertEqual(r.status_code, 201)
-        it = r.get_json()
+        it = self.legacy()
         self.assertIsNone(it["profile_name"])
         self.assertEqual(it["needs_review"], ["type_missing", "color_free_text"])
 
@@ -152,10 +191,9 @@ class ModelAndValidationTests(TypeColorBase):
         self.assertEqual((r.status_code, r.get_json()["code"]), (400, "catalog_unavailable"))
         self.assertFalse((self.tmp / "filament.db").exists())  # não cria o arquivo
         # legado continua funcionando sem catálogo
-        r = self.client.post("/api/inventory", json={
-            "material": "PLA", "manufacturer": "X", "color_name": "Preto"})
-        self.assertEqual(r.status_code, 201)
-        self.assertEqual(self.patch(r.get_json()["id"], notes="ok").status_code, 200)
+        it = self.legacy(material="PLA", manufacturer="X", color_name="Preto")
+        self.assertIsNone(it["profile_name"])
+        self.assertEqual(self.patch(it["id"], notes="ok").status_code, 200)
 
 
 class PatchTests(TypeColorBase):
@@ -230,9 +268,7 @@ class PatchTests(TypeColorBase):
         self.assertEqual(r.get_json()["code"], "type_mismatch")
 
     def test_item_legado_patch_simples_nao_revalida(self):
-        r = self.client.post("/api/inventory", json={
-            "material": "PETG", "manufacturer": "Futer3D", "color_name": "Verde Maçã"})
-        iid = r.get_json()["id"]
+        iid = self.legacy()["id"]
         self.assertEqual(self.patch(iid, weight_g=300, notes="n").status_code, 200)
         self.assertEqual(self.get(iid)["color_name"], "Verde Maçã")
 
@@ -417,6 +453,15 @@ class ExportImportTests(TypeColorBase):
         self.assertIsNone(by["u2"]["profile_name"])
         self.assertIsNone(by["u3"]["profile_name"])
         self.assertEqual(by["u1"]["weight_g"], 0)
+
+    def test_import_v1_sem_profile_name_continua_importando(self):
+        r = self.client.post("/api/inventory/import", json={
+            "schema_version": 1, "items": [self._v1_item("sem-tipo")]})
+        self.assertEqual(r.status_code, 200, r.get_data(as_text=True))
+        self.assertEqual(r.get_json()["summary"]["errors"], [])
+        it = self.items()[0]
+        self.assertIsNone(it["profile_name"])
+        self.assertIn("type_missing", it["needs_review"])
 
     def test_import_lista_pura_e_tipo_invalido(self):
         r = self.client.post("/api/inventory/import", json=[

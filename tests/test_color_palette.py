@@ -73,6 +73,8 @@ class PaletteInventoryTests(unittest.TestCase):
         importlib.reload(database)
         importlib.reload(web)
         self.inventory = inventory
+        from tests.test_inventory_type_color import _make_catalog
+        _make_catalog(self.tmp / "filament.db")
         from flask import Flask
         app = Flask(__name__)
         web.register_routes(app)
@@ -86,7 +88,7 @@ class PaletteInventoryTests(unittest.TestCase):
         self._tmp.cleanup()
 
     def _post(self, **kw):
-        payload = {"manufacturer": "Futer3D", "material": "PETG", "status": "in_stock"}
+        payload = {"profile_name": "voolt3d-petg-hf", "status": "in_stock"}
         payload.update(kw)
         return self.client.post("/api/inventory", json=payload)
 
@@ -108,13 +110,13 @@ class PaletteInventoryTests(unittest.TestCase):
         self.assertEqual(r.status_code, 400)
         self.assertEqual(self.client.get("/api/inventory/items").get_json(), [])
 
-    def test_post_sem_color_id_fluxo_legado(self):
+    def test_post_sem_color_id_fluxo_variante(self):
         self.assertEqual(self._post().status_code, 400)  # color_name segue obrigatório
-        r = self._post(color_name="Preto Velvet", hex_color="#111111")
+        r = self._post(color_name="Preto")  # cor de variante do catálogo
         self.assertEqual(r.status_code, 201)
         it = r.get_json()
         self.assertIsNone(it["color_id"])
-        self.assertEqual(it["color_name"], "Preto Velvet")
+        self.assertEqual(it["color_name"], "Preto")
 
     def test_patch_valido_e_invalido(self):
         iid = self._post(color_id="azul").get_json()["id"]

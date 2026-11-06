@@ -232,6 +232,8 @@ Tipo, cor e quantidade são propriedades **independentes** do item:
 - **Cor** = `color_id` (paleta de 24) **ou** cor de variante do produto escolhido. Com `profile_name` definido, texto livre é recusado (400 `color_invalid`). Trocar o tipo revalida a cor: cor de variante inexistente no novo produto → 400 `color_incompatible` sem escrever nada; cor da paleta sempre passa.
 - **Quantidade** = `weight_g` (inteiro 0..10000, por rolo) e nº de rolos do grupo (1 linha = 1 rolo; `spools` em PATCH só aceita 0 ou 1). Aumentar rolos = `add-spool` com `count`; reduzir é feito por "− Usei"/"Excluir" por rolo (destrutivo, não está no form).
 
+**`profile_name` é obrigatório na criação** (`POST /api/inventory`): ausente, vazio ou não-string → `400` com `code: "profile_required"` e a mensagem "Escolha o tipo (produto) do filamento.". A UI mostra o erro no campo Tipo. A regra vale só para criar item novo: `PATCH`/`PATCH /bulk` de itens legados (sem tipo, `type_missing`) seguem editáveis sem informar tipo, `add-spool` clona o item existente, e o import (v1/v2/lista) continua aceitando itens sem `profile_name`, sinalizados `type_missing`.
+
 `PATCH` altera **só os campos enviados** (peso/tipo/cor não são mais regravados ao editar outra coisa). `PATCH /api/inventory/bulk` aplica a mudança a todos os rolos de um card, de forma atômica.
 
 **Migração e `needs_review`** — `init_db()` adiciona `profile_name` por `ALTER TABLE` e roda `backfill_profiles()` (idempotente, só linhas com `profile_name IS NULL`). A inferência é conservadora: usa `variant_id` apenas se o perfil tiver mesmo fabricante+material e a variante tiver o mesmo `color_name` do item; ou `sku` que case com exatamente uma variante. Nunca adivinha: o que não puder ser inferido fica com tipo NULL e a API devolve `needs_review: ["type_missing"]` (e `"color_free_text"` se não houver `color_id` nem `variant_id`); a UI mostra o selo "Tipo não definido" e filtros. `color_name` nunca é reescrito. Catálogo ausente → backfill é pulado sem erro. Estoque antigo tende a cair em `type_missing` pela deriva de `variant_id`; basta escolher o produto na edição.
@@ -351,7 +353,7 @@ Todas as rotas de leitura são abertas. As rotas marcadas com 🔒 exigem `write
 | GET | `/api/inventory/by-material` | Estoque por material (paletas) |
 | GET | `/api/inventory/items`, `/api/inventory/<id>` | Lista plana / item (filtros em `/items`: `material`, `manufacturer`, `profile_name`, `color_id`, `color_name`; itens trazem `needs_review`) |
 | GET | `/api/inventory/export` | Dump lógico versionado (backup) |
-| POST 🔒 | `/api/inventory` | Cria item (409 se localização cheia) |
+| POST 🔒 | `/api/inventory` | Cria item (`profile_name` obrigatório → 400 `profile_required`; 409 se localização cheia) |
 | PATCH 🔒 | `/api/inventory/<id>` | Atualiza item (só campos enviados; valida tipo/cor/peso) |
 | PATCH 🔒 | `/api/inventory/bulk` | `{ids:[...], ...campos}` — aplica a vários rolos, atômico |
 | POST 🔒 | `/api/inventory/<id>/add-spool` | Clona o rolo; `{count: 1..50}` |

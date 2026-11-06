@@ -30,6 +30,7 @@ class InventoryE2ETests(unittest.TestCase):
         importlib.reload(web)
         self.inventory = inventory
 
+        self._make_catalog(self.tmp / "filament.db")
         from flask import Flask
         app = Flask(__name__)
         web.register_routes(app)
@@ -43,9 +44,42 @@ class InventoryE2ETests(unittest.TestCase):
                 os.environ[k] = v
         self._tmp.cleanup()
 
+    @staticmethod
+    def _make_catalog(path):
+        """Catálogo mínimo: profile_name é obrigatório na criação e validado."""
+        import sqlite3
+        conn = sqlite3.connect(path)
+        conn.executescript(
+            """
+            CREATE TABLE manufacturers (id INTEGER PRIMARY KEY, name TEXT);
+            CREATE TABLE materials (id INTEGER PRIMARY KEY, name TEXT);
+            CREATE TABLE filament_profiles (
+                id INTEGER PRIMARY KEY, manufacturer_id INTEGER, material_id INTEGER,
+                commercial_name TEXT, profile_name TEXT UNIQUE);
+            CREATE TABLE filament_variants (
+                id INTEGER PRIMARY KEY, filament_id INTEGER, sku TEXT,
+                color_name TEXT, hex_color TEXT, finish TEXT);
+            INSERT INTO manufacturers VALUES (1,'Voolt3D'),(2,'Sunlu');
+            INSERT INTO materials VALUES (1,'PLA');
+            INSERT INTO filament_profiles VALUES
+                (1,1,1,'PLA Velvet','voolt3d-pla'),(2,2,1,'PLA HS','sunlu-pla');
+            """
+        )
+        n = 0
+        for fid in (1, 2):
+            for name in ("Velvet Preto", "Preto", "Branco", "Um", "Dois", "Azul"):
+                n += 1
+                conn.execute(
+                    "INSERT INTO filament_variants VALUES (?,?,?,?,?,?)",
+                    (n, fid, f"S{n}", name, "#111111", "Basic"))
+        conn.commit()
+        conn.close()
+
     def _add(self, **overrides):
+        if overrides.pop("manufacturer", None) == "Sunlu":
+            overrides["profile_name"] = "sunlu-pla"
         payload = {
-            "material": "PLA", "manufacturer": "Voolt3D", "color_name": "Preto",
+            "profile_name": "voolt3d-pla", "color_name": "Preto",
             "weight_g": 1000, "spools": 1, "status": "in_stock",
         }
         payload.update(overrides)
