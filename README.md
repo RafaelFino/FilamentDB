@@ -200,7 +200,8 @@ erDiagram
         int id PK "autoincrement, local ao arquivo"
         text uid UK "uuid4 estável — chave natural de export/import"
         text material "NOT NULL"
-        text manufacturer "NOT NULL"
+        text manufacturer "NOT NULL — derivado do tipo (profile_name)"
+        text profile_name "TIPO — produto do catálogo (filament_profiles.profile_name); NULL = tipo não definido"
         text color_name "NOT NULL"
         text hex_color
         text color_id "opcional — id da paleta (src/color_palette.json)"
@@ -223,10 +224,22 @@ Pontos de design:
 - **`color_id`** é opcional e referencia a paleta de 24 cores básicas (`src/color_palette.json`, servida em `GET /api/color-palette`). Quando enviado, o backend valida contra a paleta (400 se inválido) e preenche `color_name`/`hex_color` com os valores canônicos. No form de estoque, a opção "🎨 Outra cor (paleta)…" no select de cor abre a grade. Entra no export/import sem mudar `schema_version` (campo opcional; envelopes antigos importam com `NULL`; `color_id` desconhecido no import vira `NULL` e preserva nome/hex).
 - Índices: `idx_inv_material`, `idx_inv_status` e o `UNIQUE idx_inv_uid`.
 
-**Export/import versionado** (`INVENTORY_SCHEMA_VERSION = 1`): o estoque é exportável como envelope JSON desacoplado do schema físico:
+#### Tipo × Cor × Quantidade
+
+Tipo, cor e quantidade são propriedades **independentes** do item:
+
+- **Tipo** = produto do catálogo (marca + material + produto, ex. `Voolt3D / PETG / PETG Outlet`), guardado em `profile_name` (chave estável de `filament_profiles`). `material` e `manufacturer` são derivados do perfil pelo servidor; payload divergente → 400 (`type_mismatch`). `variant_id` **não** identifica o tipo (os ids mudam a cada `build.py`); só indica de onde veio a cor.
+- **Cor** = `color_id` (paleta de 24) **ou** cor de variante do produto escolhido. Com `profile_name` definido, texto livre é recusado (400 `color_invalid`). Trocar o tipo revalida a cor: cor de variante inexistente no novo produto → 400 `color_incompatible` sem escrever nada; cor da paleta sempre passa.
+- **Quantidade** = `weight_g` (inteiro 0..10000, por rolo) e nº de rolos do grupo (1 linha = 1 rolo; `spools` em PATCH só aceita 0 ou 1). Aumentar rolos = `add-spool` com `count`; reduzir é feito por "− Usei"/"Excluir" por rolo (destrutivo, não está no form).
+
+`PATCH` altera **só os campos enviados** (peso/tipo/cor não são mais regravados ao editar outra coisa). `PATCH /api/inventory/bulk` aplica a mudança a todos os rolos de um card, de forma atômica.
+
+**Migração e `needs_review`** — `init_db()` adiciona `profile_name` por `ALTER TABLE` e roda `backfill_profiles()` (idempotente, só linhas com `profile_name IS NULL`). A inferência é conservadora: usa `variant_id` apenas se o perfil tiver mesmo fabricante+material e a variante tiver o mesmo `color_name` do item; ou `sku` que case com exatamente uma variante. Nunca adivinha: o que não puder ser inferido fica com tipo NULL e a API devolve `needs_review: ["type_missing"]` (e `"color_free_text"` se não houver `color_id` nem `variant_id`); a UI mostra o selo "Tipo não definido" e filtros. `color_name` nunca é reescrito. Catálogo ausente → backfill é pulado sem erro. Estoque antigo tende a cair em `type_missing` pela deriva de `variant_id`; basta escolher o produto na edição.
+
+**Export/import versionado** (`INVENTORY_SCHEMA_VERSION = 2`; v2 adiciona `profile_name`): o estoque é exportável como envelope JSON desacoplado do schema físico. Import aceita v1 (migrado em `_migrate_item`, com a mesma inferência segura) e lista pura; `schema_version` > 2 → 400 (atualize o servidor antes de importar). `profile_name` desconhecido no catálogo vira `NULL` no import. Peso 0 é preservado.
 
 ```json
-{ "schema_version": 1, "exported_at": "<iso8601>", "count": 3, "items": [ /* campos de _EXPORT_FIELDS */ ] }
+{ "schema_version": 2, "exported_at": "<iso8601>", "count": 3, "items": [ /* campos de _EXPORT_FIELDS */ ] }
 ```
 
 O import faz **upsert idempotente por `uid`**: reimportar o mesmo envelope não duplica. `replace=true` ativa modo espelho (remove itens ausentes do payload). `_migrate_item()` é o ponto único de evolução para futuras versões de schema. O import **não** aplica validação de capacidade (está restaurando um estado que já era válido).
@@ -336,10 +349,12 @@ Todas as rotas de leitura são abertas. As rotas marcadas com 🔒 exigem `write
 | GET | `/api/color-palette` | Paleta de 24 cores básicas (id, nome pt-BR, hex) |
 | GET | `/api/inventory` | Estoque por localização física |
 | GET | `/api/inventory/by-material` | Estoque por material (paletas) |
-| GET | `/api/inventory/items`, `/api/inventory/<id>` | Lista plana / item |
+| GET | `/api/inventory/items`, `/api/inventory/<id>` | Lista plana / item (filtros em `/items`: `material`, `manufacturer`, `profile_name`, `color_id`, `color_name`; itens trazem `needs_review`) |
 | GET | `/api/inventory/export` | Dump lógico versionado (backup) |
 | POST 🔒 | `/api/inventory` | Cria item (409 se localização cheia) |
-| PATCH 🔒 | `/api/inventory/<id>` | Atualiza item |
+| PATCH 🔒 | `/api/inventory/<id>` | Atualiza item (só campos enviados; valida tipo/cor/peso) |
+| PATCH 🔒 | `/api/inventory/bulk` | `{ids:[...], ...campos}` — aplica a vários rolos, atômico |
+| POST 🔒 | `/api/inventory/<id>/add-spool` | Clona o rolo; `{count: 1..50}` |
 | POST 🔒 | `/api/inventory/<id>/use` | Marca uso (decrementa rolos) |
 | DELETE 🔒 | `/api/inventory/<id>` | Remove item |
 | POST 🔒 | `/api/inventory/import?replace=` | Importa envelope (upsert por uid) |

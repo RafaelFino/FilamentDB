@@ -138,7 +138,7 @@ class PaletteInventoryTests(unittest.TestCase):
     def test_export_import_roundtrip_e_desconhecido(self):
         self._post(color_id="roxo")
         env = self.client.get("/api/inventory/export").get_json()
-        self.assertEqual(env["schema_version"], 1)
+        self.assertEqual(env["schema_version"], 2)
         self.assertEqual(env["items"][0]["color_id"], "roxo")
         r = self.client.post("/api/inventory/import?replace=1", json=env)
         self.assertEqual(r.status_code, 200, r.get_data(as_text=True))

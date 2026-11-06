@@ -1955,23 +1955,27 @@ const invShowUsed    = document.getElementById('inv-show-used');
 
 // Form fields
 const invF = {
-    // Form somente-catálogo: material/fabricante/cor/hex/finish/peso vêm da
-    // variante escolhida no catálogo (não há mais inputs livres). Só restam
-    // campos de estoque editáveis pelo usuário.
+    // Tipo/Cor vêm dos selects/paleta (estado em invType/invColor);
+    // aqui ficam os campos de quantidade e de estoque.
+    weight:       document.getElementById('inv-weight'),
     spools:       document.getElementById('inv-spools'),
     status:       document.getElementById('inv-status'),
     notes:        document.getElementById('inv-notes'),
 };
 
-// Catalog selects (fonte única de material/fabricante/cor).
+// Tipo: fabricante → material → produto. Cor: variante do produto (ou paleta).
 const invCatMfr     = document.getElementById('inv-cat-manufacturer');
 const invCatMat     = document.getElementById('inv-cat-material');
+const invCatProfile = document.getElementById('inv-cat-profile');
 const invCatVariant = document.getElementById('inv-cat-variant');
 const invCatPreview = document.getElementById('inv-cat-preview');
+const invBulkBox    = document.getElementById('inv-bulk-box');
+const invBulk       = document.getElementById('inv-bulk');
 
-// Variante escolhida no catálogo (snapshot para o submit). null = nada escolhido.
-// Guarda os campos denormalizados + variant_id/sku que serão persistidos.
-let invSelected = null;
+// Filtros da listagem
+const invFilterMat   = document.getElementById('inv-filter-material');
+const invFilterType  = document.getElementById('inv-filter-profile');
+const invFilterColor = document.getElementById('inv-filter-color');
 
 let invEditingId = null;   // null = criando, número = editando
 let invLoaded = false;
@@ -1997,6 +2001,7 @@ async function loadInventory() {
         const res = await fetch('/api/inventory');
         const data = await res.json();
         invData = data;
+        invPopulateFilters(data);
         renderInventory(data);
     } catch (err) {
         invContainer.innerHTML = `<div class="empty">Erro ao carregar estoque: ${err}</div>`;
@@ -2067,12 +2072,16 @@ function renderInventory(data) {
 
     const showUsed = invShowUsed?.checked;
     const printer = data.printer || { cfs: {}, spool: {} };
-    const cfs = printer.cfs || { items: [], used: 0, max: 4 };
-    const spool = printer.spool || { items: [], used: 0, max: 1 };
-    const drybox = (data.drybox && data.drybox.items) || [];
-    const open = (data.open && data.open.items) || [];
-    const sealedMaterials = (data.sealed && data.sealed.materials) || [];
-    const empty = (data.empty && data.empty.items) || [];
+    // Filtros client-side (Material/Tipo/Cor) só afetam as listas; resumo/gráficos não mudam.
+    const rawCfs = printer.cfs || { items: [], used: 0, max: 4 };
+    const rawSpool = printer.spool || { items: [], used: 0, max: 1 };
+    const cfs = { ...rawCfs, items: (rawCfs.items || []).filter(invItemMatches) };
+    const spool = { ...rawSpool, items: (rawSpool.items || []).filter(invItemMatches) };
+    const drybox = ((data.drybox && data.drybox.items) || []).filter(invItemMatches);
+    const open = ((data.open && data.open.items) || []).filter(invItemMatches);
+    const sealedMaterials = ((data.sealed && data.sealed.materials) || [])
+        .map(g => ({ ...g, items: (g.items || []).filter(invItemMatches) }));
+    const empty = ((data.empty && data.empty.items) || []).filter(invItemMatches);
 
     let html = '';
 
@@ -2333,6 +2342,11 @@ const MOVE_TARGETS = [
 
 function renderInvCard(item) {
     const isEmpty = item.status === 'empty';
+    // TIPO (fabricante · produto) e COR são linhas/elementos separados.
+    const pinfo = item.profile_name ? invProfileIndex()[item.profile_name] : null;
+    const productName = pinfo ? pinfo.commercial_name : (item.profile_name || '');
+    const typeText = [item.manufacturer, productName].filter(Boolean).join(' · ');
+    const typeMissing = Array.isArray(item.needs_review) && item.needs_review.includes('type_missing');
     const notes = item.notes ? `<div class="inv-card-notes">${escapeHtml(item.notes)}</div>` : '';
 
     // Modelo físico: cada rolo é uma linha (spools=1). Cards do estoque fechado
@@ -2374,13 +2388,15 @@ function renderInvCard(item) {
     return `
     <div class="inv-card ${isEmpty ? 'is-empty' : ''} status-${item.status}">
         <div class="inv-card-top">
-            <span class="inv-card-swatch" style="background:${item.hex_color || '#333'}"></span>
+            <span class="inv-card-swatch" style="background:${escapeHtml(item.hex_color || '#333')}" aria-hidden="true"></span>
             <div class="inv-card-title">
-                <div class="inv-card-headline">
+                <div class="inv-card-type">
                     <span class="inv-card-mat">${escapeHtml(item.material)}</span>
-                    <span class="inv-card-color">${escapeHtml(item.color_name)}</span>
+                    <span class="inv-card-product"><span class="lbl">Tipo</span>${escapeHtml(typeText)}</span>
+                    ${typeMissing ? '<span class="inv-badge-warn">Tipo não definido</span>' : ''}
                 </div>
-                <span class="inv-card-sub">${escapeHtml(item.manufacturer)}${item.finish ? ' · ' + escapeHtml(item.finish) : ''} · ${item.weight_g}g</span>
+                <div class="inv-card-colorline"><span class="lbl">Cor</span><span class="inv-card-color">${escapeHtml(item.color_name)}</span></div>
+                <span class="inv-card-sub">${item.finish ? escapeHtml(item.finish) + ' · ' : ''}${item.weight_g}g</span>
             </div>
         </div>
         <div class="inv-card-badges">
@@ -2484,7 +2500,6 @@ async function invDelete(id) {
 // duplicadas aqui; o backend valida o color_id contra a mesma lista.
 const PALETTE_OPTION = '__palette__';
 let colorPaletteData = null;      // cache {version, colors:[{id,name,hex}]}
-let invPaletteId = null;          // id da cor escolhida na paleta (modo paleta)
 
 async function loadColorPalette() {
     if (colorPaletteData) return colorPaletteData;
@@ -2548,291 +2563,647 @@ function renderColorPalette(container, colors, selectedId, onSelect) {
     });
 }
 
+// ─── Estoque: Tipo × Cor × Quantidade (propriedades separadas) ───────────────
+// Tipo  = produto do catálogo (fabricante → material → produto; chave: profile_name).
+// Cor   = variante do produto escolhido OU uma das 24 cores da paleta.
+// Estado do formulário:
+//   invType  = {manufacturer, material, profile_name, commercial_name, pi} | null
+//   invColor = {kind:'variant', variant_id, color_name, hex_color, finish, sku, weight_g}
+//            | {kind:'palette', color_id, color_name, hex_color}
+//            | {kind:'legacy',  color_name, hex_color}   (cor atual fora do catálogo; só leitura)
+//            | null
+let invType = null;
+let invColor = null;
+let invOrig = null;        // item original ao editar (para enviar só o que mudou)
+let invGroupIds = null;    // ids dos rolos do grupo (card agrupado), ou null
+let invWeightTouched = false;
+let invLostColor = null;   // cor de variante limpa por troca de tipo (para reavaliar na cascata)
+
+function invAnnounce(msg) {
+    const live = document.getElementById('inv-live');
+    if (!live) return;
+    live.textContent = '';
+    // Reatribui no próximo tick para o leitor de tela anunciar mesmo texto repetido.
+    setTimeout(() => { live.textContent = msg; }, 30);
+}
+
+// Índice profile_name → {manufacturer, material, commercial_name, pi} a partir do treeData.
+let invProfileIdx = null;
+function invProfileIndex() {
+    if (invProfileIdx) return invProfileIdx;
+    invProfileIdx = {};
+    for (const mfr of Object.keys(treeData || {})) {
+        const mats = treeData[mfr]?.materials || {};
+        for (const mat of Object.keys(mats)) {
+            (mats[mat].profiles || []).forEach((p, pi) => {
+                if (p.profile_name) {
+                    invProfileIdx[p.profile_name] = {
+                        manufacturer: mfr, material: mat, pi,
+                        commercial_name: p.commercial_name || p.profile_name,
+                    };
+                }
+            });
+        }
+    }
+    return invProfileIdx;
+}
+
+function invCurrentProfile() {
+    if (!invCatMfr.value || !invCatMat.value || invCatProfile.value === '') return null;
+    return treeData[invCatMfr.value]?.materials?.[invCatMat.value]?.profiles?.[+invCatProfile.value] || null;
+}
+
+// ── Erros inline (aria-invalid + aria-describedby, foco no 1º inválido) ──
+const INV_ERR_IDS = {
+    form: 'inv-form-error', type: 'inv-err-type', color: 'inv-err-color',
+    weight: 'inv-err-weight', spools: 'inv-err-spools',
+};
+const INV_ERR_ORDER = ['type', 'color', 'weight', 'spools', 'form'];
+
+function invClearErrors() {
+    Object.values(INV_ERR_IDS).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '';
+    });
+    invFormPanel.querySelectorAll('[aria-invalid]').forEach(e => e.removeAttribute('aria-invalid'));
+}
+
+// Controles que recebem aria-invalid e o foco, por campo lógico.
+function invErrControls(field) {
+    if (field === 'type') {
+        const sels = [invCatMfr, invCatMat, invCatProfile];
+        const empty = sels.filter(s => !s.value);
+        return empty.length ? empty : [invCatProfile];
+    }
+    if (field === 'color') {
+        if (invColorMode() === 'palette') {
+            const sw = document.querySelector('#inv-palette [tabindex="0"]');
+            return sw ? [sw] : [document.getElementById('inv-color-mode-palette')];
+        }
+        // Select desabilitado (produto sem cores) não recebe foco: usa o rádio da paleta.
+        return invCatVariant.disabled ? [document.getElementById('inv-color-mode-palette')] : [invCatVariant];
+    }
+    if (field === 'weight') return [invF.weight];
+    if (field === 'spools') return [invF.spools];
+    return [];
+}
+
+// errs: [{field, msg}]. Mostra todas e foca o primeiro (na ordem do formulário).
+function invShowErrors(errs) {
+    invClearErrors();
+    errs.forEach(({ field, msg }) => {
+        const el = document.getElementById(INV_ERR_IDS[field] || INV_ERR_IDS.form);
+        if (el) el.textContent = el.textContent ? el.textContent + ' ' + msg : msg;
+        invErrControls(field).forEach(c => c && c.setAttribute('aria-invalid', 'true'));
+    });
+    const first = INV_ERR_ORDER.find(f => errs.some(e => (INV_ERR_IDS[e.field] ? e.field : 'form') === f));
+    if (first) {
+        const target = invErrControls(first)[0];
+        if (target) target.focus();
+        else document.getElementById(INV_ERR_IDS.form)?.scrollIntoView({ block: 'nearest' });
+    }
+}
+
+// Mapeia um erro do servidor ({error, code}) para o campo correspondente.
+function invServerErrorField(err) {
+    const c = err.code;
+    if (['type_mismatch', 'profile_not_found', 'catalog_unavailable'].includes(c)) return 'type';
+    if (['color_invalid', 'color_incompatible', 'color_required'].includes(c)) return 'color';
+    const m = String(err.error || '').toLowerCase();
+    if (m.includes('weight') || m.includes('peso')) return 'weight';
+    if (m.includes('spools') || m.includes('rolo')) return 'spools';
+    return 'form';
+}
+
+// ── Modo da cor (catálogo | paleta) ──
+function invColorMode() {
+    return document.getElementById('inv-color-mode-palette')?.checked ? 'palette' : 'catalog';
+}
+
+function invSetColorMode(mode) {
+    document.getElementById('inv-color-mode-palette').checked = mode === 'palette';
+    document.getElementById('inv-color-mode-catalog').checked = mode !== 'palette';
+    const catBox = document.getElementById('inv-color-catalog-box');
+    if (catBox) catBox.style.display = mode === 'palette' ? 'none' : '';
+    if (mode === 'palette') {
+        if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
+    } else {
+        invHidePalette();
+    }
+}
+
 function invPaletteBox() { return document.getElementById('inv-palette-box'); }
 
 function invHidePalette() {
-    invPaletteId = null;
     const box = invPaletteBox();
     if (box) box.style.display = 'none';
 }
 
-// Mostra a paleta e define invSelected a partir da cor escolhida.
+// Mostra a paleta (reutiliza renderColorPalette) e atualiza invColor ao escolher.
 async function invShowPalette(selectedId = null) {
     const box = invPaletteBox();
     if (!box) return;
     let data;
     try { data = await loadColorPalette(); }
-    catch (e) { alert(e.message); return; }
+    catch (e) { invShowErrors([{ field: 'color', msg: e.message }]); return; }
     const caption = document.getElementById('inv-palette-caption');
     const apply = color => {
-        invPaletteId = color ? color.id : null;
+        invColor = color ? { kind: 'palette', color_id: color.id, color_name: color.name, hex_color: color.hex } : null;
         if (caption) caption.textContent = color ? `Cor selecionada: ${color.name}` : 'Nenhuma cor selecionada';
-        invSelected = color ? {
-            material: invCatMat.value, manufacturer: invCatMfr.value,
-            color_id: color.id, color_name: color.name, hex_color: color.hex,
-        } : null;
+        if (color) document.getElementById('inv-err-color').textContent = '';
     };
     renderColorPalette(document.getElementById('inv-palette'), data.colors, selectedId, apply);
     apply(data.colors.find(c => c.id === selectedId) || null);
     box.style.display = 'flex';
 }
 
+// ── Cascata do Tipo ──
+function invFillSelect(sel, placeholder, options) {
+    sel.innerHTML = `<option value="">${placeholder}</option>` +
+        options.map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join('');
+    sel.disabled = options.length === 0;
+}
+
+function populateCatalogManufacturers() {
+    if (!invCatMfr) return;
+    const mfrs = Object.keys(treeData || {}).sort((a, b) => a.localeCompare(b));
+    invFillSelect(invCatMfr, 'Fabricante...', mfrs.map(m => ({ value: m, label: m })));
+    invCatMfr.disabled = false;
+}
+
+// Limpa a cor escolhida (preservando o modo) e atualiza a UI da cor.
+function invResetColor() {
+    invColor = null;
+    if (invCatVariant) invCatVariant.value = '';
+    if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
+    if (invColorMode() === 'palette') invShowPalette(null);
+}
+
+invCatMfr?.addEventListener('change', () => {
+    const mfr = invCatMfr.value;
+    const mats = Object.keys(treeData[mfr]?.materials || {}).sort((a, b) => a.localeCompare(b));
+    invFillSelect(invCatMat, 'Material...', mats.map(m => ({ value: m, label: m })));
+    invFillSelect(invCatProfile, 'Produto...', []);
+    invType = null;
+    invRefreshColorOptions();
+});
+
+invCatMat?.addEventListener('change', () => {
+    const mfr = invCatMfr.value, mat = invCatMat.value;
+    const profiles = treeData[mfr]?.materials?.[mat]?.profiles || [];
+    const opts = profiles
+        .map((p, pi) => ({ value: String(pi), label: p.commercial_name || p.profile_name || `Produto ${pi + 1}` }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+    invFillSelect(invCatProfile, 'Produto...', opts);
+    invType = null;
+    invRefreshColorOptions();
+});
+
+invCatProfile?.addEventListener('change', () => {
+    const p = invCurrentProfile();
+    invType = p ? {
+        manufacturer: invCatMfr.value, material: invCatMat.value,
+        profile_name: p.profile_name, commercial_name: p.commercial_name || p.profile_name,
+        pi: +invCatProfile.value,
+    } : null;
+    invRefreshColorOptions();
+});
+
+// Recarrega as opções de cor (só variantes do produto escolhido). Se a cor atual
+// era de variante e não existe no novo produto, limpa e avisa (exige nova escolha).
+function invRefreshColorOptions() {
+    const p = invCurrentProfile();
+    const variants = p?.variants || [];
+    // Cor de variante/legada pode ter sido limpa por um passo anterior da cascata
+    // (fabricante/material mudou antes de existir produto): reavalia contra o produto.
+    const prev = invColor || invLostColor;
+
+    const counts = {};
+    variants.forEach(v => { const k = (v.color_name || 'Cor').toLowerCase(); counts[k] = (counts[k] || 0) + 1; });
+    const opts = variants
+        .map((v, vi) => {
+            const name = v.color_name || 'Cor';
+            // Acabamento só desambigua cores repetidas dentro do mesmo produto.
+            const dup = counts[name.toLowerCase()] > 1 && v.finish;
+            return { value: String(vi), label: dup ? `${name} · ${v.finish}` : name };
+        })
+        .sort((a, b) => a.label.localeCompare(b.label));
+    invFillSelect(invCatVariant, 'Cor...', opts);
+    if (p && !opts.length) {
+        invCatVariant.innerHTML = '<option value="" disabled selected>Sem cores no catálogo (use a paleta)</option>';
+        invCatVariant.disabled = true;
+    }
+
+    if (prev && prev.kind === 'palette') return;      // cor da paleta vale para qualquer tipo
+    if (prev && (prev.kind === 'variant' || prev.kind === 'legacy')) {
+        const idx = variants.findIndex(v =>
+            (prev.variant_id != null && v.id === prev.variant_id)
+            || (v.color_name || '').toLowerCase() === (prev.color_name || '').toLowerCase());
+        if (idx >= 0) {
+            invLostColor = null;
+            invCatVariant.value = String(idx);
+            invVariantChanged();
+            return;
+        }
+        invLostColor = prev;
+        invColor = null;
+        if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
+        invAnnounce(`A cor "${prev.color_name}" foi limpa porque o tipo mudou. Escolha uma cor.`);
+        if (p) {
+            // Erro inline sem roubar o foco do campo que o usuário está mexendo.
+            const msg = `A cor "${prev.color_name}" não existe em ${p.commercial_name || 'este produto'}. Escolha outra cor.`;
+            document.getElementById('inv-err-color').textContent = msg;
+            invErrControls('color').forEach(c => c && c.setAttribute('aria-invalid', 'true'));
+        }
+    }
+}
+
+function invVariantChanged() {
+    const sel = invCatVariant.value;
+    const p = invCurrentProfile();
+    const v = (sel !== '' && p) ? p.variants?.[+sel] : null;
+    if (!v) {
+        if (invColorMode() === 'catalog') invColor = null;
+        if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
+        return;
+    }
+    invLostColor = null;
+    invColor = {
+        kind: 'variant', variant_id: v.id ?? null, color_name: v.color_name || '',
+        hex_color: v.hex_color || null, finish: v.finish || null, sku: v.sku || null,
+        weight_g: v.weight_g || null,
+    };
+    document.getElementById('inv-err-color').textContent = '';
+    invCatVariant.removeAttribute('aria-invalid');
+    if (!invEditingId && !invWeightTouched && invColor.weight_g) invF.weight.value = invColor.weight_g;
+    if (invCatPreview) {
+        invCatPreview.style.display = 'flex';
+        invCatPreview.innerHTML = `
+            <span class="sw" style="background:${escapeHtml(v.hex_color || '#333')}" aria-hidden="true"></span>
+            <span class="txt">
+                <strong>${escapeHtml(v.color_name || 'Cor')}</strong>
+                <span>${v.finish ? escapeHtml(v.finish) : ''}${v.sku ? (v.finish ? ' · ' : '') + escapeHtml(v.sku) : ''}</span>
+            </span>`;
+    }
+}
+
+invCatVariant?.addEventListener('change', invVariantChanged);
+
+document.querySelectorAll('input[name="inv-color-mode"]').forEach(r =>
+    r.addEventListener('change', () => {
+        const mode = invColorMode();
+        invSetColorMode(mode);
+        if (mode === 'palette') {
+            invColor = null;
+            invShowPalette(null);
+        } else {
+            invColor = null;
+            invVariantChanged();
+        }
+    }));
+
+invF.weight?.addEventListener('input', () => { invWeightTouched = true; });
+
 // ─── Form: add / edit ───────────────────────────────────────────────────────
 function invOpenForm(editing = false) {
     invFormPanel.style.display = 'block';
     invFormTitle.textContent = editing ? 'Editar filamento' : 'Adicionar filamento ao estoque';
     invFormPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    invCatMfr?.focus({ preventScroll: true });
 }
 
+// Fecha o form e devolve o id que estava em edição (para devolver o foco).
 function invCloseForm() {
+    const prev = invEditingId;
     invFormPanel.style.display = 'none';
     invEditingId = null;
     invClearForm();
+    return prev;
+}
+
+// Foco volta ao botão "Editar" do item (ou ao "+ Adicionar" se não houver).
+function invRestoreFocus(editId) {
+    const btn = editId ? invContainer.querySelector(`[data-inv-edit="${editId}"]`) : null;
+    (btn || invAddBtn)?.focus();
 }
 
 function invClearForm() {
-    invSelected = null;
+    invType = null; invColor = null; invOrig = null; invGroupIds = null;
+    invWeightTouched = false;
+    invLostColor = null;
+    invClearErrors();
+    invF.weight.value = '1000';
     invF.spools.value = '1';
+    invF.spools.min = '1';
     invF.status.value = 'in_stock';
     invF.notes.value = '';
-    if (invCatMfr) invCatMfr.value = '';
-    if (invCatMat) { invCatMat.innerHTML = '<option value="">Material...</option>'; invCatMat.disabled = true; }
-    if (invCatVariant) { invCatVariant.innerHTML = '<option value="">Cor...</option>'; invCatVariant.disabled = true; }
+    populateCatalogManufacturers();
+    invCatMfr.value = '';
+    invFillSelect(invCatMat, 'Material...', []);
+    invFillSelect(invCatProfile, 'Produto...', []);
+    invFillSelect(invCatVariant, 'Cor...', []);
+    invSetColorMode('catalog');
     if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
-    invHidePalette();
+    if (invBulkBox) invBulkBox.style.display = 'none';
+    if (invBulk) invBulk.checked = true;
+    const hint = document.getElementById('inv-spools-hint');
+    if (hint) hint.textContent = 'Rolos extras entram como "Em estoque".';
 }
 
-// Localiza no catálogo (treeData) a variante que corresponde a um item de
-// estoque salvo, casando primeiro por variant_id/sku e, como fallback, por
-// (fabricante, material, cor). Retorna {mfr, mat, pi, vi, variant} ou null.
-function findCatalogVariant(item) {
-    const mfrs = Object.keys(treeData || {});
-    let fallback = null;
-    for (const mfr of mfrs) {
-        const mats = treeData[mfr]?.materials || {};
-        for (const mat of Object.keys(mats)) {
-            const profiles = mats[mat].profiles || [];
-            for (let pi = 0; pi < profiles.length; pi++) {
-                const vars = profiles[pi].variants || [];
-                for (let vi = 0; vi < vars.length; vi++) {
-                    const v = vars[vi];
-                    if (item.variant_id != null && v.id === item.variant_id) {
-                        return { mfr, mat, pi, vi, variant: v };
-                    }
-                    if (item.sku && v.sku && v.sku === item.sku) {
-                        return { mfr, mat, pi, vi, variant: v };
-                    }
-                    if (!fallback
-                        && mfr === item.manufacturer && mat === item.material
-                        && (v.color_name || '') === (item.color_name || '')) {
-                        fallback = { mfr, mat, pi, vi, variant: v };
-                    }
-                }
-            }
+async function invStartEdit(id) {
+    let item;
+    try {
+        const res = await fetch(`/api/inventory/${id}`);
+        if (!res.ok) throw new Error('Item não encontrado');
+        item = await res.json();
+    } catch (e) {
+        invOpenForm(true);
+        invShowErrors([{ field: 'form', msg: 'Não foi possível carregar o item: ' + e.message }]);
+        return;
+    }
+    invClearForm();
+    invEditingId = id;
+    invOrig = item;
+    const card = findItemInState(id);
+    invGroupIds = (card && Array.isArray(card.entry_ids) && card.entry_ids.length > 1) ? card.entry_ids : null;
+
+    // Tipo: pré-carrega pelo profile_name; sem ele, pré-carrega o que der (fabricante/material).
+    const pinfo = item.profile_name ? invProfileIndex()[item.profile_name] : null;
+    const mfr = pinfo ? pinfo.manufacturer : item.manufacturer;
+    const mat = pinfo ? pinfo.material : item.material;
+    if (treeData?.[mfr]?.materials?.[mat]) {
+        invCatMfr.value = mfr;
+        invCatMfr.dispatchEvent(new Event('change'));
+        invCatMat.value = mat;
+        invCatMat.dispatchEvent(new Event('change'));
+        if (pinfo) {
+            invCatProfile.value = String(pinfo.pi);
+            invCatProfile.dispatchEvent(new Event('change'));
         }
     }
-    return fallback;
+    if (!pinfo) invAnnounce('Tipo não definido. Escolha o produto para definir o tipo.');
+
+    // Cor
+    if (item.color_id) {
+        invSetColorMode('palette');
+        await invShowPalette(item.color_id);
+    } else {
+        invSetColorMode('catalog');
+        const p = invCurrentProfile();
+        const idx = p ? (p.variants || []).findIndex(v =>
+            (item.variant_id != null && v.id === item.variant_id)
+            || (v.color_name || '').toLowerCase() === (item.color_name || '').toLowerCase()) : -1;
+        if (idx >= 0) {
+            invCatVariant.value = String(idx);
+            invVariantChanged();
+        } else {
+            // Cor atual fora do catálogo/sem tipo: mostra, mas só muda se o usuário escolher outra.
+            invColor = { kind: 'legacy', color_name: item.color_name, hex_color: item.hex_color };
+            invCatPreview.style.display = 'flex';
+            invCatPreview.innerHTML = `
+                <span class="sw" style="background:${escapeHtml(item.hex_color || '#333')}" aria-hidden="true"></span>
+                <span class="txt"><strong>${escapeHtml(item.color_name || '')}</strong>
+                <span>Cor atual (fora do catálogo). Escolha outra para alterar.</span></span>`;
+        }
+    }
+
+    // Quantidade
+    invF.weight.value = item.weight_g ?? '';
+    const n = invGroupIds ? invGroupIds.length : 1;
+    invF.spools.value = n;
+    invF.spools.min = String(n);
+    const hint = document.getElementById('inv-spools-hint');
+    if (hint) hint.textContent = `Hoje são ${n}. Aumentar cria novos rolos "Em estoque" com este tipo e cor.`;
+    if (invBulkBox) {
+        invBulkBox.style.display = invGroupIds ? '' : 'none';
+        document.getElementById('inv-bulk-label').textContent =
+            `Aplicar tipo, cor e peso a todos os ${n} rolos do grupo`;
+        invBulk.checked = true;
+    }
+    invF.status.value = item.status || 'in_stock';
+    invF.notes.value = item.notes || '';
+    invOpenForm(true);
 }
 
-// Programaticamente seleciona uma variante do catálogo nos selects encadeados,
-// disparando a cadeia de change para preencher preview + invSelected.
-function selectCatalogVariant(match) {
-    if (!match) return false;
-    invCatMfr.value = match.mfr;
-    invCatMfr.dispatchEvent(new Event('change'));
-    invCatMat.value = match.mat;
-    invCatMat.dispatchEvent(new Event('change'));
-    invCatVariant.value = `${match.pi}:${match.vi}`;
-    invCatVariant.dispatchEvent(new Event('change'));
-    return true;
-}
-
-function invStartEdit(id) {
-    fetch(`/api/inventory/${id}`).then(r => r.json()).then(item => {
-        invEditingId = id;
-        invF.spools.value = item.spools ?? 1;
-        invF.status.value = item.status || 'in_stock';
-        invF.notes.value = item.notes || '';
-        // Repopula os selects de catálogo a partir do item salvo. Se o produto
-        // não existir mais no catálogo (ex.: foi removido do filament-data),
-        // avisa e ainda assim permite ajustar estoque/status.
-        // Item com cor da paleta: restaura fabricante/material + modo paleta.
-        if (item.color_id && treeData?.[item.manufacturer]?.materials?.[item.material]) {
-            invCatMfr.value = item.manufacturer;
-            invCatMfr.dispatchEvent(new Event('change'));
-            invCatMat.value = item.material;
-            invCatMat.dispatchEvent(new Event('change'));
-            invCatVariant.value = PALETTE_OPTION;
-            invShowPalette(item.color_id).then(() => invOpenForm(true));
-            return;
-        }
-        const match = findCatalogVariant(item);
-        if (!selectCatalogVariant(match)) {
-            invSelected = null;
-            if (invCatPreview) {
-                invCatPreview.style.display = 'flex';
-                invCatPreview.innerHTML =
-                    `<span class="txt"><strong>${escapeHtml(item.material || '')} ${escapeHtml(item.color_name || '')}</strong>`
-                    + `<span>${escapeHtml(item.manufacturer || '')} — não encontrado no catálogo atual</span></span>`;
-            }
-        }
-        invOpenForm(true);
+// Requisição JSON com resultado uniforme {ok, status, data}.
+async function invRequest(url, method, body) {
+    const res = await fetch(url, {
+        method, headers: { 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
     });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+}
+
+function invHandleServerError(r) {
+    const err = r.data || {};
+    const field = r.status === 409 ? 'form' : invServerErrorField(err);
+    const msg = err.error || `Erro ao salvar (HTTP ${r.status})`;
+    if (err.code === 'color_incompatible') {
+        // O servidor recusou: a cor não existe no novo produto. Exige nova escolha.
+        invColor = null;
+        if (invColorMode() === 'catalog') invCatVariant.value = '';
+        if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
+        invAnnounce(msg);
+    }
+    invShowErrors([{ field, msg }]);
+}
+
+// Valida o formulário; retorna {errs, values}.
+function invCollect() {
+    const errs = [];
+    const editing = !!invEditingId;
+    const origHadType = !!(invOrig && invOrig.profile_name);
+
+    if (!invType) {
+        const mfrChanged = editing && !origHadType
+            && (invCatMfr.value !== (invOrig.manufacturer || '') || invCatMat.value !== (invOrig.material || ''));
+        if (!editing) errs.push({ field: 'type', msg: 'Escolha fabricante, material e produto.' });
+        else if (origHadType) errs.push({ field: 'type', msg: 'Escolha o produto do tipo.' });
+        else if (mfrChanged) errs.push({ field: 'type', msg: 'Escolha o produto para alterar o tipo.' });
+    }
+    if (!invColor || (!editing && invColor.kind === 'legacy')) {
+        errs.push({ field: 'color', msg: 'Escolha uma cor.' });
+    }
+    const w = invF.weight.value.trim();
+    const weight = Number(w);
+    if (w === '' || !Number.isInteger(weight) || weight < 0 || weight > 10000) {
+        errs.push({ field: 'weight', msg: 'Informe o peso em gramas (inteiro de 0 a 10000).' });
+    }
+    const minSpools = editing ? (invGroupIds ? invGroupIds.length : 1) : 1;
+    const spools = Number(invF.spools.value);
+    if (!Number.isInteger(spools) || spools < minSpools || spools > minSpools + 50) {
+        errs.push({
+            field: 'spools',
+            msg: editing
+                ? `Informe de ${minSpools} a ${minSpools + 50} rolos (reduzir é feito com "− Usei" ou "Excluir").`
+                : 'Informe de 1 a 51 rolos.',
+        });
+    }
+    return { errs, weight, spools, minSpools };
+}
+
+function invConfirmMixedCfs(status, material) {
+    if (status !== 'cfs') return true;
+    const distinct = [...new Set(materialsInCfs().filter(m => m !== material))];
+    if (!distinct.length) return true;
+    return confirm(
+        `⚠️ ATENÇÃO: o CFS já tem ${distinct.join(', ')} e você está colocando ${material}.\n\n`
+        + `Materiais diferentes no mesmo CFS podem causar problemas de impressão `
+        + `(temperaturas e velocidades incompatíveis). Deseja continuar mesmo assim?`
+    );
+}
+
+// Campos de cor a enviar (criação: sempre; edição: só se mudou ou se o tipo mudou).
+function invColorFields(orig) {
+    const c = invColor;
+    if (!c || c.kind === 'legacy') return {};
+    if (c.kind === 'palette') {
+        if (orig && orig.color_id === c.color_id) return {};
+        const f = { color_id: c.color_id, color_name: c.color_name };
+        if (orig && orig.variant_id != null) { f.finish = null; f.sku = null; }
+        return f;
+    }
+    if (orig && !orig.color_id && orig.variant_id === c.variant_id
+        && (orig.color_name || '').toLowerCase() === c.color_name.toLowerCase()) return {};
+    return {
+        color_name: c.color_name, variant_id: c.variant_id, color_id: null,
+        finish: c.finish, sku: c.sku,
+    };
 }
 
 async function invSave() {
-    // Form somente-catálogo: sem uma variante escolhida não há o que salvar.
-    if (!invSelected) {
-        alert('Escolha um filamento do catálogo (fabricante → material → cor).');
+    const { errs, weight, spools, minSpools } = invCollect();
+    if (errs.length) { invShowErrors(errs); return; }
+    invClearErrors();
+
+    const editing = !!invEditingId;
+    const material = invType ? invType.material : invOrig.material;
+    const status = invF.status.value;
+    const notes = invF.notes.value.trim() || null;
+
+    if ((!editing || status !== invOrig.status) && !invConfirmMixedCfs(status, material)) return;
+
+    if (!editing) {
+        const payload = {
+            profile_name: invType.profile_name,
+            material: invType.material, manufacturer: invType.manufacturer,
+            weight_g: weight, spools: 1, status, notes,
+            ...invColorFields(null),
+        };
+        const r = await invRequest('/api/inventory', 'POST', payload);
+        if (!r.ok) { invHandleServerError(r); return; }
+        if (spools > 1) {
+            const r2 = await invRequest(`/api/inventory/${r.data.id}/add-spool`, 'POST', { count: spools - 1 });
+            if (!r2.ok) {
+                await loadInventory();
+                invHandleServerError(r2);
+                invAnnounce('O primeiro rolo foi salvo, mas os rolos extras falharam.');
+                return;
+            }
+        }
+        const prev = invCloseForm();
+        await loadInventory();
+        invRestoreFocus(prev);
         return;
     }
-    const payload = {
-        material:     invSelected.material,
-        manufacturer: invSelected.manufacturer,
-        color_name:   invSelected.color_name,
-        hex_color:    invSelected.hex_color,
-        // color_id: null limpa a referência da paleta ao voltar para o catálogo.
-        // Com color_id, o servidor sobrescreve nome/hex pelos valores canônicos.
-        color_id:     invSelected.color_id ?? null,
-        finish:       invSelected.finish ?? null,
-        weight_g:     invSelected.weight_g ?? 1000,
-        variant_id:   invSelected.variant_id ?? null,
-        sku:          invSelected.sku ?? null,
-        spools:       parseInt(invF.spools.value) || 1,
-        status:       invF.status.value,
-        notes:        invF.notes.value.trim() || null,
-    };
 
-    // Alerta de material misto ao cadastrar/editar direto no CFS (não bloqueia).
-    if (payload.status === 'cfs') {
-        const others = materialsInCfs().filter(m => m !== payload.material);
-        // ao editar, ignora o próprio item se ele já estava no CFS
-        const distinct = [...new Set(others)];
-        if (distinct.length) {
-            const proceed = confirm(
-                `⚠️ ATENÇÃO: o CFS já tem ${distinct.join(', ')} e você está colocando ${payload.material}.\n\n`
-                + `Materiais diferentes no mesmo CFS podem causar problemas de impressão `
-                + `(temperaturas e velocidades incompatíveis). Deseja continuar mesmo assim?`
-            );
-            if (!proceed) return;
+    // ── Edição: só os campos alterados (nunca regrava peso/acabamento por padrão) ──
+    const orig = invOrig;
+    const shared = {};   // tipo, cor, peso (podem ir em lote)
+    if (invType && invType.profile_name !== orig.profile_name) shared.profile_name = invType.profile_name;
+    Object.assign(shared, invColorFields(orig));
+    if (weight !== orig.weight_g) shared.weight_g = weight;
+
+    const own = {};      // sempre só deste rolo
+    if (status !== orig.status) own.status = status;
+    if (notes !== (orig.notes || null)) own.notes = notes;
+
+    const useBulk = !!(invGroupIds && invBulk.checked);
+    const steps = [];
+    if (useBulk && Object.keys(shared).length) {
+        steps.push(() => invRequest('/api/inventory/bulk', 'PATCH', { ids: invGroupIds, ...shared }));
+    }
+    const single = { ...(useBulk ? {} : shared), ...own };
+    if (Object.keys(single).length) {
+        steps.push(() => invRequest(`/api/inventory/${invEditingId}`, 'PATCH', single));
+    }
+    const extra = spools - minSpools;
+    if (extra > 0) {
+        steps.push(() => invRequest(`/api/inventory/${invEditingId}/add-spool`, 'POST', { count: extra }));
+    }
+
+    for (const step of steps) {
+        const r = await step();
+        if (!r.ok) {
+            await loadInventory();
+            invHandleServerError(r);
+            return;
         }
     }
-
-    const url = invEditingId ? `/api/inventory/${invEditingId}` : '/api/inventory';
-    const method = invEditingId ? 'PATCH' : 'POST';
-    const res = await fetch(url, {
-        method, headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert('Erro ao salvar: ' + (err.error || res.status));
-        return;
-    }
-    invCloseForm();
-    loadInventory();
+    const prev = invCloseForm();
+    await loadInventory();
+    invRestoreFocus(prev);
 }
 
 invAddBtn?.addEventListener('click', () => {
-    if (invFormPanel.style.display === 'block' && !invEditingId) { invCloseForm(); return; }
+    if (invFormPanel.style.display === 'block' && !invEditingId) { invRestoreFocus(invCloseForm()); return; }
     invEditingId = null;
     invClearForm();
     invOpenForm(false);
 });
-invCancelBtn?.addEventListener('click', invCloseForm);
+invCancelBtn?.addEventListener('click', () => invRestoreFocus(invCloseForm()));
 invSaveBtn?.addEventListener('click', invSave);
 invShowUsed?.addEventListener('change', loadInventory);
 
-// ─── Catalog pre-fill (window.treeData) ──────────────────────────────────────
-function populateCatalogManufacturers() {
-    if (!invCatMfr) return;
-    const mfrs = Object.keys(treeData || {}).sort((a, b) => a.localeCompare(b));
-    invCatMfr.innerHTML = '<option value="">Fabricante...</option>' +
-        mfrs.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+// ─── Filtros (client-side) por Material / Tipo / Cor ────────────────────────
+function invAllItems(data) {
+    if (!data) return [];
+    const out = [
+        ...(data.printer?.cfs?.items || []), ...(data.printer?.spool?.items || []),
+        ...(data.drybox?.items || []), ...(data.open?.items || []), ...(data.empty?.items || []),
+    ];
+    for (const m of (data.sealed?.materials || [])) out.push(...(m.items || []));
+    return out;
 }
 
-invCatMfr?.addEventListener('change', () => {
-    const mfr = invCatMfr.value;
-    invCatMat.innerHTML = '<option value="">Material...</option>';
-    invCatVariant.innerHTML = '<option value="">Cor...</option>';
-    invCatVariant.disabled = true;
-    invSelected = null;
-    invHidePalette();
-    if (!mfr) { invCatMat.disabled = true; return; }
-    const mats = Object.keys(treeData[mfr]?.materials || {}).sort((a, b) => a.localeCompare(b));
-    invCatMat.innerHTML += mats.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-    invCatMat.disabled = false;
-});
+const INV_NO_TYPE = '__none__';
 
-invCatMat?.addEventListener('change', () => {
-    const mfr = invCatMfr.value, mat = invCatMat.value;
-    invCatVariant.innerHTML = '<option value="">Cor...</option>';
-    // Trocar (ou limpar) o material invalida a cor/variante e a paleta.
-    invSelected = null;
-    invHidePalette();
-    if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
-    if (!mfr || !mat) { invCatVariant.disabled = true; return; }
-    const profiles = treeData[mfr]?.materials?.[mat]?.profiles || [];
-    // Flatten all variants of all profiles/lines for this material, ordenando
-    // as cores em ordem alfabética (case-insensitive) por color_name.
-    const entries = [];
-    profiles.forEach((p, pi) => {
-        (p.variants || []).forEach((varnt, vi) => {
-            const colorName = varnt.color_name || 'Cor';
-            const label = `${colorName}${varnt.finish ? ' · ' + varnt.finish : ''} (${p.commercial_name})`;
-            entries.push({ key: colorName, html: `<option value="${pi}:${vi}">${escapeHtml(label)}</option>` });
-        });
+function invPopulateFilters(data) {
+    if (!invFilterMat) return;
+    const items = invAllItems(data);
+    const mats = [...new Set(items.map(i => i.material).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const types = new Map();
+    let anyNoType = false;
+    items.forEach(i => {
+        if (!i.profile_name) { anyNoType = true; return; }
+        const p = invProfileIndex()[i.profile_name];
+        types.set(i.profile_name, `${i.manufacturer} · ${p ? p.commercial_name : i.profile_name}`);
     });
-    entries.sort((a, b) => a.key.localeCompare(b.key));
-    let opts = entries.map(e => e.html).join('');
-    if (!opts) opts = '<option value="" disabled>Sem variantes no catálogo</option>';
-    // Sempre oferece a paleta de 24 cores básicas (produtos sem variantes incluídos).
-    opts += `<option value="${PALETTE_OPTION}">🎨 Outra cor (paleta)…</option>`;
-    invCatVariant.innerHTML += opts;
-    invCatVariant.disabled = false;
-});
-
-invCatVariant?.addEventListener('change', () => {
-    const mfr = invCatMfr.value, mat = invCatMat.value, sel = invCatVariant.value;
-    if (sel === PALETTE_OPTION) {
-        // Modo paleta: esconde o preview do catálogo e mostra a grade.
-        if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
-        invSelected = null;
-        if (!invPaletteId) invShowPalette(null);
-        return;
-    }
-    invHidePalette();
-    if (!sel) { invSelected = null; return; }
-    const [pi, vi] = sel.split(':').map(Number);
-    const profile = treeData[mfr]?.materials?.[mat]?.profiles?.[pi];
-    const varnt = profile?.variants?.[vi];
-    if (!varnt) { invSelected = null; return; }
-
-    // Snapshot da variante escolhida — é o que o submit persiste. Guardamos os
-    // campos denormalizados (para exibir no card sem depender do catálogo) mais
-    // variant_id/sku (para reconciliar com o catálogo depois).
-    invSelected = {
-        material:     mat,
-        manufacturer: mfr,
-        color_name:   varnt.color_name || '',
-        hex_color:    varnt.hex_color || null,
-        finish:       varnt.finish || null,
-        weight_g:     varnt.weight_g || 1000,
-        variant_id:   varnt.id ?? null,
-        sku:          varnt.sku || null,
+    const colors = [...new Set(items.map(i => i.color_name).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const fill = (sel, first, opts) => {
+        const cur = sel.value;
+        sel.innerHTML = `<option value="">${first}</option>` +
+            opts.map(o => `<option value="${escapeHtml(o.v)}">${escapeHtml(o.l)}</option>`).join('');
+        sel.value = opts.some(o => o.v === cur) ? cur : '';
     };
+    fill(invFilterMat, 'Todos', mats.map(m => ({ v: m, l: m })));
+    const typeOpts = [...types.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([v, l]) => ({ v, l }));
+    if (anyNoType) typeOpts.push({ v: INV_NO_TYPE, l: 'Tipo não definido' });
+    fill(invFilterType, 'Todos', typeOpts);
+    fill(invFilterColor, 'Todas', colors.map(c => ({ v: c, l: c })));
+}
 
-    // Preview visual da cor escolhida no catálogo
-    if (invCatPreview) {
-        invCatPreview.style.display = 'flex';
-        invCatPreview.innerHTML = `
-            <span class="sw" style="background:${varnt.hex_color || '#333'}"></span>
-            <span class="txt">
-                <strong>${escapeHtml(varnt.color_name || 'Cor')}</strong>
-                <span>${escapeHtml(mfr)} ${escapeHtml(mat)}${varnt.finish ? ' · ' + escapeHtml(varnt.finish) : ''}${varnt.sku ? ' · ' + escapeHtml(varnt.sku) : ''}</span>
-            </span>`;
-    }
-});
+function invItemMatches(i) {
+    const m = invFilterMat?.value, t = invFilterType?.value, c = invFilterColor?.value;
+    if (m && i.material !== m) return false;
+    if (t === INV_NO_TYPE ? !!i.profile_name : (t && i.profile_name !== t)) return false;
+    if (c && i.color_name !== c) return false;
+    return true;
+}
+
+[invFilterMat, invFilterType, invFilterColor].forEach(el =>
+    el?.addEventListener('change', () => { if (invData) renderInventory(invData); }));
 
 
 // ─── Identidade do usuário + permissão (auth feature flag) ────────────────────

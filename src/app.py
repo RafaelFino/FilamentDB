@@ -29,6 +29,7 @@ app = Flask(
 # Importante para deploy por `git pull`: o inventory.db não vem no repo,
 # então é criado/validado aqui no startup.
 inventory.init_db()
+inventory.backfill_profiles()  # tipo (profile_name) só por inferência segura
 
 register_routes(app)
 

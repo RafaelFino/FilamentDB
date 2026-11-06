@@ -725,6 +725,23 @@
         .inv-filters { display:flex; align-items:center; gap:12px; }
         .inv-filter { display:flex; align-items:center; gap:6px; font-size:.8rem; color:var(--muted); cursor:pointer; }
 
+        /* ── Estoque: Tipo × Cor separados ─────────────────────────────────── */
+        .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+        .inv-fieldset { border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin:0; display:flex; flex-direction:column; gap:10px; min-width:0; }
+        .inv-fieldset > legend { font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--blue); padding:0 6px; }
+        .inv-field > label > span { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+        .inv-color-mode { display:flex; gap:16px; flex-wrap:wrap; }
+        .inv-error { color:var(--red); font-size:.76rem; min-height:0; }
+        .inv-error:empty { display:none; }
+        [aria-invalid="true"] { border-color: var(--red) !important; }
+        .inv-filters { flex-wrap:wrap; }
+        .inv-filters .sim-select { max-width:200px; }
+        .inv-card-type { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+        .inv-card-product { font-weight:700; font-size:.86rem; }
+        .inv-card-colorline { font-size:.82rem; color:var(--text); }
+        .inv-card-colorline .lbl, .inv-card-type .lbl { color:var(--muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; margin-right:4px; }
+        .inv-badge-warn { font-size:.68rem; font-weight:800; color:#05070a; background:var(--orange); border-radius:5px; padding:1px 7px; }
+
         .inv-form-panel {
             background: var(--panel);
             border: 1px solid var(--border);
@@ -1272,7 +1289,13 @@
             <div class="toolbar">
                 <span class="toolbar-label" id="inv-current-label">Meu estoque</span>
                 <div class="actions">
-                    <div class="inv-filters">
+                    <div class="inv-filters" role="group" aria-label="Filtros do estoque">
+                        <label class="inv-filter" for="inv-filter-material">Material
+                            <select id="inv-filter-material" class="sim-select"><option value="">Todos</option></select></label>
+                        <label class="inv-filter" for="inv-filter-profile">Tipo
+                            <select id="inv-filter-profile" class="sim-select"><option value="">Todos</option></select></label>
+                        <label class="inv-filter" for="inv-filter-color">Cor
+                            <select id="inv-filter-color" class="sim-select"><option value="">Todas</option></select></label>
                         <label class="inv-filter">
                             <input type="checkbox" id="inv-show-used" />
                             Exibir rolos usados
@@ -1286,29 +1309,72 @@
             <div id="inv-form-panel" class="inv-form-panel" style="display:none;">
                 <div class="info-block-header" id="inv-form-title">Adicionar filamento ao estoque</div>
                 <div class="inv-form-body">
-                    <!-- Somente catálogo: o estoque só aceita filamentos que existem
-                         no nosso catálogo. Escolha fabricante → material → cor. -->
-                    <div class="inv-catalog-box">
-                        <div class="inv-catalog-box-title">🗂️ Escolher do catálogo</div>
+                    <!-- Tipo e Cor são propriedades separadas: Tipo = produto do catálogo
+                         (fabricante → material → produto); Cor = variante do produto ou paleta. -->
+                    <div id="inv-live" class="sr-only" aria-live="polite" role="status"></div>
+                    <div id="inv-form-error" class="inv-error" role="alert"></div>
+
+                    <fieldset class="inv-fieldset" id="inv-fs-type">
+                        <legend>Tipo</legend>
                         <div class="inv-catalog-selects">
-                            <select id="inv-cat-manufacturer" class="sim-select"><option value="">Fabricante...</option></select>
-                            <select id="inv-cat-material" class="sim-select" disabled><option value="">Material...</option></select>
-                            <select id="inv-cat-variant" class="sim-select" disabled><option value="">Cor...</option></select>
+                            <div class="inv-field">
+                                <label for="inv-cat-manufacturer"><span>Fabricante</span></label>
+                                <select id="inv-cat-manufacturer" class="sim-select" aria-describedby="inv-err-type"><option value="">Fabricante...</option></select>
+                            </div>
+                            <div class="inv-field">
+                                <label for="inv-cat-material"><span>Material</span></label>
+                                <select id="inv-cat-material" class="sim-select" aria-describedby="inv-err-type" disabled><option value="">Material...</option></select>
+                            </div>
+                            <div class="inv-field">
+                                <label for="inv-cat-profile"><span>Produto</span></label>
+                                <select id="inv-cat-profile" class="sim-select" aria-describedby="inv-err-type" disabled><option value="">Produto...</option></select>
+                            </div>
+                        </div>
+                        <div id="inv-err-type" class="inv-error" role="alert"></div>
+                        <p class="inv-form-hint">O tipo é o produto do catálogo (ex.: Sunlu PLA High Speed). Falta algum produto? Adicione ao catálogo (filament-data) e rode o build.</p>
+                    </fieldset>
+
+                    <fieldset class="inv-fieldset" id="inv-fs-color">
+                        <legend>Cor</legend>
+                        <div class="inv-color-mode" role="radiogroup" aria-label="Origem da cor">
+                            <label class="inv-filter"><input type="radio" name="inv-color-mode" id="inv-color-mode-catalog" value="catalog" checked /> Cor do produto</label>
+                            <label class="inv-filter"><input type="radio" name="inv-color-mode" id="inv-color-mode-palette" value="palette" /> 🎨 Outra cor (paleta de 24)</label>
+                        </div>
+                        <div class="inv-field" id="inv-color-catalog-box">
+                            <label for="inv-cat-variant"><span>Cor</span></label>
+                            <select id="inv-cat-variant" class="sim-select" aria-describedby="inv-err-color" disabled><option value="">Cor...</option></select>
                         </div>
                         <div class="inv-catalog-preview" id="inv-cat-preview" style="display:none;"></div>
                         <div id="inv-palette-box" class="color-palette-box" style="display:none;">
                             <div class="color-palette" id="inv-palette" role="radiogroup" aria-label="Paleta de cores"></div>
                             <div class="color-palette-caption" id="inv-palette-caption" aria-live="polite">Nenhuma cor selecionada</div>
                         </div>
-                        <p class="inv-form-hint">Selecione fabricante → material → cor. O produto (fabricante + material) precisa existir no catálogo. Se a cor não estiver listada, escolha "🎨 Outra cor (paleta)…" e clique numa das 24 cores básicas. Falta algum produto? Adicione ao catálogo (filament-data) e rode o build.</p>
-                    </div>
+                        <div id="inv-err-color" class="inv-error" role="alert"></div>
+                    </fieldset>
 
-                    <div class="inv-form-section-lbl">Estoque</div>
-                    <div class="inv-form-grid">
-                        <label class="inv-field">
-                            <span>Rolos</span>
-                            <input type="number" id="inv-spools" class="inv-input" value="1" min="1" step="1" />
+                    <fieldset class="inv-fieldset" id="inv-fs-qty">
+                        <legend>Quantidade</legend>
+                        <div class="inv-form-grid">
+                            <div class="inv-field">
+                                <label for="inv-weight"><span>Peso do rolo (g)</span></label>
+                                <input type="number" id="inv-weight" class="inv-input" value="1000" min="0" max="10000" step="1" aria-describedby="inv-err-weight" />
+                                <div id="inv-err-weight" class="inv-error" role="alert"></div>
+                            </div>
+                            <div class="inv-field">
+                                <label for="inv-spools"><span>Rolos neste grupo</span></label>
+                                <input type="number" id="inv-spools" class="inv-input" value="1" min="1" step="1" aria-describedby="inv-err-spools inv-spools-hint" />
+                                <div id="inv-spools-hint" class="inv-form-hint"></div>
+                                <div id="inv-err-spools" class="inv-error" role="alert"></div>
+                            </div>
+                        </div>
+                        <label class="inv-filter" id="inv-bulk-box" style="display:none;">
+                            <input type="checkbox" id="inv-bulk" />
+                            <span id="inv-bulk-label">Aplicar tipo, cor e peso a todos os rolos do grupo</span>
                         </label>
+                    </fieldset>
+
+                    <div class="inv-form-section-lbl">Local e notas</div>
+                    <div class="inv-form-grid">
                         <label class="inv-field">
                             <span>Local / Status</span>
                             <select id="inv-status" class="inv-input">
@@ -1343,6 +1409,6 @@
 
 <script>window.treeData = {{ tree | tojson }};</script>
 <script>window.processTreeData = {{ process_tree | tojson }};</script>
-<script src="{{ url_for('static', filename='main.js') }}?v=35"></script>
+<script src="{{ url_for('static', filename='main.js') }}?v=36"></script>
 </body>
 </html>

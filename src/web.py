@@ -273,8 +273,14 @@ def register_routes(app):
 
     @app.get("/api/inventory/items")
     def list_inventory_items():
-        """Lista plana de todos os itens de estoque."""
-        return jsonify(inventory.list_items())
+        """Lista plana dos itens de estoque.
+
+        Filtros opcionais (AND): material, manufacturer, profile_name,
+        color_id, color_name.
+        """
+        filters = {k: request.args.get(k) for k in
+                   ("material", "manufacturer", "profile_name", "color_id", "color_name")}
+        return jsonify(inventory.list_items(filters))
 
     @app.get("/api/inventory/<int:item_id>")
     def get_inventory_item(item_id):
@@ -292,8 +298,30 @@ def register_routes(app):
         except inventory.LocationFullError as exc:
             return jsonify({"error": str(exc), "code": "location_full", "status": exc.status}), 409
         except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
+            return jsonify({"error": str(exc),
+                            "code": getattr(exc, "code", "validation_error")}), 400
         return jsonify(item), 201
+
+    # Registrada ANTES de /<int:item_id> (clareza; o conversor int já separa).
+    @app.patch("/api/inventory/bulk")
+    @auth.require_writer
+    def bulk_update_inventory():
+        """Atualiza vários rolos de uma vez, de forma atômica.
+
+        Corpo: {"ids": [1, 2, ...], <campos de tipo/cor/peso/notas/status>}.
+        """
+        data = request.get_json(silent=True) or {}
+        fields = {k: v for k, v in data.items() if k != "ids"}
+        try:
+            items = inventory.bulk_update(data.get("ids"), fields)
+        except inventory.ItemNotFoundError as exc:
+            return jsonify({"error": str(exc), "code": "not_found", "id": exc.item_id}), 404
+        except inventory.LocationFullError as exc:
+            return jsonify({"error": str(exc), "code": "location_full", "status": exc.status}), 409
+        except ValueError as exc:
+            return jsonify({"error": str(exc),
+                            "code": getattr(exc, "code", "validation_error")}), 400
+        return jsonify({"updated": len(items), "items": items})
 
     @app.patch("/api/inventory/<int:item_id>")
     @auth.require_writer
@@ -304,7 +332,8 @@ def register_routes(app):
         except inventory.LocationFullError as exc:
             return jsonify({"error": str(exc), "code": "location_full", "status": exc.status}), 409
         except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
+            return jsonify({"error": str(exc),
+                            "code": getattr(exc, "code", "validation_error")}), 400
         if item is None:
             return jsonify({"error": "item not found"}), 404
         return jsonify(item)
@@ -323,8 +352,12 @@ def register_routes(app):
     @app.post("/api/inventory/<int:item_id>/add-spool")
     @auth.require_writer
     def add_spool_inventory_item(item_id):
-        """Comprei mais um rolo: cria uma nova linha física (1 rolo) em estoque."""
-        item = inventory.add_spool(item_id)
+        """Comprei mais rolos: cria `count` (1..50, default 1) linhas físicas em estoque."""
+        data = request.get_json(silent=True) or {}
+        try:
+            item = inventory.add_spool(item_id, data.get("count", 1))
+        except ValueError as exc:
+            return jsonify({"error": str(exc), "code": "validation_error"}), 400
         if item is None:
             return jsonify({"error": "item not found"}), 404
         return jsonify(item), 201
