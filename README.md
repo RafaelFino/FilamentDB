@@ -203,6 +203,7 @@ erDiagram
         text manufacturer "NOT NULL"
         text color_name "NOT NULL"
         text hex_color
+        text color_id "opcional — id da paleta (src/color_palette.json)"
         text finish
         int weight_g "default 1000"
         int spools "NOT NULL default 1 — 1 rolo = 1 slot físico"
@@ -219,6 +220,7 @@ Pontos de design:
 
 - **`id` vs `uid`** — `id` é autoincrement e local ao arquivo `.db`. `uid` (uuid4) é o identificador **estável** do rolo físico: sobrevive a export/import e à recriação do banco. É a chave natural do upsert na importação, com índice `UNIQUE`. Itens de bancos antigos recebem `uid` via backfill idempotente no `init_db()`.
 - **`variant_id`** é referência lógica opcional ao catálogo (`filament_variants`). Não há FK forte porque os bancos são fisicamente separados — um item de estoque pode ser totalmente manual.
+- **`color_id`** é opcional e referencia a paleta de 24 cores básicas (`src/color_palette.json`, servida em `GET /api/color-palette`). Quando enviado, o backend valida contra a paleta (400 se inválido) e preenche `color_name`/`hex_color` com os valores canônicos. No form de estoque, a opção "🎨 Outra cor (paleta)…" no select de cor abre a grade. Entra no export/import sem mudar `schema_version` (campo opcional; envelopes antigos importam com `NULL`; `color_id` desconhecido no import vira `NULL` e preserva nome/hex).
 - Índices: `idx_inv_material`, `idx_inv_status` e o `UNIQUE idx_inv_uid`.
 
 **Export/import versionado** (`INVENTORY_SCHEMA_VERSION = 1`): o estoque é exportável como envelope JSON desacoplado do schema físico:
@@ -331,6 +333,7 @@ Todas as rotas de leitura são abertas. As rotas marcadas com 🔒 exigem `write
 **Estoque**
 | Método | Rota | Descrição |
 |--------|------|-----------|
+| GET | `/api/color-palette` | Paleta de 24 cores básicas (id, nome pt-BR, hex) |
 | GET | `/api/inventory` | Estoque por localização física |
 | GET | `/api/inventory/by-material` | Estoque por material (paletas) |
 | GET | `/api/inventory/items`, `/api/inventory/<id>` | Lista plana / item |

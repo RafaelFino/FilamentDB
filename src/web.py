@@ -6,7 +6,7 @@ import time
 
 from flask import jsonify, request, render_template, send_file
 
-from src import auth, buildinfo, database, inventory, prices, services
+from src import auth, buildinfo, database, inventory, palette, prices, services
 
 
 def _probe(connect_fn, path, probe_sql):
@@ -256,6 +256,11 @@ def register_routes(app):
     # Único conjunto de endpoints de ESCRITA do projeto. Persistido em
     # inventory.db (separado do catálogo), que sobrevive aos rebuilds.
 
+    @app.get("/api/color-palette")
+    def get_color_palette():
+        """Paleta de 24 cores básicas (fonte única: src/color_palette.json)."""
+        return jsonify(palette.load())
+
     @app.get("/api/inventory")
     def list_inventory():
         """Estoque organizado por localização física (impressora → drybox → aberto → estoque)."""
@@ -298,6 +303,8 @@ def register_routes(app):
             item = inventory.update_item(item_id, data)
         except inventory.LocationFullError as exc:
             return jsonify({"error": str(exc), "code": "location_full", "status": exc.status}), 409
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
         if item is None:
             return jsonify({"error": "item not found"}), 404
         return jsonify(item)

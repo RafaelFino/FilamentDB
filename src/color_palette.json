@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "colors": [
+    {"id": "preto", "name": "Preto", "hex": "#1A1A1A"},
+    {"id": "branco", "name": "Branco", "hex": "#F5F5F5"},
+    {"id": "cinza-claro", "name": "Cinza claro", "hex": "#B0B3B8"},
+    {"id": "cinza", "name": "Cinza", "hex": "#808080"},
+    {"id": "cinza-escuro", "name": "Cinza escuro", "hex": "#4A4D52"},
+    {"id": "prata", "name": "Prata", "hex": "#C0C0C0"},
+    {"id": "vermelho", "name": "Vermelho", "hex": "#D32F2F"},
+    {"id": "vinho", "name": "Vinho", "hex": "#7B1E2E"},
+    {"id": "laranja", "name": "Laranja", "hex": "#F57C00"},
+    {"id": "amarelo", "name": "Amarelo", "hex": "#F9D71C"},
+    {"id": "ouro", "name": "Ouro", "hex": "#D4AF37"},
+    {"id": "bege", "name": "Bege", "hex": "#D9C3A0"},
+    {"id": "marrom", "name": "Marrom", "hex": "#6D4C41"},
+    {"id": "verde-claro", "name": "Verde claro", "hex": "#7CCB5B"},
+    {"id": "verde", "name": "Verde", "hex": "#2E8B57"},
+    {"id": "verde-escuro", "name": "Verde escuro", "hex": "#1B5E3A"},
+    {"id": "azul-claro", "name": "Azul claro", "hex": "#5DADE2"},
+    {"id": "azul", "name": "Azul", "hex": "#1E5BC6"},
+    {"id": "azul-marinho", "name": "Azul marinho", "hex": "#14284B"},
+    {"id": "turquesa", "name": "Turquesa", "hex": "#1ABC9C"},
+    {"id": "roxo", "name": "Roxo", "hex": "#7B3FA0"},
+    {"id": "rosa", "name": "Rosa", "hex": "#F06292"},
+    {"id": "magenta", "name": "Magenta", "hex": "#C2185B"},
+    {"id": "natural", "name": "Natural / Transparente", "hex": "#E8E4D8"}
+  ]
+}

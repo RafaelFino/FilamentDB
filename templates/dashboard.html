@@ -750,6 +750,27 @@
         .inv-catalog-preview .txt { font-size: .8rem; }
         .inv-catalog-preview .txt strong { color: var(--text); }
         .inv-catalog-preview .txt span { color: var(--muted); font-size: .74rem; }
+        /* Paleta de cores básicas (seleção indicada por anel + ícone ✓, não só cor) */
+        .color-palette-box { display:flex; flex-direction:column; gap:8px; --sel-ring:#ffffff; }
+        .color-palette { display:grid; grid-template-columns:repeat(auto-fill, minmax(44px, 1fr)); gap:10px; padding:6px; }
+        .color-palette-swatch {
+            width:100%; min-width:36px; min-height:36px; aspect-ratio:1/1;
+            border-radius:8px; border:1px solid rgba(255,255,255,.35);
+            cursor:pointer; padding:0; font-size:1.2rem; font-weight:700; line-height:1;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .color-palette-swatch[aria-checked="true"] {
+            outline:3px solid var(--sel-ring); outline-offset:3px;
+        }
+        .color-palette-swatch:focus-visible {
+            outline:2px dashed var(--blue); outline-offset:5px;
+        }
+        .color-palette-swatch[aria-checked="true"]:focus-visible {
+            outline:3px solid var(--sel-ring); outline-offset:3px;
+            box-shadow:0 0 0 7px var(--blue);
+        }
+        .color-palette-caption { font-size:.8rem; color:var(--text); }
+
         .inv-form-section-lbl {
             font-size: .7rem; font-weight: 700; text-transform: uppercase;
             letter-spacing: .07em; color: var(--muted);
@@ -1275,7 +1296,11 @@
                             <select id="inv-cat-variant" class="sim-select" disabled><option value="">Cor...</option></select>
                         </div>
                         <div class="inv-catalog-preview" id="inv-cat-preview" style="display:none;"></div>
-                        <p class="inv-form-hint">Selecione fabricante → material → cor. Só é possível cadastrar filamentos do catálogo. Falta algum produto? Adicione ao catálogo (filament-data) e rode o build.</p>
+                        <div id="inv-palette-box" class="color-palette-box" style="display:none;">
+                            <div class="color-palette" id="inv-palette" role="radiogroup" aria-label="Paleta de cores"></div>
+                            <div class="color-palette-caption" id="inv-palette-caption" aria-live="polite">Nenhuma cor selecionada</div>
+                        </div>
+                        <p class="inv-form-hint">Selecione fabricante → material → cor. O produto (fabricante + material) precisa existir no catálogo. Se a cor não estiver listada, escolha "🎨 Outra cor (paleta)…" e clique numa das 24 cores básicas. Falta algum produto? Adicione ao catálogo (filament-data) e rode o build.</p>
                     </div>
 
                     <div class="inv-form-section-lbl">Estoque</div>

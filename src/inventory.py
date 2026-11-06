@@ -17,6 +17,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from src import palette
 from src import config  # carrega config.env no os.environ antes de resolver paths
 
 config.load()
@@ -121,6 +122,9 @@ _SCHEMA_COLUMNS = {
     "manufacturer": "TEXT NOT NULL",
     "color_name":   "TEXT NOT NULL",
     "hex_color":    "TEXT",
+    # color_id: id estável da paleta (src/color_palette.json); NULL = cor vinda
+    # de variante do catálogo/texto livre (legado).
+    "color_id":     "TEXT",
     "finish":       "TEXT",
     "weight_g":     "INTEGER DEFAULT 1000",
     "spools":       "INTEGER NOT NULL DEFAULT 1",
@@ -137,6 +141,7 @@ _SCHEMA_COLUMNS = {
 _ADDABLE_COLUMNS = {
     "uid": "TEXT",
     "hex_color": "TEXT",
+    "color_id": "TEXT",
     "finish": "TEXT",
     "weight_g": "INTEGER DEFAULT 1000",
     "spools": "INTEGER NOT NULL DEFAULT 1",
@@ -313,6 +318,27 @@ def get_item(item_id):
     return _row_to_dict(row) if row else None
 
 
+def _apply_palette(data):
+    """Se `color_id` veio no payload, valida contra a paleta e sobrescreve
+    color_name/hex_color com os valores canônicos (o servidor é autoritativo).
+
+    `color_id` vazio/None limpa a referência (cor volta a ser texto/variante).
+    Id fora da paleta -> ValueError (HTTP 400). Modifica `data` in place.
+    """
+    if "color_id" not in data:
+        return
+    cid = data["color_id"]
+    if cid is None or cid == "":
+        data["color_id"] = None
+        return
+    color = palette.get_color(cid)
+    if color is None:
+        raise ValueError(f"color_id inválido: {cid!r} (não pertence à paleta)")
+    data["color_id"] = color["id"]
+    data["color_name"] = color["name"]
+    data["hex_color"] = color["hex"]
+
+
 def add_item(data):
     """
     Cria um item de estoque.
@@ -321,6 +347,8 @@ def add_item(data):
       material (obrigatório), manufacturer (obrigatório), color_name (obrigatório),
       hex_color, finish, weight_g, spools, status, variant_id, sku, notes
     """
+    data = dict(data)
+    _apply_palette(data)
     material = (data.get("material") or "").strip()
     manufacturer = (data.get("manufacturer") or "").strip()
     color_name = (data.get("color_name") or "").strip()
@@ -355,14 +383,14 @@ def add_item(data):
         cur.execute(
             """
             INSERT INTO inventory_items(
-                uid, material, manufacturer, color_name, hex_color, finish,
-                weight_g, spools, status, variant_id, sku, notes,
+                uid, material, manufacturer, color_name, hex_color, color_id,
+                finish, weight_g, spools, status, variant_id, sku, notes,
                 created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 item_uid, material, manufacturer, color_name,
-                data.get("hex_color"), data.get("finish"),
+                data.get("hex_color"), data.get("color_id"), data.get("finish"),
                 weight_g, 1, status,
                 data.get("variant_id"), data.get("sku"),
                 data.get("notes"), now, now,
@@ -377,7 +405,7 @@ def add_item(data):
 
 # Campos que o usuário pode atualizar diretamente
 _UPDATABLE = {
-    "material", "manufacturer", "color_name", "hex_color", "finish",
+    "material", "manufacturer", "color_name", "hex_color", "color_id", "finish",
     "weight_g", "spools", "status", "variant_id", "sku", "notes",
 }
 
@@ -391,6 +419,7 @@ def update_item(item_id, data):
     fields = {k: v for k, v in data.items() if k in _UPDATABLE}
     if not fields:
         return existing
+    _apply_palette(fields)
 
     # Status é explícito, escolhido pelo usuário. Se vier inválido, normaliza.
     if "status" in fields:
@@ -454,6 +483,7 @@ def add_spool(item_id):
         "manufacturer": existing["manufacturer"],
         "color_name": existing["color_name"],
         "hex_color": existing.get("hex_color"),
+        "color_id": existing.get("color_id"),
         "finish": existing.get("finish"),
         "weight_g": existing.get("weight_g"),
         "variant_id": existing.get("variant_id"),
@@ -484,7 +514,8 @@ def delete_item(item_id):
 # propósito: é local ao arquivo .db e não deve atravessar import (a identidade
 # estável é o `uid`). created_at/updated_at são preservados para manter histórico.
 _EXPORT_FIELDS = (
-    "uid", "material", "manufacturer", "color_name", "hex_color", "finish",
+    "uid", "material", "manufacturer", "color_name", "hex_color", "color_id",
+    "finish",
     "weight_g", "spools", "status", "variant_id", "sku", "notes",
     "created_at", "updated_at",
 )
@@ -614,6 +645,12 @@ def import_data(payload, replace=False):
     }
 
 
+def _import_color_id(item):
+    """color_id do envelope; desconhecido vira None (restauração não aborta)."""
+    cid = item.get("color_id")
+    return cid if palette.is_valid_id(cid) else None
+
+
 def _insert_from_import(conn, item):
     """Insere um item vindo do import preservando uid e timestamps.
 
@@ -626,17 +663,17 @@ def _insert_from_import(conn, item):
     conn.execute(
         """
         INSERT INTO inventory_items(
-            uid, material, manufacturer, color_name, hex_color, finish,
+            uid, material, manufacturer, color_name, hex_color, color_id, finish,
             weight_g, spools, status, variant_id, sku, notes,
             created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             item["uid"],
             (item.get("material") or "").strip(),
             (item.get("manufacturer") or "").strip(),
             (item.get("color_name") or "").strip(),
-            item.get("hex_color"), item.get("finish"),
+            item.get("hex_color"), _import_color_id(item), item.get("finish"),
             int(item.get("weight_g", 1000) or 1000),
             int(item.get("spools", 1) or 0),
             _normalize_status(item.get("status")),
@@ -653,6 +690,7 @@ def _update_from_import(conn, item_id, item):
         """
         UPDATE inventory_items SET
             material = ?, manufacturer = ?, color_name = ?, hex_color = ?,
+            color_id = ?,
             finish = ?, weight_g = ?, spools = ?, status = ?, variant_id = ?,
             sku = ?, notes = ?, updated_at = ?
         WHERE id = ?
@@ -661,7 +699,7 @@ def _update_from_import(conn, item_id, item):
             (item.get("material") or "").strip(),
             (item.get("manufacturer") or "").strip(),
             (item.get("color_name") or "").strip(),
-            item.get("hex_color"), item.get("finish"),
+            item.get("hex_color"), _import_color_id(item), item.get("finish"),
             int(item.get("weight_g", 1000) or 1000),
             int(item.get("spools", 1) or 0),
             _normalize_status(item.get("status")),

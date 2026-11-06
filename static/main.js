@@ -2479,6 +2479,104 @@ async function invDelete(id) {
     loadInventory();
 }
 
+// ─── Paleta de cores básicas (componente reutilizável) ───────────────────────
+// Fonte única: GET /api/color-palette (src/color_palette.json). Nada de cores
+// duplicadas aqui; o backend valida o color_id contra a mesma lista.
+const PALETTE_OPTION = '__palette__';
+let colorPaletteData = null;      // cache {version, colors:[{id,name,hex}]}
+let invPaletteId = null;          // id da cor escolhida na paleta (modo paleta)
+
+async function loadColorPalette() {
+    if (colorPaletteData) return colorPaletteData;
+    const res = await fetch('/api/color-palette');
+    if (!res.ok) throw new Error('Falha ao carregar a paleta de cores');
+    colorPaletteData = await res.json();
+    return colorPaletteData;
+}
+
+// Cor do ícone ✓ sobre o fundo (luminância relativa WCAG): preto se > 0.179
+// (contraste ≥ 4.5:1 com preto), senão branco.
+function contrastTextColor(hex) {
+    const ch = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    const n = parseInt(hex.slice(1), 16);
+    const lum = 0.2126 * ch((n >> 16) & 255) + 0.7152 * ch((n >> 8) & 255) + 0.0722 * ch(n & 255);
+    return lum > 0.179 ? '#000000' : '#FFFFFF';
+}
+
+// Renderiza a grade (role=radiogroup) em `container`. `onSelect(color)` é
+// chamado ao escolher. Teclado: Tab entra no grupo (roving tabindex), setas
+// movem foco + seleção, Espaço/Enter selecionam.
+function renderColorPalette(container, colors, selectedId, onSelect) {
+    container.innerHTML = '';
+    const buttons = [];
+    const focusable = colors.some(c => c.id === selectedId) ? selectedId : colors[0]?.id;
+    colors.forEach(c => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'color-palette-swatch';
+        b.setAttribute('role', 'radio');
+        b.setAttribute('aria-label', c.name);
+        b.title = c.name;
+        b.dataset.colorId = c.id;
+        b.style.background = c.hex;
+        b.style.color = contrastTextColor(c.hex);
+        b.setAttribute('aria-checked', String(c.id === selectedId));
+        b.tabIndex = c.id === focusable ? 0 : -1;
+        b.textContent = c.id === selectedId ? '✓' : '';
+        buttons.push(b);
+        container.appendChild(b);
+    });
+    const select = (i, focus) => {
+        const idx = (i + buttons.length) % buttons.length;
+        buttons.forEach((b, j) => {
+            const on = j === idx;
+            b.setAttribute('aria-checked', String(on));
+            b.tabIndex = on ? 0 : -1;
+            b.textContent = on ? '✓' : '';
+        });
+        if (focus) buttons[idx].focus();
+        onSelect(colors[idx]);
+    };
+    buttons.forEach((b, i) => {
+        b.addEventListener('click', () => select(i, false));
+        b.addEventListener('keydown', e => {
+            const cols = Math.max(1, Math.floor(container.clientWidth / (b.offsetWidth + 10)) || 1);
+            const step = { ArrowRight: 1, ArrowDown: cols, ArrowLeft: -1, ArrowUp: -cols }[e.key];
+            if (step !== undefined) { e.preventDefault(); select(i + step, true); }
+            else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(i, false); }
+        });
+    });
+}
+
+function invPaletteBox() { return document.getElementById('inv-palette-box'); }
+
+function invHidePalette() {
+    invPaletteId = null;
+    const box = invPaletteBox();
+    if (box) box.style.display = 'none';
+}
+
+// Mostra a paleta e define invSelected a partir da cor escolhida.
+async function invShowPalette(selectedId = null) {
+    const box = invPaletteBox();
+    if (!box) return;
+    let data;
+    try { data = await loadColorPalette(); }
+    catch (e) { alert(e.message); return; }
+    const caption = document.getElementById('inv-palette-caption');
+    const apply = color => {
+        invPaletteId = color ? color.id : null;
+        if (caption) caption.textContent = color ? `Cor selecionada: ${color.name}` : 'Nenhuma cor selecionada';
+        invSelected = color ? {
+            material: invCatMat.value, manufacturer: invCatMfr.value,
+            color_id: color.id, color_name: color.name, hex_color: color.hex,
+        } : null;
+    };
+    renderColorPalette(document.getElementById('inv-palette'), data.colors, selectedId, apply);
+    apply(data.colors.find(c => c.id === selectedId) || null);
+    box.style.display = 'flex';
+}
+
 // ─── Form: add / edit ───────────────────────────────────────────────────────
 function invOpenForm(editing = false) {
     invFormPanel.style.display = 'block';
@@ -2501,6 +2599,7 @@ function invClearForm() {
     if (invCatMat) { invCatMat.innerHTML = '<option value="">Material...</option>'; invCatMat.disabled = true; }
     if (invCatVariant) { invCatVariant.innerHTML = '<option value="">Cor...</option>'; invCatVariant.disabled = true; }
     if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
+    invHidePalette();
 }
 
 // Localiza no catálogo (treeData) a variante que corresponde a um item de
@@ -2557,6 +2656,16 @@ function invStartEdit(id) {
         // Repopula os selects de catálogo a partir do item salvo. Se o produto
         // não existir mais no catálogo (ex.: foi removido do filament-data),
         // avisa e ainda assim permite ajustar estoque/status.
+        // Item com cor da paleta: restaura fabricante/material + modo paleta.
+        if (item.color_id && treeData?.[item.manufacturer]?.materials?.[item.material]) {
+            invCatMfr.value = item.manufacturer;
+            invCatMfr.dispatchEvent(new Event('change'));
+            invCatMat.value = item.material;
+            invCatMat.dispatchEvent(new Event('change'));
+            invCatVariant.value = PALETTE_OPTION;
+            invShowPalette(item.color_id).then(() => invOpenForm(true));
+            return;
+        }
         const match = findCatalogVariant(item);
         if (!selectCatalogVariant(match)) {
             invSelected = null;
@@ -2582,10 +2691,13 @@ async function invSave() {
         manufacturer: invSelected.manufacturer,
         color_name:   invSelected.color_name,
         hex_color:    invSelected.hex_color,
-        finish:       invSelected.finish,
-        weight_g:     invSelected.weight_g,
-        variant_id:   invSelected.variant_id,
-        sku:          invSelected.sku,
+        // color_id: null limpa a referência da paleta ao voltar para o catálogo.
+        // Com color_id, o servidor sobrescreve nome/hex pelos valores canônicos.
+        color_id:     invSelected.color_id ?? null,
+        finish:       invSelected.finish ?? null,
+        weight_g:     invSelected.weight_g ?? 1000,
+        variant_id:   invSelected.variant_id ?? null,
+        sku:          invSelected.sku ?? null,
         spools:       parseInt(invF.spools.value) || 1,
         status:       invF.status.value,
         notes:        invF.notes.value.trim() || null,
@@ -2644,6 +2756,8 @@ invCatMfr?.addEventListener('change', () => {
     invCatMat.innerHTML = '<option value="">Material...</option>';
     invCatVariant.innerHTML = '<option value="">Cor...</option>';
     invCatVariant.disabled = true;
+    invSelected = null;
+    invHidePalette();
     if (!mfr) { invCatMat.disabled = true; return; }
     const mats = Object.keys(treeData[mfr]?.materials || {}).sort((a, b) => a.localeCompare(b));
     invCatMat.innerHTML += mats.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
@@ -2653,6 +2767,10 @@ invCatMfr?.addEventListener('change', () => {
 invCatMat?.addEventListener('change', () => {
     const mfr = invCatMfr.value, mat = invCatMat.value;
     invCatVariant.innerHTML = '<option value="">Cor...</option>';
+    // Trocar (ou limpar) o material invalida a cor/variante e a paleta.
+    invSelected = null;
+    invHidePalette();
+    if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
     if (!mfr || !mat) { invCatVariant.disabled = true; return; }
     const profiles = treeData[mfr]?.materials?.[mat]?.profiles || [];
     // Flatten all variants of all profiles/lines for this material, ordenando
@@ -2668,15 +2786,22 @@ invCatMat?.addEventListener('change', () => {
     entries.sort((a, b) => a.key.localeCompare(b.key));
     let opts = entries.map(e => e.html).join('');
     if (!opts) opts = '<option value="" disabled>Sem variantes no catálogo</option>';
+    // Sempre oferece a paleta de 24 cores básicas (produtos sem variantes incluídos).
+    opts += `<option value="${PALETTE_OPTION}">🎨 Outra cor (paleta)…</option>`;
     invCatVariant.innerHTML += opts;
     invCatVariant.disabled = false;
-    // Trocar de material invalida a variante escolhida anteriormente.
-    invSelected = null;
-    if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
 });
 
 invCatVariant?.addEventListener('change', () => {
     const mfr = invCatMfr.value, mat = invCatMat.value, sel = invCatVariant.value;
+    if (sel === PALETTE_OPTION) {
+        // Modo paleta: esconde o preview do catálogo e mostra a grade.
+        if (invCatPreview) { invCatPreview.style.display = 'none'; invCatPreview.innerHTML = ''; }
+        invSelected = null;
+        if (!invPaletteId) invShowPalette(null);
+        return;
+    }
+    invHidePalette();
     if (!sel) { invSelected = null; return; }
     const [pi, vi] = sel.split(':').map(Number);
     const profile = treeData[mfr]?.materials?.[mat]?.profiles?.[pi];
