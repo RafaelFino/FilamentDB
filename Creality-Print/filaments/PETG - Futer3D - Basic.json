@@ -32,10 +32,10 @@
     "is_custom_defined": "0",
     "name": "PETG - Futer3D - Basic",
     "nozzle_temperature": [
-        "240"
+        "270"
     ],
     "nozzle_temperature_initial_layer": [
-        "240"
+        "270"
     ],
     "nozzle_temperature_range_low": [
         "230"

@@ -623,7 +623,7 @@ materials:
         Matéria-prima com certificação europeia FoodSafe.
         Pode ser usado em qualquer impressora aberta ou fechada.
       nozzle:
-        initial: 245
+        initial: 255
         min: 235
         max: 255
       bed:

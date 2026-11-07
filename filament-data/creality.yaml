@@ -299,7 +299,7 @@ materials:
         OFDB sem data_sheet_url. Fonte:
         https://api.openfilamentdatabase.org/api/v1/brands/creality/materials/PETG/filaments/cr_petg/index.json
       nozzle:
-        initial: 245
+        initial: 250
         min: 235
         max: 250
       bed:
@@ -373,7 +373,7 @@ materials:
         corrigir); density e diameter_tolerance preenchidos. Fonte:
         https://api.openfilamentdatabase.org/api/v1/brands/creality/materials/PETG/filaments/hyper_petg/index.json
       nozzle:
-        initial: 250
+        initial: 260
         min: 240
         max: 260
       bed:

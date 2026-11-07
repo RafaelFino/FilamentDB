@@ -753,7 +753,7 @@ materials:
         conservador: em divergência, menor valor; 15 coincidiu com sub-extrusão no Strong 0.20).
         Fonte: https://voolt3d.com.br/produtos/filamento-petg-hf-preto-high-fluidity-premium-1kg
       nozzle:
-        initial: 245
+        initial: 250
         min: 235
         max: 250
       bed:
@@ -1067,7 +1067,7 @@ materials:
       profile_name: Voolt3D PETG CF
       notes: PETG com fibra de carbono para alta rigidez. Produto confirmado (esgotado).
       nozzle:
-        initial: 260
+        initial: 270
         min: 250
         max: 270
       bed:

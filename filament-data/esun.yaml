@@ -284,7 +284,7 @@ materials:
     - line: PETG-Basic Line
       commercial_name: PETG-Basic
       profile_name: eSUN PETG-Basic
-      nozzle: {initial: 245, min: 230, max: 250}
+      nozzle: {initial: 250, min: 230, max: 250}
       bed: {initial: 75, temp: 75}
       flow_ratio: 0.98
       max_volumetric_speed: 12
@@ -296,7 +296,7 @@ materials:
     - line: PETG HS Line
       commercial_name: PETG HS
       profile_name: eSUN PETG HS
-      nozzle: {initial: 245, min: 220, max: 260}
+      nozzle: {initial: 260, min: 220, max: 260}
       bed: {initial: 80, temp: 80}
       flow_ratio: 0.98
       # MVS 18 -> 12: sem fonte de MVS; classe do material (Orca mvs_default), política do menor valor

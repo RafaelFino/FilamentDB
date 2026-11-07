@@ -529,7 +529,7 @@ materials:
       commercial_name: PETG
       profile_name: Sunlu PETG
       nozzle:
-        initial: 245
+        initial: 255
         min: 235
         max: 255
       bed:
@@ -558,7 +558,7 @@ materials:
         50 -> 60 (TDS: 60-65°C, menor valor). OFDB tolerância ±0.02mm. TDS:
         https://media.sunlu.com/prod/20260330/ccf53a55-5b58-49fa-b1d9-08f94c0a4b28.pdf?filename=TDS
       nozzle:
-        initial: 250
+        initial: 260
         min: 240
         max: 260
       bed:

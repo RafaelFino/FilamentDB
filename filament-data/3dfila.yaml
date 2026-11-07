@@ -151,7 +151,7 @@ materials:
       profile_name: 3DFila PETG XT
       tracking: 1
       nozzle:
-        initial: 240
+        initial: 255
         min: 230
         max: 255
       bed:

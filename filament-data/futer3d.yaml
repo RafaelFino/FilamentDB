@@ -27,11 +27,11 @@ materials:
         site, diâmetro/tolerância, peso, densidade, secagem, ventilação, cor, acabamento,
         preço, URL.
       nozzle:
-        initial: 240
+        initial: 270
         min: 230
         max: 270
       # Faixas informadas pelo usuário (fonte: rótulo/página do produto): bico 230-270, mesa 70-90.
-      # initial = escolha conservadora dentro da faixa (bico 240; mesa 80 = ponto médio).
+      # initial 240 -> 270: topo da faixa de ficha (etiqueta confirmada 230-270) p/ combater sub-extrusão de PETG; mesa 80 = ponto médio.
       bed:
         initial: 80
         temp: 80

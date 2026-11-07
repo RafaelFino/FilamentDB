@@ -91,7 +91,7 @@ materials:
       commercial_name: PETG
       profile_name: Prusament PETG
       nozzle:
-        initial: 240
+        initial: 255
         min: 230
         max: 255
       bed:

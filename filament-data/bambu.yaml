@@ -143,7 +143,7 @@ materials:
       commercial_name: PETG Basic
       profile_name: Bambu PETG
       nozzle:
-        initial: 240
+        initial: 255
         min: 230
         max: 255
       bed:

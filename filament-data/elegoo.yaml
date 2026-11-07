@@ -647,7 +647,7 @@ materials:
       commercial_name: PETG
       profile_name: Elegoo PETG
       nozzle:
-        initial: 245
+        initial: 255
         min: 235
         max: 255
       bed:
