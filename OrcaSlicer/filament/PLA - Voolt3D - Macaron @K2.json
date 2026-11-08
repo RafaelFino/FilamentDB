@@ -17,10 +17,10 @@
         "Voolt3D"
     ],
     "nozzle_temperature": [
-        "215"
+        "225"
     ],
     "nozzle_temperature_initial_layer": [
-        "215"
+        "225"
     ],
     "nozzle_temperature_range_low": [
         "205"

@@ -344,9 +344,10 @@ materials:
       commercial_name: PLA Standard
       profile_name: Voolt3D PLA Standard
       nozzle:
-        initial: 220
+        initial: 235
         min: 210
         max: 235
+      # initial 220 -> 235: topo da faixa (235) p/ combater sub-extrusão reportada pelo usuário.
       bed:
         initial: 60
         temp: 60
@@ -494,8 +495,9 @@ materials:
         (acima da faixa oficial); density e diameter_tolerance preenchidos. MVS mantido
         em 15 (fabricante declara "até 25 mm³/s"; política de MVS conservador).
         Fonte: https://voolt3d.com.br/produtos/filamento-pla-rosa-premium
+        initial 225 -> 230: topo da faixa oficial p/ combater sub-extrusão reportada pelo usuário.
       nozzle:
-        initial: 225
+        initial: 230
         min: 215
         max: 230
       bed:
@@ -547,8 +549,9 @@ materials:
         diameter_tolerance preenchidos. MVS mantido em 10 (fabricante declara "até 25
         mm³/s"; política de MVS conservador).
         Fonte: https://voolt3d.com.br/produtos/filamento-pla-vermelho-v-silk-high-speed-premium-1kg
+        initial 220 -> 230: topo da faixa oficial p/ combater sub-extrusão reportada pelo usuário.
       nozzle:
-        initial: 220
+        initial: 230
         min: 210
         max: 230
       bed:
@@ -602,8 +605,9 @@ materials:
         diameter_tolerance preenchido. MVS mantido em 10 (fabricante declara "até 25
         mm³/s"; política de MVS conservador).
         Fonte: https://voolt3d.com.br/produtos/filamento-pla-azul-macaron-velvet-premium
+        initial 215 -> 225: topo da faixa oficial p/ combater sub-extrusão reportada pelo usuário.
       nozzle:
-        initial: 215
+        initial: 225
         min: 205
         max: 225
       bed:
@@ -658,8 +662,9 @@ materials:
         diameter_tolerance preenchido. MVS mantido em 15 (fabricante declara "até 25
         mm³/s"; política de MVS conservador).
         Fonte: https://voolt3d.com.br/produtos/filamento-pla-outlet
+        initial 220 -> 230: topo da faixa oficial p/ combater sub-extrusão reportada pelo usuário.
       nozzle:
-        initial: 220
+        initial: 230
         min: 190
         max: 230
       bed:
@@ -705,8 +710,9 @@ materials:
         diameter_tolerance preenchido. MVS mantido em 15 (fabricante declara "até 25
         mm³/s"; política de MVS conservador).
         Fonte: https://voolt3d.com.br/produtos/filamento-pla-branco-off-white-evo-1kg
+        initial 215 -> 230: topo da faixa oficial p/ combater sub-extrusão reportada pelo usuário.
       nozzle:
-        initial: 215
+        initial: 230
         min: 190
         max: 230
       bed:
