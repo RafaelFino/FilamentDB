@@ -1,360 +1,188 @@
 manufacturer:
   name: Masterprint
   country: Brazil
-  website: https://masterprint3d.com.br
-  notes: Fabricante brasileiro de filamentos 3D. Catálogo completo de filamentos para uso geral e industrial.
+  website: https://www.masterprint.com.br
+  notes: Fabricante brasileiro de filamentos 3D. Catalogo reescrito a partir do catalogo oficial (PDF).
+    Apenas o PETG basico comprado pelo usuario (Cinza/Skin/Azul/Lavanda) e exportado para os slicers;
+    o restante fica no catalogo como referencia.
 lines:
-- name: Standard Line
-  description: General purpose filaments for everyday printing
+- name: Basico
+  description: Linha basica de uso geral (PLA/PETG/ABS)
   positioning: balanced
-  difficulty: 45
-  target_use: general_printing
-  tier: standard
   category: general
   finish: standard
-  notes: Linha base, foco em custo e consistência
-  color_options:
-  - Natural
-  - Black
-- name: Industrial Line
-  description: Functional materials for mechanical parts
-  positioning: functional
-  difficulty: 60
-  target_use: mechanical_parts
-  tier: premium
-  category: mechanical
-  finish: standard
-  notes: Maior estabilidade mecânica e térmica
-  color_options:
-  - Black
-  - White
-  - Natural
-- name: Premium Line
-  description: Improved quality PLA/PETG with better finish
-  positioning: improved_quality
-  difficulty: 50
-  target_use: better_surface_finish
-  tier: standard
-  category: general
-  finish: standard
-  notes: Versão com melhor acabamento superficial
-  color_options:
-  - Natural
-  - Black
-- name: Flex Line
-  description: TPU flexible materials
+- name: Especial
+  description: Cores e efeitos especiais (metalico, marmore, fibra, etc.)
+  positioning: aesthetic
+  category: aesthetic
+  finish: special
+- name: Fosco
+  description: Acabamento fosco (matte)
+  positioning: aesthetic
+  category: aesthetic
+  finish: matte
+- name: Silk
+  description: Acabamento sedoso/gloss (silk)
+  positioning: aesthetic
+  category: aesthetic
+  finish: silk
+- name: Duocolor
+  description: Filamento bicolor (duocolor)
+  positioning: aesthetic
+  category: aesthetic
+  finish: silk
+- name: Tricolor
+  description: Filamento tricolor
+  positioning: aesthetic
+  category: aesthetic
+  finish: silk
+- name: Glitter
+  description: Acabamento com glitter
+  positioning: aesthetic
+  category: aesthetic
+  finish: silk
+- name: Fosforescente
+  description: Brilha no escuro (glow-in-the-dark)
+  positioning: aesthetic
+  category: aesthetic
+  finish: glow
+- name: Rainbow
+  description: Transicao multicor (rainbow)
+  positioning: aesthetic
+  category: aesthetic
+  finish: multicolor
+- name: Rainbow Fosco
+  description: Multicor com acabamento fosco
+  positioning: aesthetic
+  category: aesthetic
+  finish: matte
+- name: Silk Rainbow
+  description: Multicor com acabamento sedoso
+  positioning: aesthetic
+  category: aesthetic
+  finish: silk
+- name: Silk Duocolor
+  description: Bicolor com acabamento sedoso
+  positioning: aesthetic
+  category: aesthetic
+  finish: silk
+- name: Silk Rainbow Fosforescente
+  description: Multicor sedoso que brilha no escuro
+  positioning: aesthetic
+  category: aesthetic
+  finish: silk
+- name: Translucido
+  description: Cores translucidas
+  positioning: aesthetic
+  category: aesthetic
+  finish: transparent
+- name: Flex
+  description: Materiais flexiveis (TPR/TPU)
   positioning: flexible
-  difficulty: 80
-  target_use: flexible_parts
-  tier: standard
   category: flexible
   finish: standard
-  notes: Baixa velocidade, foco em elasticidade
-  color_options:
-  - Natural
-  - Black
-  - Gray
+- name: ASA
+  description: ASA resistente a UV para uso externo
+  positioning: functional
+  category: mechanical
+  finish: standard
 materials:
-  PLA:
-    profiles:
-    - line: Standard Line
-      commercial_name: PLA Standard
-      profile_name: Masterprint PLA Standard
-      nozzle:
-        initial: 220
-        min: 210
-        max: 235
-      bed:
-        initial: 60
-        temp: 60
-      flow_ratio: 1.0
-      max_volumetric_speed: 14
-      recommendation: PLA básico confiável para uso geral
-      color: Natural
-      surface_finish: Standard
-      drying_temperature: 50
-      drying_time: 8.0
-      variants:
-      - sku: MPR-PLA-WHT-1K
-        color_name: White
-        hex: '#F5F5F5'
-        rgb:
-        - 245
-        - 245
-        - 245
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        notes: Easy printing
-        status: Active
-      - sku: MPR-PLA-BLK-1K
-        color_name: Black
-        hex: '#111111'
-        rgb:
-        - 17
-        - 17
-        - 17
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        status: Active
-      - sku: MPR-PLA-GRY-1K
-        color_name: Gray
-        hex: '#808080'
-        rgb:
-        - 128
-        - 128
-        - 128
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: Functional parts
-        status: Active
-      - sku: MPR-PLA-RED-1K
-        color_name: Red
-        hex: '#C62828'
-        rgb:
-        - 198
-        - 40
-        - 40
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        status: Active
-      - sku: MPR-PLA-BLU-1K
-        color_name: Blue
-        hex: '#1565C0'
-        rgb:
-        - 21
-        - 101
-        - 192
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        status: Active
-      - sku: MPR-PLA-GRN-1K
-        color_name: Green
-        hex: '#2E7D32'
-        rgb:
-        - 46
-        - 125
-        - 50
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        status: Active
-      - sku: MPR-PLA-YLW-1K
-        color_name: Yellow
-        hex: '#FBC02D'
-        rgb:
-        - 251
-        - 192
-        - 45
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        status: Active
-      - sku: MPR-PLA-ORG-1K
-        color_name: Orange
-        hex: '#F57C00'
-        rgb:
-        - 245
-        - 124
-        - 0
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        status: Active
-    - line: Premium Line
-      commercial_name: PLA Premium
-      profile_name: Masterprint PLA Premium
-      nozzle:
-        initial: 225
-        min: 215
-        max: 240
-      bed:
-        initial: 60
-        temp: 60
-      flow_ratio: 1.02
-      max_volumetric_speed: 15
-      recommendation: Melhor acabamento e estabilidade que a linha standard
-      color: Natural
-      surface_finish: Standard
-      drying_temperature: 50
-      drying_time: 8.0
-      variants:
-      - sku: MPR-PLA-WHT-1K
-        color_name: White
-        hex: '#F5F5F5'
-        rgb:
-        - 245
-        - 245
-        - 245
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        notes: Easy printing
-        status: Active
-      - sku: MPR-PLA-BLK-1K
-        color_name: Black
-        hex: '#111111'
-        rgb:
-        - 17
-        - 17
-        - 17
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        status: Active
-      - sku: MPR-PLA-GRY-1K
-        color_name: Gray
-        hex: '#808080'
-        rgb:
-        - 128
-        - 128
-        - 128
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: Functional parts
-        status: Active
-      - sku: MPR-PLA-RED-1K
-        color_name: Red
-        hex: '#C62828'
-        rgb:
-        - 198
-        - 40
-        - 40
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        status: Active
-      - sku: MPR-PLA-BLU-1K
-        color_name: Blue
-        hex: '#1565C0'
-        rgb:
-        - 21
-        - 101
-        - 192
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        status: Active
-      - sku: MPR-PLA-GRN-1K
-        color_name: Green
-        hex: '#2E7D32'
-        rgb:
-        - 46
-        - 125
-        - 50
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        status: Active
-      - sku: MPR-PLA-YLW-1K
-        color_name: Yellow
-        hex: '#FBC02D'
-        rgb:
-        - 251
-        - 192
-        - 45
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        status: Active
-      - sku: MPR-PLA-ORG-1K
-        color_name: Orange
-        hex: '#F57C00'
-        rgb:
-        - 245
-        - 124
-        - 0
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: General purpose
-        status: Active
   PETG:
     profiles:
-    - line: Industrial Line
-      commercial_name: PETG Standard
+    - line: Basico
+      commercial_name: PETG
       profile_name: Masterprint PETG
+      export: true
       nozzle:
-        initial: 255
-        min: 235
-        max: 255
+        initial: 240
+        min: 220
+        max: 240
       bed:
         initial: 80
         temp: 80
-      flow_ratio: 0.98
-      max_volumetric_speed: 12
-      recommendation: Boa resistência mecânica para peças funcionais
-      color: Natural
-      surface_finish: Standard
+      flow_ratio: 1.0
+      max_volumetric_speed: 10
+      surface_finish: Semi-Gloss
       drying_temperature: 65
       drying_time: 8.0
+      notes: 'Produto comprado pelo usuario (4 cores: Cinza, Skin/bege, Azul, Lavanda). Specs do catalogo:
+        nozzle 220-240C, mesa 70-90C. Temperaturas fixadas em 240/80 por decisao do usuario (padrao medio-alto,
+        proximo ao limite). MVS 10 conservador (PETG barato, nao-premium, sem spec de MVS do fabricante).
+        flow 1.0. SKU = Cod. Produto do catalogo. Fonte: catalogo oficial Masterprint (PDF).'
       variants:
-      - sku: MPR-PET-WHT-1K
-        color_name: White
-        hex: '#F5F5F5'
+      - sku: '231020012'
+        color_name: Cinza
+        hex: '#808080'
         rgb:
-        - 245
-        - 245
-        - 245
+        - 128
+        - 128
+        - 128
         finish: Semi-Gloss
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 65
         dry_hours: 8.0
-        recommended_use: Mechanical parts
         status: Active
-      - sku: MPR-PET-BLK-1K
-        color_name: Black
+      - sku: '231020016'
+        color_name: Skin
+        hex: '#E8C8A0'
+        rgb:
+        - 232
+        - 200
+        - 160
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020003'
+        color_name: Azul
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020021'
+        color_name: Lavanda
+        hex: '#B57EDC'
+        rgb:
+        - 181
+        - 126
+        - 220
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+    - line: Basico
+      commercial_name: PETG Basico
+      profile_name: Masterprint PETG Basico
+      nozzle:
+        initial: 235
+        min: 220
+        max: 240
+      bed:
+        initial: 85
+        temp: 85
+      flow_ratio: 1.0
+      max_volumetric_speed: 11
+      surface_finish: Semi-Gloss
+      drying_temperature: 65
+      drying_time: 8.0
+      notes: 'PETG basico (cores nao compradas). Fonte: catalogo oficial Masterprint (PDF). SKU = Cod.
+        Produto do catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de ficha);
+        flow 1.0; MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231020001'
+        color_name: Preto
         hex: '#111111'
         rgb:
         - 17
@@ -365,24 +193,549 @@ materials:
         weight_g: 1000
         dry_temp: 65
         dry_hours: 8.0
-        recommended_use: Mechanical parts
         status: Active
-      - sku: MPR-PET-CLR-1K
-        color_name: Transparent
-        hex: '#F8F8F8'
+      - sku: '231020002'
+        color_name: Branco
+        hex: '#F5F5F5'
         rgb:
-        - 248
-        - 248
-        - 248
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020004'
+        color_name: Vermelho
+        hex: '#C62828'
+        rgb:
+        - 198
+        - 40
+        - 40
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020005'
+        color_name: Verde
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020009'
+        color_name: Rosa
+        hex: '#F06292'
+        rgb:
+        - 240
+        - 98
+        - 146
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020010'
+        color_name: Prata
+        hex: '#C0C0C0'
+        rgb:
+        - 192
+        - 192
+        - 192
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020011'
+        color_name: Transparente
+        hex: '#F0F0F0'
+        rgb:
+        - 240
+        - 240
+        - 240
         finish: Transparent
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 65
         dry_hours: 8.0
-        recommended_use: Mechanical parts
         status: Active
-      - sku: MPR-PET-BLU-1K
-        color_name: Blue
+      - sku: '231020013'
+        color_name: Amarelo
+        hex: '#FBC02D'
+        rgb:
+        - 251
+        - 192
+        - 45
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020014'
+        color_name: Marrom
+        hex: '#6D4C41'
+        rgb:
+        - 109
+        - 76
+        - 65
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020015'
+        color_name: Laranja
+        hex: '#F57C00'
+        rgb:
+        - 245
+        - 124
+        - 0
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020017'
+        color_name: Madeira
+        hex: '#A1887F'
+        rgb:
+        - 161
+        - 136
+        - 127
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020023'
+        color_name: Bronze
+        hex: '#8C7853'
+        rgb:
+        - 140
+        - 120
+        - 83
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020028'
+        color_name: Dourado
+        hex: '#D4AF37'
+        rgb:
+        - 212
+        - 175
+        - 55
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020031'
+        color_name: Roxo
+        hex: '#6A1B9A'
+        rgb:
+        - 106
+        - 27
+        - 154
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+    - line: Fosco
+      commercial_name: PETG Fosco
+      profile_name: Masterprint PETG Fosco
+      nozzle:
+        initial: 235
+        min: 220
+        max: 240
+      bed:
+        initial: 85
+        temp: 85
+      flow_ratio: 1.0
+      max_volumetric_speed: 11
+      surface_finish: Matte
+      drying_temperature: 65
+      drying_time: 8.0
+      notes: 'PETG linha Fosco. Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto do catalogo.
+        Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0; MVS conservador
+        por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231020018'
+        color_name: Preto
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020019'
+        color_name: Branco
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+    - line: Especial
+      commercial_name: PETG Especial
+      profile_name: Masterprint PETG Especial
+      nozzle:
+        initial: 235
+        min: 220
+        max: 240
+      bed:
+        initial: 85
+        temp: 85
+      flow_ratio: 1.0
+      max_volumetric_speed: 11
+      surface_finish: Semi-Gloss
+      drying_temperature: 65
+      drying_time: 8.0
+      notes: 'PETG linha Especial. Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto do catalogo.
+        Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0; MVS conservador
+        por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231020029'
+        color_name: Fibra de Carbono
+        hex: '#2B2B2B'
+        rgb:
+        - 43
+        - 43
+        - 43
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231020032'
+        color_name: Branco PCV Indoor
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231020033'
+        color_name: Branco PCV Outdoor
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+    - line: Rainbow
+      commercial_name: PETG Rainbow
+      profile_name: Masterprint PETG Rainbow
+      nozzle:
+        initial: 235
+        min: 220
+        max: 240
+      bed:
+        initial: 85
+        temp: 85
+      flow_ratio: 1.0
+      max_volumetric_speed: 11
+      surface_finish: Multicolor
+      drying_temperature: 65
+      drying_time: 8.0
+      notes: 'PETG linha Rainbow (multicor). Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto
+        do catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0;
+        MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231020020'
+        color_name: Luminous Rainbow
+        hex: '#7F7FD5'
+        rgb:
+        - 127
+        - 127
+        - 213
+        finish: Multicolor
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+    - line: Fosforescente
+      commercial_name: PETG Fosforescente
+      profile_name: Masterprint PETG Fosforescente
+      nozzle:
+        initial: 235
+        min: 220
+        max: 240
+      bed:
+        initial: 85
+        temp: 85
+      flow_ratio: 1.0
+      max_volumetric_speed: 11
+      surface_finish: Glow
+      drying_temperature: 65
+      drying_time: 8.0
+      notes: 'PETG linha Fosforescente (glow-in-the-dark). Fonte: catalogo oficial Masterprint (PDF).
+        SKU = Cod. Produto do catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa
+        de ficha); flow 1.0; MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231020022'
+        color_name: Roxo
+        hex: '#6A1B9A'
+        rgb:
+        - 106
+        - 27
+        - 154
+        finish: Glow
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+    - line: Translucido
+      commercial_name: PETG Translucido
+      profile_name: Masterprint PETG Translucido
+      nozzle:
+        initial: 235
+        min: 220
+        max: 240
+      bed:
+        initial: 85
+        temp: 85
+      flow_ratio: 1.0
+      max_volumetric_speed: 11
+      surface_finish: Transparent
+      drying_temperature: 65
+      drying_time: 8.0
+      notes: 'PETG linha Translucido. Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto do
+        catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0;
+        MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231020006'
+        color_name: Amarelo Translucido
+        hex: '#FBE38A'
+        rgb:
+        - 251
+        - 227
+        - 138
+        finish: Transparent
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020007'
+        color_name: Azul Translucido
+        hex: '#7FB2E5'
+        rgb:
+        - 127
+        - 178
+        - 229
+        finish: Transparent
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020008'
+        color_name: Vermelho Translucido
+        hex: '#E57373'
+        rgb:
+        - 229
+        - 115
+        - 115
+        finish: Transparent
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: Active
+      - sku: '231020030'
+        color_name: Verde Translucido
+        hex: '#81C784'
+        rgb:
+        - 129
+        - 199
+        - 132
+        finish: Transparent
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231020036'
+        color_name: Branco Translucido
+        hex: '#F2F2F2'
+        rgb:
+        - 242
+        - 242
+        - 242
+        finish: Transparent
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+    - line: Basico
+      commercial_name: PETG 3kg
+      profile_name: Masterprint PETG 3kg
+      nozzle:
+        initial: 235
+        min: 220
+        max: 240
+      bed:
+        initial: 85
+        temp: 85
+      flow_ratio: 1.0
+      max_volumetric_speed: 11
+      surface_finish: Semi-Gloss
+      drying_temperature: 65
+      drying_time: 8.0
+      notes: 'PETG basico em bobina de 3kg. Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto
+        do catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0;
+        MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231020024'
+        color_name: Preto
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 3000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231020025'
+        color_name: Branco
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 3000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+    - line: Basico
+      commercial_name: PETG 5kg
+      profile_name: Masterprint PETG 5kg
+      nozzle:
+        initial: 235
+        min: 220
+        max: 240
+      bed:
+        initial: 85
+        temp: 85
+      flow_ratio: 1.0
+      max_volumetric_speed: 11
+      surface_finish: Semi-Gloss
+      drying_temperature: 65
+      drying_time: 8.0
+      notes: 'PETG basico em bobina de 5kg. Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto
+        do catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0;
+        MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231020026'
+        color_name: Preto
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 5000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231020027'
+        color_name: Branco
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 5000
+        dry_temp: 65
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+  PLA:
+    profiles:
+    - line: Basico
+      commercial_name: PLA Basico
+      profile_name: Masterprint PLA Basico
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Semi-Gloss
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Basico. Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto do catalogo.
+        Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0; MVS conservador
+        por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010003'
+        color_name: Azul
         hex: '#1565C0'
         rgb:
         - 21
@@ -391,123 +744,24 @@ materials:
         finish: Semi-Gloss
         diameter_mm: 1.75
         weight_g: 1000
-        dry_temp: 65
+        dry_temp: 50
         dry_hours: 8.0
-        recommended_use: Mechanical parts
         status: Active
-  ABS:
-    profiles:
-    - line: Industrial Line
-      commercial_name: ABS Standard
-      profile_name: Masterprint ABS
-      nozzle:
-        initial: 250
-        min: 240
-        max: 265
-      bed:
-        initial: 100
-        temp: 100
-      flow_ratio: 1.0
-      max_volumetric_speed: 10
-      recommendation: Peças estruturais e funcionais
-      color: Black
-      surface_finish: Standard
-      drying_temperature: 80
-      drying_time: 6.0
-      variants:
-      - sku: MPR-ABS-BLK-1K
-        color_name: Black
-        hex: '#111111'
-        rgb:
-        - 17
-        - 17
-        - 17
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 80
-        dry_hours: 6.0
-        recommended_use: Engineering
-        status: Active
-      - sku: MPR-ABS-WHT-1K
-        color_name: White
-        hex: '#F5F5F5'
-        rgb:
-        - 245
-        - 245
-        - 245
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 80
-        dry_hours: 6.0
-        recommended_use: Engineering
-        status: Active
-      - sku: MPR-ABS-GRY-1K
-        color_name: Gray
+      - sku: '231010004'
+        color_name: Cinza
         hex: '#808080'
         rgb:
         - 128
         - 128
         - 128
-        finish: Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 80
-        dry_hours: 6.0
-        recommended_use: Engineering
-        status: Active
-  TPU:
-    profiles:
-    - line: Flex Line
-      commercial_name: TPU 95A
-      profile_name: Masterprint TPU
-      nozzle:
-        initial: 225
-        min: 215
-        max: 235
-      bed:
-        initial: 50
-        temp: 50
-      flow_ratio: 1.05
-      # MVS 8 -> 4: sem fonte; Orca fdm_filament_tpu = 3.2 mm³/s
-      max_volumetric_speed: 4
-      recommendation: Flexível padrão, baixa velocidade obrigatória
-      color: Natural
-      surface_finish: Flexible
-      drying_temperature: 50
-      drying_time: 8.0
-      variants:
-      - sku: MPR-TPU-BLK-1K
-        color_name: Black
-        hex: '#111111'
-        rgb:
-        - 17
-        - 17
-        - 17
         finish: Semi-Gloss
         diameter_mm: 1.75
         weight_g: 1000
         dry_temp: 50
         dry_hours: 8.0
-        recommended_use: Flexible parts
         status: Active
-      - sku: MPR-TPU-WHT-1K
-        color_name: White
-        hex: '#F5F5F5'
-        rgb:
-        - 245
-        - 245
-        - 245
-        finish: Semi-Gloss
-        diameter_mm: 1.75
-        weight_g: 1000
-        dry_temp: 50
-        dry_hours: 8.0
-        recommended_use: Flexible parts
-        status: Active
-      - sku: MPR-TPU-RED-1K
-        color_name: Red
+      - sku: '231010005'
+        color_name: Vermelho
         hex: '#C62828'
         rgb:
         - 198
@@ -518,5 +772,1799 @@ materials:
         weight_g: 1000
         dry_temp: 50
         dry_hours: 8.0
-        recommended_use: Flexible parts
+        status: Active
+      - sku: '231010006'
+        color_name: Verde
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010007'
+        color_name: Dourado
+        hex: '#D4AF37'
+        rgb:
+        - 212
+        - 175
+        - 55
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010008'
+        color_name: Madeira
+        hex: '#A1887F'
+        rgb:
+        - 161
+        - 136
+        - 127
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010009'
+        color_name: Amarelo
+        hex: '#FBC02D'
+        rgb:
+        - 251
+        - 192
+        - 45
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010019'
+        color_name: Branco
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010020'
+        color_name: Rosa
+        hex: '#F06292'
+        rgb:
+        - 240
+        - 98
+        - 146
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010021'
+        color_name: Azul Escuro
+        hex: '#0D47A1'
+        rgb:
+        - 13
+        - 71
+        - 161
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010022'
+        color_name: Prata
+        hex: '#C0C0C0'
+        rgb:
+        - 192
+        - 192
+        - 192
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010023'
+        color_name: Laranja
+        hex: '#F57C00'
+        rgb:
+        - 245
+        - 124
+        - 0
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010026'
+        color_name: Preto
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010029'
+        color_name: Cinza Claro
+        hex: '#BDBDBD'
+        rgb:
+        - 189
+        - 189
+        - 189
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010030'
+        color_name: Marrom
+        hex: '#6D4C41'
+        rgb:
+        - 109
+        - 76
+        - 65
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010032'
+        color_name: Roxo
+        hex: '#6A1B9A'
+        rgb:
+        - 106
+        - 27
+        - 154
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010033'
+        color_name: Roxo Claro
+        hex: '#B39DDB'
+        rgb:
+        - 179
+        - 157
+        - 219
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010046'
+        color_name: Madeira Escura
+        hex: '#6D4C41'
+        rgb:
+        - 109
+        - 76
+        - 65
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010051'
+        color_name: Verde Bambu
+        hex: '#7CB342'
+        rgb:
+        - 124
+        - 179
+        - 66
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010052'
+        color_name: Verde Escuro
+        hex: '#1B5E20'
+        rgb:
+        - 27
+        - 94
+        - 32
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010053'
+        color_name: Cafe
+        hex: '#4B3621'
+        rgb:
+        - 75
+        - 54
+        - 33
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010054'
+        color_name: Marrom Escuro
+        hex: '#4E342E'
+        rgb:
+        - 78
+        - 52
+        - 46
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010083'
+        color_name: Skin
+        hex: '#E8C8A0'
+        rgb:
+        - 232
+        - 200
+        - 160
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010084'
+        color_name: Transparente
+        hex: '#F0F0F0'
+        rgb:
+        - 240
+        - 240
+        - 240
+        finish: Transparent
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010112'
+        color_name: Rosa Claro
+        hex: '#F8BBD0'
+        rgb:
+        - 248
+        - 187
+        - 208
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010113'
+        color_name: Azul Claro
+        hex: '#64B5F6'
+        rgb:
+        - 100
+        - 181
+        - 246
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+    - line: Especial
+      commercial_name: PLA Especial
+      profile_name: Masterprint PLA Especial
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Semi-Gloss
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Especial. Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto do catalogo.
+        Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0; MVS conservador
+        por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010031'
+        color_name: Cobre
+        hex: '#B87333'
+        rgb:
+        - 184
+        - 115
+        - 51
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010047'
+        color_name: Marmore
+        hex: '#E0E0E0'
+        rgb:
+        - 224
+        - 224
+        - 224
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010049'
+        color_name: Ice Cream
+        hex: '#F3D9DC'
+        rgb:
+        - 243
+        - 217
+        - 220
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010050'
+        color_name: Cor Deserto
+        hex: '#C2B280'
+        rgb:
+        - 194
+        - 178
+        - 128
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010055'
+        color_name: Fibra de Carbono
+        hex: '#2B2B2B'
+        rgb:
+        - 43
+        - 43
+        - 43
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010056'
+        color_name: Cinza Metalico
+        hex: '#8C8C8C'
+        rgb:
+        - 140
+        - 140
+        - 140
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010069'
+        color_name: Peacock Blue
+        hex: '#1A7A8C'
+        rgb:
+        - 26
+        - 122
+        - 140
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010070'
+        color_name: Dragon Fruit
+        hex: '#C2185B'
+        rgb:
+        - 194
+        - 24
+        - 91
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010105'
+        color_name: Amarelo Gold
+        hex: '#E6B800'
+        rgb:
+        - 230
+        - 184
+        - 0
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+    - line: Fosco
+      commercial_name: PLA Fosco
+      profile_name: Masterprint PLA Fosco
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Matte
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Basico Fosco. Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto do
+        catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0;
+        MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010085'
+        color_name: Preto Carbono
+        hex: '#1A1A1A'
+        rgb:
+        - 26
+        - 26
+        - 26
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010086'
+        color_name: Roxo
+        hex: '#6A1B9A'
+        rgb:
+        - 106
+        - 27
+        - 154
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010087'
+        color_name: Sakura Rosa
+        hex: '#F7CAD0'
+        rgb:
+        - 247
+        - 202
+        - 208
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010088'
+        color_name: Azul Artico
+        hex: '#A7C7E7'
+        rgb:
+        - 167
+        - 199
+        - 231
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010089'
+        color_name: Cinza Fossil
+        hex: '#6E6E6E'
+        rgb:
+        - 110
+        - 110
+        - 110
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010090'
+        color_name: Branco
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010094'
+        color_name: Preto
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010095'
+        color_name: Vermelho
+        hex: '#C62828'
+        rgb:
+        - 198
+        - 40
+        - 40
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010096'
+        color_name: Verde Militar
+        hex: '#4B5320'
+        rgb:
+        - 75
+        - 83
+        - 32
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010097'
+        color_name: Azul
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010098'
+        color_name: Laranja Por do Sol
+        hex: '#E2743B'
+        rgb:
+        - 226
+        - 116
+        - 59
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010099'
+        color_name: Verde Floresta
+        hex: '#228B22'
+        rgb:
+        - 34
+        - 139
+        - 34
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010100'
+        color_name: Marrom Terra
+        hex: '#8B5A2B'
+        rgb:
+        - 139
+        - 90
+        - 43
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010101'
+        color_name: Verde
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010102'
+        color_name: Cinza
+        hex: '#808080'
+        rgb:
+        - 128
+        - 128
+        - 128
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+    - line: Duocolor
+      commercial_name: PLA Duocolor
+      profile_name: Masterprint PLA Duocolor
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Semi-Gloss
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Basico Duocolor (bicolor; hex da cor dominante). Fonte: catalogo oficial Masterprint
+        (PDF). SKU = Cod. Produto do catalogo. Temperaturas pela politica medio-alta (initial no topo
+        da faixa de ficha); flow 1.0; MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010018'
+        color_name: Vermelho/Dourado
+        hex: '#C62828'
+        rgb:
+        - 198
+        - 40
+        - 40
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+    - line: Silk
+      commercial_name: PLA Silk
+      profile_name: Masterprint PLA Silk
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Silk
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Silk (acabamento sedoso/gloss). Fonte: catalogo oficial Masterprint (PDF). SKU
+        = Cod. Produto do catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de
+        ficha); flow 1.0; MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010015'
+        color_name: Verde
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010027'
+        color_name: Azul
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010028'
+        color_name: Vermelho
+        hex: '#C62828'
+        rgb:
+        - 198
+        - 40
+        - 40
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010036'
+        color_name: Rosa
+        hex: '#F06292'
+        rgb:
+        - 240
+        - 98
+        - 146
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010037'
+        color_name: Branco
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010038'
+        color_name: Bronze
+        hex: '#8C7853'
+        rgb:
+        - 140
+        - 120
+        - 83
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010039'
+        color_name: Prata
+        hex: '#C0C0C0'
+        rgb:
+        - 192
+        - 192
+        - 192
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010040'
+        color_name: Preto
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010041'
+        color_name: Dourado
+        hex: '#D4AF37'
+        rgb:
+        - 212
+        - 175
+        - 55
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010042'
+        color_name: Roxo
+        hex: '#6A1B9A'
+        rgb:
+        - 106
+        - 27
+        - 154
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010043'
+        color_name: Fuchsia
+        hex: '#C2185B'
+        rgb:
+        - 194
+        - 24
+        - 91
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010044'
+        color_name: Lavanda
+        hex: '#B57EDC'
+        rgb:
+        - 181
+        - 126
+        - 220
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010057'
+        color_name: Cobre
+        hex: '#B87333'
+        rgb:
+        - 184
+        - 115
+        - 51
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010058'
+        color_name: Azul Lago
+        hex: '#1CA3A3'
+        rgb:
+        - 28
+        - 163
+        - 163
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010059'
+        color_name: Azul Tiffany
+        hex: '#81D8D0'
+        rgb:
+        - 129
+        - 216
+        - 208
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010060'
+        color_name: Azul Azure
+        hex: '#007FFF'
+        rgb:
+        - 0
+        - 127
+        - 255
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010076'
+        color_name: Vermelho Purpura
+        hex: '#96365A'
+        rgb:
+        - 150
+        - 54
+        - 90
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010111'
+        color_name: Cobre Esverdeado
+        hex: '#7E9B76'
+        rgb:
+        - 126
+        - 155
+        - 118
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010114'
+        color_name: Bronze Esverdeado
+        hex: '#8A8B5C'
+        rgb:
+        - 138
+        - 139
+        - 92
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+    - line: Glitter
+      commercial_name: PLA Silk Glitter
+      profile_name: Masterprint PLA Silk Glitter
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Silk
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Silk com Glitter. Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto
+        do catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0;
+        MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010081'
+        color_name: Roxo com Glitter
+        hex: '#5E35B1'
+        rgb:
+        - 94
+        - 53
+        - 177
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010082'
+        color_name: Preto Glitter
+        hex: '#1C1C1C'
+        rgb:
+        - 28
+        - 28
+        - 28
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+    - line: Silk Duocolor
+      commercial_name: PLA Silk Duocolor
+      profile_name: Masterprint PLA Silk Duocolor
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Silk
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Silk Duocolor (bicolor; hex da cor dominante). Fonte: catalogo oficial Masterprint
+        (PDF). SKU = Cod. Produto do catalogo. Temperaturas pela politica medio-alta (initial no topo
+        da faixa de ficha); flow 1.0; MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010048'
+        color_name: Roxo/Preto
+        hex: '#4A148C'
+        rgb:
+        - 74
+        - 20
+        - 140
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010061'
+        color_name: Laranja/Preto
+        hex: '#E2743B'
+        rgb:
+        - 226
+        - 116
+        - 59
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010062'
+        color_name: Azul/Vermelho
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010077'
+        color_name: Azul/Roxo
+        hex: '#3949AB'
+        rgb:
+        - 57
+        - 73
+        - 171
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010091'
+        color_name: Dourado/Roxo
+        hex: '#D4AF37'
+        rgb:
+        - 212
+        - 175
+        - 55
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010093'
+        color_name: Crystal Preto/Vermelho
+        hex: '#2B2B2B'
+        rgb:
+        - 43
+        - 43
+        - 43
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+    - line: Tricolor
+      commercial_name: PLA Silk Tricolor
+      profile_name: Masterprint PLA Silk Tricolor
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Silk
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Silk Tricolor (tricor; hex da cor dominante). Fonte: catalogo oficial Masterprint
+        (PDF). SKU = Cod. Produto do catalogo. Temperaturas pela politica medio-alta (initial no topo
+        da faixa de ficha); flow 1.0; MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010063'
+        color_name: Azul/Preto/Roxo
+        hex: '#283593'
+        rgb:
+        - 40
+        - 53
+        - 147
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010064'
+        color_name: Azul/Dourado/Roxo
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010092'
+        color_name: Verde/Roxo/Rosa
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+    - line: Fosforescente
+      commercial_name: PLA Fosforescente
+      profile_name: Masterprint PLA Fosforescente
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Glow
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Fosforescente (glow-in-the-dark). Fonte: catalogo oficial Masterprint (PDF). SKU
+        = Cod. Produto do catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de
+        ficha); flow 1.0; MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010034'
+        color_name: Verde Escuro
+        hex: '#1B5E20'
+        rgb:
+        - 27
+        - 94
+        - 32
+        finish: Glow
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010035'
+        color_name: Azul
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Glow
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+    - line: Rainbow
+      commercial_name: PLA Rainbow
+      profile_name: Masterprint PLA Rainbow
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Multicolor
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Rainbow (multicor). Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto
+        do catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0;
+        MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010013'
+        color_name: Rainbow
+        hex: '#7F7FD5'
+        rgb:
+        - 127
+        - 127
+        - 213
+        finish: Multicolor
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+    - line: Silk Rainbow
+      commercial_name: PLA Silk Rainbow
+      profile_name: Masterprint PLA Silk Rainbow
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Silk
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Silk Rainbow (multicor sedoso). Fonte: catalogo oficial Masterprint (PDF). SKU
+        = Cod. Produto do catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de
+        ficha); flow 1.0; MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010025'
+        color_name: Rainbow
+        hex: '#7F7FD5'
+        rgb:
+        - 127
+        - 127
+        - 213
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231010045'
+        color_name: Happy Rainbow
+        hex: '#7F7FD5'
+        rgb:
+        - 127
+        - 127
+        - 213
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+    - line: Silk Rainbow Fosforescente
+      commercial_name: PLA Silk Rainbow Fosforescente
+      profile_name: Masterprint PLA Silk Rainbow Fosforescente
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Silk
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Silk Rainbow Fosforescente (multicor glow). Fonte: catalogo oficial Masterprint
+        (PDF). SKU = Cod. Produto do catalogo. Temperaturas pela politica medio-alta (initial no topo
+        da faixa de ficha); flow 1.0; MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010065'
+        color_name: Fosforescente Rainbow
+        hex: '#7F7FD5'
+        rgb:
+        - 127
+        - 127
+        - 213
+        finish: Silk
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+    - line: Rainbow Fosco
+      commercial_name: PLA Rainbow Fosco
+      profile_name: Masterprint PLA Rainbow Fosco
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 14
+      surface_finish: Matte
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'PLA linha Rainbow Fosco (multicor fosco). Fonte: catalogo oficial Masterprint (PDF). SKU
+        = Cod. Produto do catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de
+        ficha); flow 1.0; MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231010103'
+        color_name: Rainbow
+        hex: '#7F7FD5'
+        rgb:
+        - 127
+        - 127
+        - 213
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231010104'
+        color_name: Dreamy Rainbow
+        hex: '#7F7FD5'
+        rgb:
+        - 127
+        - 127
+        - 213
+        finish: Matte
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+  ABS:
+    profiles:
+    - line: Basico
+      commercial_name: ABS Basico
+      profile_name: Masterprint ABS Basico
+      nozzle:
+        initial: 245
+        min: 230
+        max: 250
+      bed:
+        initial: 105
+        temp: 105
+      flow_ratio: 1.0
+      max_volumetric_speed: 10
+      surface_finish: Gloss
+      drying_temperature: 80
+      drying_time: 6.0
+      notes: 'ABS linha Basico. Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto do catalogo.
+        Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0; MVS conservador
+        por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231030001'
+        color_name: Preto
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: Active
+      - sku: '231030002'
+        color_name: Branco
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: Active
+      - sku: '231030003'
+        color_name: Azul
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: Active
+      - sku: '231030004'
+        color_name: Cinza
+        hex: '#808080'
+        rgb:
+        - 128
+        - 128
+        - 128
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: Active
+      - sku: '231030005'
+        color_name: Vermelho
+        hex: '#C62828'
+        rgb:
+        - 198
+        - 40
+        - 40
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: Active
+      - sku: '231030006'
+        color_name: Verde
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: Active
+      - sku: '231030007'
+        color_name: Natural
+        hex: '#EDE8DC'
+        rgb:
+        - 237
+        - 232
+        - 220
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: Active
+      - sku: '231030009'
+        color_name: Rosa
+        hex: '#F06292'
+        rgb:
+        - 240
+        - 98
+        - 146
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231030010'
+        color_name: Laranja
+        hex: '#F57C00'
+        rgb:
+        - 245
+        - 124
+        - 0
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231030011'
+        color_name: Amarelo
+        hex: '#FBC02D'
+        rgb:
+        - 251
+        - 192
+        - 45
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231030012'
+        color_name: Roxo
+        hex: '#6A1B9A'
+        rgb:
+        - 106
+        - 27
+        - 154
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231030013'
+        color_name: Prata
+        hex: '#C0C0C0'
+        rgb:
+        - 192
+        - 192
+        - 192
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231030014'
+        color_name: Marrom
+        hex: '#6D4C41'
+        rgb:
+        - 109
+        - 76
+        - 65
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231030015'
+        color_name: Dourado
+        hex: '#D4AF37'
+        rgb:
+        - 212
+        - 175
+        - 55
+        finish: Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 80
+        dry_hours: 6.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+  TPR:
+    profiles:
+    - line: Flex
+      commercial_name: TPR Flex
+      profile_name: Masterprint TPR Flex
+      nozzle:
+        initial: 215
+        min: 190
+        max: 220
+      bed:
+        initial: 60
+        temp: 60
+      flow_ratio: 1.0
+      max_volumetric_speed: 4
+      surface_finish: Flexible
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'Linha Flex TPR, DIAMETRO 2.85mm. Mapeado para a classe de material TPR. Fonte: catalogo
+        oficial Masterprint (PDF). SKU = Cod. Produto do catalogo. Temperaturas pela politica medio-alta
+        (initial no topo da faixa de ficha); flow 1.0; MVS conservador por classe (sem spec de MVS do
+        fabricante).'
+      variants:
+      - sku: '231040001'
+        color_name: Preto
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 2.85
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231040002'
+        color_name: Branco
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 2.85
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231040003'
+        color_name: Azul
+        hex: '#1565C0'
+        rgb:
+        - 21
+        - 101
+        - 192
+        finish: Semi-Gloss
+        diameter_mm: 2.85
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231040004'
+        color_name: Amarelo
+        hex: '#FBC02D'
+        rgb:
+        - 251
+        - 192
+        - 45
+        finish: Semi-Gloss
+        diameter_mm: 2.85
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231040005'
+        color_name: Vermelho
+        hex: '#C62828'
+        rgb:
+        - 198
+        - 40
+        - 40
+        finish: Semi-Gloss
+        diameter_mm: 2.85
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231040006'
+        color_name: Verde
+        hex: '#2E7D32'
+        rgb:
+        - 46
+        - 125
+        - 50
+        finish: Semi-Gloss
+        diameter_mm: 2.85
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+  TPU:
+    profiles:
+    - line: Flex
+      commercial_name: TPU Flex
+      profile_name: Masterprint TPU Flex
+      nozzle:
+        initial: 225
+        min: 190
+        max: 230
+      bed:
+        initial: 55
+        temp: 55
+      flow_ratio: 1.0
+      max_volumetric_speed: 4
+      surface_finish: Flexible
+      drying_temperature: 50
+      drying_time: 8.0
+      notes: 'Linha Flex TPU. Faixa de mesa 0-60C no catalogo (piso ''00C'' e erro tipografico); initial/temp
+        fixados em 55C. Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto do catalogo. Temperaturas
+        pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0; MVS conservador por classe
+        (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231050001'
+        color_name: Branco
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231050002'
+        color_name: Preto
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+      - sku: '231050003'
+        color_name: Cinza
+        hex: '#808080'
+        rgb:
+        - 128
+        - 128
+        - 128
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: ComingSoon
+        notes: Indisponivel no lancamento do catalogo (Em Breve)
+      - sku: '231050004'
+        color_name: Natural/Transparente
+        hex: '#E8E8E0'
+        rgb:
+        - 232
+        - 232
+        - 224
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 50
+        dry_hours: 8.0
+        status: Active
+  ASA:
+    profiles:
+    - line: ASA
+      commercial_name: ASA Basico
+      profile_name: Masterprint ASA Basico
+      nozzle:
+        initial: 225
+        min: 190
+        max: 230
+      bed:
+        initial: 100
+        temp: 100
+      flow_ratio: 1.0
+      max_volumetric_speed: 10
+      surface_finish: Semi-Gloss
+      drying_temperature: 70
+      drying_time: 6.0
+      notes: 'ASA (resistente a UV/exterior). Fonte: catalogo oficial Masterprint (PDF). SKU = Cod. Produto
+        do catalogo. Temperaturas pela politica medio-alta (initial no topo da faixa de ficha); flow 1.0;
+        MVS conservador por classe (sem spec de MVS do fabricante).'
+      variants:
+      - sku: '231060001'
+        color_name: Branco
+        hex: '#F5F5F5'
+        rgb:
+        - 245
+        - 245
+        - 245
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 70
+        dry_hours: 6.0
+        status: Active
+      - sku: '231060002'
+        color_name: Preto
+        hex: '#111111'
+        rgb:
+        - 17
+        - 17
+        - 17
+        finish: Semi-Gloss
+        diameter_mm: 1.75
+        weight_g: 1000
+        dry_temp: 70
+        dry_hours: 6.0
         status: Active
