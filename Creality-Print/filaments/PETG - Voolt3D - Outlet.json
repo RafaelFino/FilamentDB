@@ -32,16 +32,16 @@
     "is_custom_defined": "0",
     "name": "PETG - Voolt3D - Outlet",
     "nozzle_temperature": [
-        "260"
+        "270"
     ],
     "nozzle_temperature_initial_layer": [
-        "260"
+        "270"
     ],
     "nozzle_temperature_range_low": [
         "220"
     ],
     "nozzle_temperature_range_high": [
-        "260"
+        "270"
     ],
     "textured_plate_temp": [
         "70"

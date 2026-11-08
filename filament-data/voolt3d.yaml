@@ -1031,17 +1031,19 @@ materials:
         linha de produção. Perfil SEPARADO do PETG HF porque os carretéis outlet/troca de
         cor se comportam de forma variável por lote (sub-extrusão observada) e não como o
         HF (High Fluidity) do catálogo.
-        Origem dos valores: nozzle initial/max 260 = decisão do usuário (máximo impresso na
-        caixa do carretel; a ficha do site diz 220-245°C); nozzle min 220 = ficha do site;
+        Origem dos valores: nozzle initial/max 270 = decisão do usuário, SEM FONTE em ficha
+        técnica (a ficha do site diz 220-245°C; a caixa do carretel imprime até 260°C);
+        usuário testou e relatou sub-extrusão resolvida a 270°C. Valor acima de qualquer
+        especificação impressa; calibrar por lote. nozzle min 220 = ficha do site;
         MVS 10 = decisão do usuário (ficha declara 20 mm³/s); bed 70, density 1.27, Tg 75-80,
         tolerância ±0.02mm = ficha do site; flow_ratio 0.98 = SEM FONTE (igual ao HF),
         calibrar. Secagem não encontrada na ficha (campos omitidos).
         Fonte: https://www.voolt3d.com.br/filamentos/outlet/filamento-petg-outlet
         (SKU PG-HF-OT-1, R$80,00 / R$76,00 / R$72,20 Pix na consulta).
       nozzle:
-        initial: 260
+        initial: 270
         min: 220
-        max: 260
+        max: 270
       bed:
         initial: 70
         temp: 70
@@ -1053,8 +1055,9 @@ materials:
       glass_transition_temp: 75
       recommendation: >
         PETG de troca de cor a preço de outlet; a cor é imprevisível e o comportamento
-        varia por lote, por isso MVS 10 e bico a 260°C (decisão do usuário). Quando
-        escolher: peças onde a cor não importa e o custo pesa.
+        varia por lote, por isso MVS 10 e bico a 270°C (decisão do usuário, acima da
+        ficha, para evitar sub-extrusão). Quando escolher: peças onde a cor não importa
+        e o custo pesa.
       color: Indefinida
       surface_finish: Standard
       variants:
