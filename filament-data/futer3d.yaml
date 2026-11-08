@@ -21,17 +21,19 @@ materials:
       export: true
       notes: >
         Produto comprado pelo usuário. Pesquisa web (remote_web_search, web_fetch) não
-        localizou site oficial, loja nem TDS da Futer3D. Faixas de bico (230-270) e mesa
-        (70-90) informadas pelo usuário. Fluxo e MVS são da CLASSE PETG adotada no projeto,
+        localizou site oficial, loja nem TDS da Futer3D. Faixa de mesa (70-90) informada
+        pelo usuário; faixa de bico corrigida para 230-260 (outlier de 270 identificado em
+        auditoria comparativa com os demais PETG do catálogo). Fluxo e MVS são da CLASSE PETG adotada no projeto,
         NÃO do fabricante. Não encontrado: país,
         site, diâmetro/tolerância, peso, densidade, secagem, ventilação, cor, acabamento,
         preço, URL.
       nozzle:
-        initial: 270
+        initial: 260
         min: 230
-        max: 270
-      # Faixas informadas pelo usuário (fonte: rótulo/página do produto): bico 230-270, mesa 70-90.
-      # initial 240 -> 270: topo da faixa de ficha (etiqueta confirmada 230-270) p/ combater sub-extrusão de PETG; mesa 80 = ponto médio.
+        max: 260
+      # Faixas informadas pelo usuário (fonte: rótulo/página do produto): bico 230-260, mesa 70-90.
+      # initial = max = 260: topo da faixa real de ficha (230-260; o valor 270 era outlier e foi corrigido
+      # após auditoria comparativa com os demais PETG do catálogo) p/ combater sub-extrusão.
       bed:
         initial: 80
         temp: 80
