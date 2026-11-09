@@ -1,7 +1,8 @@
 {
     "type": "filament",
     "name": "TPU - Voolt3D - 95A @K2",
-    "inherits": "fdm_filament_tpu",
+    "version": "2.3.2.75",
+    "inherits": "Generic TPU @K2-all",
     "from": "User",
     "instantiation": "true",
     "filament_flow_ratio": [

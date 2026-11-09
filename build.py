@@ -1552,20 +1552,33 @@ def export_orca_filaments():
         if not _export_allowed(export_enabled):
             continue
 
-        inherits = ORCA_FILAMENT_INHERITS.get(material, "fdm_filament_pla")
         filament_type = ORCA_FILAMENT_TYPE.get(material, "PLA")
         bed_temp = int(bed) if bed else 60
 
         # Exporta o mesmo filamento uma vez por device Orca habilitado, cada um
-        # com seu sufixo de nome e compatible_printers.
+        # com seu sufixo de nome, inherits e compatible_printers.
         for device in devices:
             orca_cfg = device["slicers"]["orca"]
             suffix = device["orca_name_suffix"]
             orca_name = f"{profile_name} @{suffix}"
 
+            # O preset-pai de filamento é POR DEVICE: cada máquina expõe nomes
+            # de pai próprios no Orca (K2: "Generic PLA @K2-all"; CC2: "Elegoo
+            # PLA @ECC2"). Os genéricos fdm_filament_* NÃO existem na instalação
+            # da K2 — herdar deles faz o Orca rejeitar com "can not find parent"
+            # e o filamento nunca aparece. Resolve-se via
+            # filament_inherits_by_material na definição do device; o mapa
+            # genérico ORCA_FILAMENT_INHERITS fica só como fallback para devices
+            # que ainda não declararam o seu.
+            fil_inherits_map = orca_cfg.get("filament_inherits_by_material", {})
+            inherits = fil_inherits_map.get(material)
+            if not inherits:
+                inherits = ORCA_FILAMENT_INHERITS.get(material, "fdm_filament_pla")
+
             payload = {
                 "type": "filament",
                 "name": orca_name,
+                "version": ORCA_CONFIG_VERSION,
                 "inherits": inherits,
                 "from": "User",
                 "instantiation": "true",
@@ -1600,6 +1613,14 @@ def export_orca_filaments():
 # =============================================================================
 # STEP 7: EXPORT PROCESSES (Orca Slicer format)
 # =============================================================================
+
+# Versão do formato de config do OrcaSlicer. Distinta da versão do Creality
+# Print (26.4.28.18, formato próprio do CP). O Orca REJEITA presets de usuário
+# sem este campo com "invalid version in config" e não os lista na UI — logo é
+# obrigatório em todo payload Orca (filamento e processo). Valor confirmado nos
+# presets que o próprio Orca 2.5.0 grava no diretório de usuário (2.3.2.75); o
+# Orca faz upgrade de versão de config pra frente sem problema.
+ORCA_CONFIG_VERSION = "2.3.2.75"
 
 # Orca process profiles inherit from the built-in K2 Standard profile
 ORCA_PROCESS_BASE = "0.20mm Standard @Creality K2 0.4 nozzle"
@@ -1736,6 +1757,7 @@ def export_orca_processes():
         data = {
             "type": "process",
             "name": orca_name,
+            "version": ORCA_CONFIG_VERSION,
             "inherits": orca_inherits,
             "from": "User",
             "instantiation": "true",

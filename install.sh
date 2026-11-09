@@ -343,18 +343,25 @@ write_orca_runner() {
 # run-orca-slicer.sh — Sincroniza perfis do FilamentDB e abre o Orca Slicer.
 # GERADO por install.sh. Agrega raiz (K2) + subpastas de device (cc2, ...).
 #
-# Orca usa um único diretório de usuário achatado (user/default) por design —
-# não tem árvore versionada por conta como o Creality Print. Por isso não há
-# enumeração multi-conta aqui; o alvo é sempre user/default.
+# Alvos de conta (DINÂMICO): o Orca guarda presets de usuário por CONTA em
+# user/<id>/. Quando há login, a conta ativa fica em user/<preset_folder>/ (lido
+# de OrcaSlicer.conf) e é essa pasta que o cloud sync observa e envia (quando
+# sync_user_preset=true). Sem os perfis AQUI, logado eles não aparecem na UI nem
+# sobem pra nuvem. Por isso espelhamos em TODOS os alvos: sempre user/default
+# (fallback deslogado) + a conta logada detectada no conf. Nada de id hardcoded
+# — preset_folder muda a cada conta/login.
+#
+# Pré-requisito já resolvido no export (build.py): todo preset Orca carrega o
+# campo "version" (ORCA_CONFIG_VERSION); sem ele o Orca rejeita com "invalid
+# version in config" e não lista nem sincroniza.
 #
 
 ORCA_ROOT="\${HOME}/filament-db/orca"
 FILAMENT_SRC="\${ORCA_ROOT}/filament"
 PROCESS_SRC="\${ORCA_ROOT}/process"
 DIFF_DIR="\${HOME}/filament-db/diff"
-ORCA_USER_DIR="\${HOME}/.config/OrcaSlicer/user/default"
-FILAMENT_DST="\${ORCA_USER_DIR}/filament"
-PROCESS_DST="\${ORCA_USER_DIR}/process"
+ORCA_USER_BASE="\${HOME}/.config/OrcaSlicer/user"
+ORCA_CONF="\${HOME}/.config/OrcaSlicer/OrcaSlicer.conf"
 ORCA_APPIMAGE="${orca_exec}"
 
 DATE_SUFFIX=\$(date +%Y%m%d)
@@ -368,7 +375,33 @@ if [[ ! -d "\$FILAMENT_SRC" ]]; then
     err "\$FILAMENT_SRC não encontrado. Rode publish.sh primeiro."
     exit 1
 fi
-mkdir -p "\$FILAMENT_DST" "\$PROCESS_DST" "\$DIFF_DIR"
+mkdir -p "\$DIFF_DIR"
+
+# --- Detecção de contas-alvo -------------------------------------------------
+# Sempre inclui 'default'; adiciona a conta logada (preset_folder no conf) se a
+# pasta existir. Dedup preserva ordem.
+detect_account_dirs() {
+    local -a accounts=(default)
+    local logged=""
+    if [[ -r "\$ORCA_CONF" ]]; then
+        # Extrai o valor de "preset_folder": "<id>"
+        logged=\$(grep -oE '"preset_folder"[[:space:]]*:[[:space:]]*"[^"]*"' "\$ORCA_CONF" 2>/dev/null \\
+                 | head -1 | sed -E 's/.*:[[:space:]]*"([^"]*)".*/\1/')
+    fi
+    if [[ -n "\$logged" && -d "\${ORCA_USER_BASE}/\${logged}" ]]; then
+        accounts+=("\$logged")
+    elif [[ -n "\$logged" ]]; then
+        warn "Conta logada '\$logged' no conf, mas \${ORCA_USER_BASE}/\${logged} não existe — abra o Orca logado uma vez."
+    fi
+    # dedup preservando ordem (seen precisa ser associativo em zsh)
+    local -A seen
+    local -a uniq=()
+    local a
+    for a in "\${accounts[@]}"; do
+        [[ -z "\${seen[\$a]:-}" ]] && { uniq+=("\$a"); seen[\$a]=1; }
+    done
+    print -l -- "\${uniq[@]}"
+}
 
 collect_sources() {
     local kind="\$1"
@@ -384,6 +417,7 @@ collect_sources() {
 archive_orphans() {
     local dst_dir="\$1" label="\$2"; shift 2
     local -a src_dirs=("\$@") ; local moved=0 dst_file
+    [[ -d "\$dst_dir" ]] || return 0
     for dst_file in "\$dst_dir"/*.json(N); do
         [[ -f "\$dst_file" ]] || continue
         local base="\${dst_file:t}" ext="\${dst_file:t:e}" name="\${dst_file:t:r}"
@@ -402,6 +436,7 @@ archive_orphans() {
 sync_kind() {
     local kind="\$1" dst_dir="\$2" label="\$3"; shift 3
     local -a src_dirs=("\$@") ; local src
+    mkdir -p "\$dst_dir"
     find "\$dst_dir" -maxdepth 1 -type f -name "*.json" -delete
     for src in "\${src_dirs[@]}"; do
         cp "\$src"/*.json(N) "\$dst_dir/" 2>/dev/null
@@ -414,13 +449,23 @@ PROCESS_SRCS=("\${(@f)\$(collect_sources process)}")
 info "Fontes de filamento: \${#FILAMENT_SRCS[@]} (raiz + devices)"
 info "Fontes de processo:  \${#PROCESS_SRCS[@]} (raiz + devices)"
 
-archive_orphans "\$FILAMENT_DST" "Filamentos Orca" "\${FILAMENT_SRCS[@]}"
-archive_orphans "\$PROCESS_DST" "Processos Orca" "\${PROCESS_SRCS[@]}"
-sync_kind filament "\$FILAMENT_DST" "Filamentos" "\${FILAMENT_SRCS[@]}"
-sync_kind process "\$PROCESS_DST" "Processos" "\${PROCESS_SRCS[@]}"
+ACCOUNT_DIRS=("\${(@f)\$(detect_account_dirs)}")
+info "Contas-alvo: \${ACCOUNT_DIRS[*]}"
+
+for acct in "\${ACCOUNT_DIRS[@]}"; do
+    user_dir="\${ORCA_USER_BASE}/\${acct}"
+    filament_dst="\${user_dir}/filament"
+    process_dst="\${user_dir}/process"
+    echo ""
+    info "Alvo: conta \${acct}"
+    archive_orphans "\$filament_dst" "Filamentos Orca (\${acct})" "\${FILAMENT_SRCS[@]}"
+    archive_orphans "\$process_dst"  "Processos Orca (\${acct})"  "\${PROCESS_SRCS[@]}"
+    sync_kind filament "\$filament_dst" "  Filamentos" "\${FILAMENT_SRCS[@]}"
+    sync_kind process  "\$process_dst"  "  Processos"  "\${PROCESS_SRCS[@]}"
+done
 
 echo ""
-info "Abrindo Orca Slicer..."
+info "Sincronizados \${#ACCOUNT_DIRS[@]} alvo(s). Abrindo Orca Slicer..."
 exec "\$ORCA_APPIMAGE" "\$@"
 RUNNER_EOF
     chmod 755 "$ORCA_RUNNER"

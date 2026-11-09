@@ -15,7 +15,18 @@
             "compatible_printers": ["Elegoo CC2 0.4 Nozzle"],
             "process_inherits_by_layer": [
                 { "max": 99.0, "inherits": "0.20mm Standard @Elegoo CC2 0.4 Nozzle" }
-            ]
+            ],
+            "filament_inherits_by_material": {
+                "PLA": "Elegoo PLA @ECC2",
+                "PETG": "Elegoo PETG @ECC2",
+                "ABS": "Elegoo ABS @ECC2",
+                "ASA": "Elegoo ASA @ECC2",
+                "TPU": "Elegoo TPU 95A @ECC2",
+                "PLA-CF": "Elegoo PLA-CF @ECC2",
+                "PETG-CF": "Elegoo PETG-CF @ECC2",
+                "PLA-LW": "Elegoo PLA @ECC2",
+                "PETG-LW": "Elegoo PETG @ECC2"
+            }
         },
         "creality_print": {
             "enabled": false

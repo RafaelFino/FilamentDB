@@ -1,7 +1,8 @@
 {
     "type": "filament",
     "name": "TPU - Voolt3D - 95A @CC2",
-    "inherits": "fdm_filament_tpu",
+    "version": "2.3.2.75",
+    "inherits": "Elegoo TPU 95A @ECC2",
     "from": "User",
     "instantiation": "true",
     "filament_flow_ratio": [

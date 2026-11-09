@@ -1,7 +1,8 @@
 {
     "type": "filament",
     "name": "PETG - Sunlu - High Speed Matte @CC2",
-    "inherits": "fdm_filament_petg",
+    "version": "2.3.2.75",
+    "inherits": "Elegoo PETG @ECC2",
     "from": "User",
     "instantiation": "true",
     "filament_flow_ratio": [

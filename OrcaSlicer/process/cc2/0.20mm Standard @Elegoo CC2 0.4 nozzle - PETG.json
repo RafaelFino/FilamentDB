@@ -1,6 +1,7 @@
 {
     "type": "process",
     "name": "0.20mm Standard @Elegoo CC2 0.4 nozzle - PETG",
+    "version": "2.3.2.75",
     "inherits": "0.20mm Standard @Elegoo CC2 0.4 Nozzle",
     "from": "User",
     "instantiation": "true",

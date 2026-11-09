@@ -19,7 +19,18 @@
                 { "max": 0.22, "inherits": "0.20mm Standard @Creality K2 0.4 nozzle" },
                 { "max": 0.26, "inherits": "0.24mm Draft @Creality K2 0.4 nozzle" },
                 { "max": 99.0, "inherits": "0.28mm SuperDraft @Creality K2 0.4 nozzle" }
-            ]
+            ],
+            "filament_inherits_by_material": {
+                "PLA": "Generic PLA @K2-all",
+                "PETG": "Generic PETG @K2-all",
+                "ABS": "Generic ABS @K2-all",
+                "ASA": "Generic ASA @K2-all",
+                "TPU": "Generic TPU @K2-all",
+                "PLA-CF": "Generic PLA-CF @K2-all",
+                "PETG-CF": "Generic PETG-CF @K2-all",
+                "PLA-LW": "Hyper L-W PLA @K2-all",
+                "PETG-LW": "Generic PETG @K2-all"
+            }
         },
         "creality_print": {
             "enabled": true,

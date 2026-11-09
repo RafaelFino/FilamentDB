@@ -1,7 +1,8 @@
 {
     "type": "filament",
     "name": "PLA-CF - Voolt3D - Standard @CC2",
-    "inherits": "fdm_filament_pla",
+    "version": "2.3.2.75",
+    "inherits": "Elegoo PLA-CF @ECC2",
     "from": "User",
     "instantiation": "true",
     "filament_flow_ratio": [

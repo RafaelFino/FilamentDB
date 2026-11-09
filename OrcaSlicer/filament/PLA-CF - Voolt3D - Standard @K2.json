@@ -1,7 +1,8 @@
 {
     "type": "filament",
     "name": "PLA-CF - Voolt3D - Standard @K2",
-    "inherits": "fdm_filament_pla",
+    "version": "2.3.2.75",
+    "inherits": "Generic PLA-CF @K2-all",
     "from": "User",
     "instantiation": "true",
     "filament_flow_ratio": [
