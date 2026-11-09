@@ -404,11 +404,26 @@ class OrcaProcessFieldCoverageTests(unittest.TestCase):
                 f"{f}: support_type={data.get('support_type')!r} fora de {ORCA_SUPPORT_TYPE_VALUES}",
             )
 
+    @staticmethod
+    def _same_value(a, b):
+        """Igualdade de VALOR, não de representação. CP usa o caminho float
+        genérico ("300.0", "15%") e o Orca usa as_int/str ("300", "15") — o
+        número é o mesmo. Normaliza "%", inteiros-float e compara numérico
+        quando possível; senão, string exata."""
+        if a == b:
+            return True
+        na, nb = str(a).rstrip("%"), str(b).rstrip("%")
+        try:
+            return float(na) == float(nb)
+        except (TypeError, ValueError):
+            return na == nb
+
     def test_cp_orca_scoped_field_parity(self):
         """Paridade completa CP×Orca no perfil de referência: todo campo de
         perfil do CP (descontando as chaves CP-only/[meta] e flush_multiplier)
         aparece no Orca com o MESMO valor. brim_width difere só na representação
-        de inteiro ("5.0" vs "5") — tolerado explicitamente.
+        de inteiro ("5.0" vs "5") — tolerado pela comparação numérica de
+        _same_value.
 
         Trava a regressão que o diff manual pegaria: um campo removido, renomeado
         ou com valor divergente no export Orca derruba este teste.
@@ -429,28 +444,66 @@ class OrcaProcessFieldCoverageTests(unittest.TestCase):
             f"Campos de perfil do CP ausentes no Orca: {missing}",
         )
 
-        def same_value(a, b):
-            """Igualdade de VALOR, não de representação. CP usa o caminho float
-            genérico ("300.0", "15%") e o Orca usa as_int/str ("300", "15") — o
-            número é o mesmo. Normaliza "%", inteiros-float e compara numérico
-            quando possível; senão, string exata."""
-            if a == b:
-                return True
-            na, nb = str(a).rstrip("%"), str(b).rstrip("%")
-            try:
-                return float(na) == float(nb)
-            except (TypeError, ValueError):
-                return na == nb
-
         mismatches = [
             (k, cp[k], orca.get(k))
             for k in sorted(cp_profile_keys)
-            if not same_value(cp[k], orca.get(k))
+            if not self._same_value(cp[k], orca.get(k))
         ]
         self.assertEqual(
             mismatches, [],
             f"Divergências de valor CP×Orca (campo, cp, orca): {mismatches}",
         )
+
+    # Campos de 2 casas governados por set_2dp: é aqui que o arredondamento
+    # arrisca colapsar/divergir o VALOR num layer height fino. A paridade de
+    # valor CP×Orca sobre ESTES campos é checada em layer heights finos para
+    # blindar o set_2dp (finding de review "paridade validada em único perfil").
+    # NÃO inclui campos de velocidade: o export Orca serializa velocidade como
+    # inteiro (set_val as_int → int(22.5)=22) enquanto o CP mantém 1 casa
+    # (22.5) — divergência de REPRESENTAÇÃO de velocidade pré-existente e fora
+    # do escopo deste contrato de cobertura.
+    _SET2DP_PARITY_FIELDS = [
+        "layer_height", "initial_layer_print_height",
+        "support_top_z_distance", "support_interface_spacing",
+        "support_object_xy_distance", "brim_object_gap",
+        "top_shell_thickness", "bottom_shell_thickness",
+    ]
+    _SET2DP_PARITY_PROFILES = [
+        "0.12mm Detail @Creality K2 0.4 nozzle - PLA.json",
+        "0.16mm Standard @Creality K2 0.4 nozzle - PLA.json",
+        "0.28mm Strong @Creality K2 0.4 nozzle - PLA.json",
+    ]
+
+    def test_cp_orca_set2dp_value_parity_fine_layers(self):
+        """Paridade de VALOR (não só presença) dos campos de 2 casas em layer
+        heights finos/variados. Em 0.12/0.16/0.28 os campos de distância e as
+        espessuras de casca têm 2 casas significativas (0.12, 0.22, 0.45, 0.84,
+        0.30, 0.55, 1.12) — é onde o set_2dp colapsaria se estivesse errado.
+        A comparação é NUMÉRICA (0.12 == "0.12"), então pega divergência de valor
+        além de ausência de campo. Fecha o finding de paridade em perfil único.
+        """
+        checked = 0
+        for fname in self._SET2DP_PARITY_PROFILES:
+            cp_path = ROOT / "Creality-Print" / "process" / fname
+            orca_path = ROOT / "OrcaSlicer" / "process" / fname
+            if not (cp_path.exists() and orca_path.exists()):
+                continue
+            cp = json.load(open(cp_path))
+            orca = json.load(open(orca_path))
+            for key in self._SET2DP_PARITY_FIELDS:
+                if key not in cp:
+                    continue  # campo não presente neste profile type
+                self.assertIn(
+                    key, orca, f"{fname}: Orca sem campo de 2 casas '{key}'",
+                )
+                self.assertTrue(
+                    self._same_value(cp[key], orca[key]),
+                    f"{fname}: valor divergente CP×Orca em '{key}' "
+                    f"(cp={cp[key]!r}, orca={orca[key]!r})",
+                )
+            checked += 1
+        if checked == 0:
+            self.skipTest("JSONs Orca/CP de layer height variado ausentes (rodar build.py antes)")
 
     def test_flush_multiplier_absent(self):
         """flush_multiplier é exclusão proposital (rejeitado pelo CP; mantido

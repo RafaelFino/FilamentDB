@@ -115,6 +115,18 @@ diferença de representação como `brim_width` "5.0"/"5"). Wipe
 emitem quando a coluna tem valor (ausente no Fast PETG em ambos); por isso não é
 asserção de presença incondicional, só é garantido pela paridade por-perfil.
 
+Paridade de VALOR dos campos de 2 casas também é travada em layer heights
+finos/variados (`test_cp_orca_set2dp_value_parity_fine_layers`: 0.12 Detail,
+0.16 Standard, 0.28 Strong) para blindar o `set_2dp` contra divergência de valor
+(não só presença) onde o colapso de casa mais arrisca. **Importante — velocidade
+diverge por REPRESENTAÇÃO entre os exports**: o Orca serializa campos de
+velocidade como inteiro (`set_val` `as_int` → `int(22.5)=22`) enquanto o CP
+mantém 1 casa (`"22.5"`); por isso a paridade de valor campo-a-campo nos LH finos
+é **escopada aos campos de `set_2dp`** (distâncias pequenas, shells, layer
+heights), não às velocidades. Essa divergência de velocidade é pré-existente e
+**não** deve ser "corrigida" mudando a serialização do Orca (alteraria valores de
+perfil emitidos).
+
 **Gate de runtime (manual, só o usuário):** a paridade estática CP×Orca NÃO
 substitui carregar os presets no OrcaSlicer real e conferir o log de debug
 (`~/.config/OrcaSlicer/log/debug_*.log.0`, extensão `.log.0`) por
