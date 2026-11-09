@@ -285,6 +285,108 @@ class MultiMaterialCFSTests(unittest.TestCase):
         self.assertEqual(missing, [], f"JSONs sem wiping_volumes_extruders: {missing}")
 
 
+# Campos de perfil que o export Orca de processo DEVE emitir (espelha o field_map
+# do CP). Causa-raiz do gap: o SELECT de export_orca_processes não buscava estas
+# colunas, então nunca chegavam ao payload. Travado aqui para evitar regressão.
+ORCA_SUPPORT_FIELDS = [
+    "enable_support", "support_type", "support_on_build_plate_only",
+    "support_top_z_distance", "support_interface_spacing",
+    "support_interface_top_layers", "support_object_xy_distance",
+    "support_xy_overrides_z",
+]
+ORCA_PRIME_TOWER_FIELDS = [
+    "enable_prime_tower", "prime_tower_width", "prime_tower_brim_width",
+    "prime_volume",
+]
+ORCA_FLUSH_FIELDS = [
+    "flush_into_infill", "flush_into_objects", "flush_into_support",
+]
+
+
+class OrcaProcessFieldCoverageTests(unittest.TestCase):
+    """O export Orca de processo espelha os campos de perfil do CP (exceto
+    flush_multiplier e as chaves [meta]). Lê os JSONs publicados em
+    OrcaSlicer/process/ (padrão de test_wiping_volumes_present_in_exports);
+    skipTest se o build ainda não rodou.
+    """
+
+    def _orca_process_jsons(self):
+        import glob
+        return sorted(set(
+            glob.glob(str(ROOT / "OrcaSlicer" / "process" / "*.json"))
+            + glob.glob(str(ROOT / "OrcaSlicer" / "process" / "**" / "*.json"), recursive=True)
+        ))
+
+    def test_support_block_present(self):
+        files = self._orca_process_jsons()
+        if not files:
+            self.skipTest("nenhum JSON Orca exportado (rodar build.py antes)")
+        for f in files:
+            data = json.load(open(f))
+            for key in ORCA_SUPPORT_FIELDS:
+                self.assertIn(key, data, f"{f} sem campo de suporte '{key}'")
+
+    def test_prime_tower_block_present(self):
+        files = self._orca_process_jsons()
+        if not files:
+            self.skipTest("nenhum JSON Orca exportado (rodar build.py antes)")
+        for f in files:
+            data = json.load(open(f))
+            for key in ORCA_PRIME_TOWER_FIELDS:
+                self.assertIn(key, data, f"{f} sem campo de prime tower '{key}'")
+
+    def test_flush_block_present(self):
+        files = self._orca_process_jsons()
+        if not files:
+            self.skipTest("nenhum JSON Orca exportado (rodar build.py antes)")
+        for f in files:
+            data = json.load(open(f))
+            for key in ORCA_FLUSH_FIELDS:
+                self.assertIn(key, data, f"{f} sem campo de flush '{key}'")
+
+    def test_flush_multiplier_absent(self):
+        """flush_multiplier é exclusão proposital (rejeitado pelo CP; mantido
+        fora do Orca por simetria)."""
+        files = self._orca_process_jsons()
+        if not files:
+            self.skipTest("nenhum JSON Orca exportado (rodar build.py antes)")
+        offending = [f for f in files if "flush_multiplier" in json.load(open(f))]
+        self.assertEqual(offending, [], f"JSONs Orca com flush_multiplier: {offending}")
+
+    def test_small_distances_keep_two_decimals(self):
+        """Regressão de colapso de casas decimais: set_val arredonda a 1 casa e
+        corromperia 0.25→0.2 / 0.15→0.1. O bloco set_2dp preserva 2 casas."""
+        target = (ROOT / "OrcaSlicer" / "process"
+                  / "0.20mm Standard @Creality K2 0.4 nozzle - PLA.json")
+        if not target.exists():
+            self.skipTest("JSON de referência Orca ausente (rodar build.py antes)")
+        data = json.load(open(target))
+        self.assertEqual(data.get("support_top_z_distance"), "0.25")
+        self.assertEqual(data.get("brim_object_gap"), "0.15")
+
+    def test_layer_height_keeps_two_decimals_fine_layers(self):
+        """layer_height é o parâmetro mais crítico do perfil: set_val arredonda a
+        1 casa e colapsaria 0.12→"0.1" / 0.16→"0.2", fazendo o Orca fatiar na
+        altura errada. set_2dp preserva as 2 casas."""
+        cases = {
+            "0.12mm Detail @Creality K2 0.4 nozzle - PLA.json": "0.12",
+            "0.16mm Standard @Creality K2 0.4 nozzle - PLA.json": "0.16",
+        }
+        checked = 0
+        for fname, want in cases.items():
+            target = ROOT / "OrcaSlicer" / "process" / fname
+            if not target.exists():
+                continue
+            data = json.load(open(target))
+            self.assertEqual(
+                data.get("layer_height"), want,
+                f"{fname}: layer_height colapsou ({data.get('layer_height')!r} != {want!r})",
+            )
+            checked += 1
+        if checked == 0:
+            self.skipTest("JSONs Orca de layer height fino ausentes (rodar build.py antes)")
+
+
 class ZAADisabledScopeTests(unittest.TestCase):
     """ZAA (Z-layer anti-aliasing / Z contouring) NÃO é usado em nenhum perfil.
 

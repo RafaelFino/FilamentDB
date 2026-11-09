@@ -1681,6 +1681,17 @@ def export_orca_processes():
             pp.wipe_tower_bridging, pp.wipe_tower_cone_angle, pp.wipe_tower_extra_spacing,
             pp.wipe_tower_no_sparse_layers, pp.wipe_tower_rotation_angle,
             pp.prime_tower_enhance_type, pp.ooze_prevention,
+            pp.wall_generator, pp.internal_solid_infill_pattern,
+            pp.infill_combination, pp.top_surface_pattern, pp.bottom_surface_pattern,
+            pp.top_shell_thickness, pp.bottom_shell_thickness,
+            pp.enable_support, pp.support_type, pp.support_on_build_plate_only,
+            pp.support_top_z_distance, pp.support_interface_spacing,
+            pp.support_interface_top_layers, pp.support_object_xy_distance,
+            pp.support_xy_overrides_z, pp.brim_width, pp.brim_object_gap,
+            pp.role_based_wipe_speed, pp.wipe_on_loops,
+            pp.enable_prime_tower, pp.prime_tower_width, pp.prime_tower_brim_width,
+            pp.prime_volume, pp.flush_into_infill, pp.flush_into_objects,
+            pp.flush_into_support,
             m.name AS material_name, pp.device_id,
             pp.zaa_enabled, pp.zaa_minimize_perimeter_height, pp.zaa_min_z,
             pp.ironing_pattern, pp.ironing_angle
@@ -1709,6 +1720,17 @@ def export_orca_processes():
          wipe_tower_bridging, wipe_tower_cone_angle, wipe_tower_extra_spacing,
          wipe_tower_no_sparse_layers, wipe_tower_rotation_angle,
          prime_tower_enhance_type, ooze_prevention,
+         wall_generator, internal_solid_infill_pattern,
+         infill_combination, top_surface_pattern, bottom_surface_pattern,
+         top_shell_thickness, bottom_shell_thickness,
+         enable_support, support_type, support_on_build_plate_only,
+         support_top_z_distance, support_interface_spacing,
+         support_interface_top_layers, support_object_xy_distance,
+         support_xy_overrides_z, brim_width, brim_object_gap,
+         role_based_wipe_speed, wipe_on_loops,
+         enable_prime_tower, prime_tower_width, prime_tower_brim_width,
+         prime_volume, flush_into_infill, flush_into_objects,
+         flush_into_support,
          material_name, device_id,
          zaa_enabled, zaa_minimize_perimeter_height, zaa_min_z,
          ironing_pattern, ironing_angle) = row
@@ -1752,7 +1774,17 @@ def export_orca_processes():
                 else:
                     data[key] = str(val)
 
-        set_val("layer_height", layer_height)
+        # Distâncias pequenas: preservar 2 casas (set_val arredonda a 1 casa e
+        # colapsaria 0.25→0.2 / 0.15→0.1 / 0.45→0.5 — corrupção silenciosa).
+        # Espelha o tratamento já usado para ironing_spacing.
+        def set_2dp(key, val):
+            if val is not None:
+                v = float(val)
+                data[key] = str(int(v)) if v == int(v) else str(round(v, 2))
+
+        # layer_height: 2 casas (set_val padrão colapsava 0.12→"0.1" / 0.16→"0.2",
+        # fazendo o Orca fatiar na altura errada nesses layer heights finos).
+        set_2dp("layer_height", layer_height)
         set_val("inner_wall_speed", inner_wall, as_int=True)
         set_val("outer_wall_speed", outer_wall, as_int=True)
         set_val("sparse_infill_speed", sparse_infill, as_int=True)
@@ -1783,6 +1815,56 @@ def export_orca_processes():
         # Suporte apenas em regiões críticas é padrão obrigatório (materializado
         # explícito em todo JSON — invariante travada por teste).
         set_val("support_critical_regions_only", support_critical_regions_only, as_int=True)
+
+        # Cobertura de campos de perfil: espelha o field_map do export CP
+        # (export_processes) para que o Orca emita os mesmos campos de processo.
+        # Exclusões propositais: flush_multiplier (rejeitado pelo CP; mantido fora
+        # do Orca também), colunas [meta] e zaa_* (tratados em bloco próprio).
+        initial_lh = initial_layer_height if initial_layer_height is not None else layer_height
+        set_2dp("initial_layer_print_height", initial_lh)
+
+        # Parede
+        set_val("wall_generator", wall_generator)
+        set_val("wall_sequence", wall_sequence)
+
+        # Padrões de preenchimento/superfície
+        set_val("internal_solid_infill_pattern", internal_solid_infill_pattern)
+        set_val("infill_combination", infill_combination, as_int=True)
+        set_val("top_surface_pattern", top_surface_pattern)
+        set_val("bottom_surface_pattern", bottom_surface_pattern)
+
+        # Espessura de casca (2 casas: valores por layer height como 0.84/0.96/1.12)
+        set_2dp("top_shell_thickness", top_shell_thickness)
+        set_2dp("bottom_shell_thickness", bottom_shell_thickness)
+
+        # Suporte (bloco completo)
+        set_val("enable_support", enable_support, as_int=True)
+        set_val("support_type", support_type)
+        set_val("support_on_build_plate_only", support_on_build_plate_only, as_int=True)
+        set_2dp("support_top_z_distance", support_top_z_distance)
+        set_2dp("support_interface_spacing", support_interface_spacing)
+        set_val("support_interface_top_layers", support_interface_top_layers, as_int=True)
+        set_2dp("support_object_xy_distance", support_object_xy_distance)
+        set_val("support_xy_overrides_z", support_xy_overrides_z)
+
+        # Brim
+        set_val("brim_width", brim_width)
+        set_2dp("brim_object_gap", brim_object_gap)
+
+        # Wipe
+        set_val("role_based_wipe_speed", role_based_wipe_speed, as_int=True)
+        set_val("wipe_on_loops", wipe_on_loops, as_int=True)
+
+        # Prime tower (geométrico)
+        set_val("enable_prime_tower", enable_prime_tower, as_int=True)
+        set_val("prime_tower_width", prime_tower_width, as_int=True)
+        set_val("prime_tower_brim_width", prime_tower_brim_width, as_int=True)
+        set_val("prime_volume", prime_volume, as_int=True)
+
+        # Flush (sem flush_multiplier — exclusão proposital)
+        set_val("flush_into_infill", flush_into_infill, as_int=True)
+        set_val("flush_into_objects", flush_into_objects, as_int=True)
+        set_val("flush_into_support", flush_into_support, as_int=True)
 
         # Bloco CFS/multi-material materializado explícito (não só via herança):
         # garante que o reconhecimento de multifilamento do slicer não dependa da

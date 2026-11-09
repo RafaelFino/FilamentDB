@@ -75,6 +75,34 @@ Ao adicionar material/inherits novo, CONFIRMAR o nome exato com
 `find ~/.config/Creality/"Creality Print"/<v>/system/Creality/filament/ -iname '*<mat>*K2 0.4*'`
 antes — não inventar o nome do pai.
 
+## OrcaSlicer — cobertura de campos no export de processo (gap corrigido)
+
+O export de PROCESSO do Orca (`export_orca_processes`) emitia só um subconjunto
+dos campos de perfil — faltavam suporte, prime tower, flush, brim, wall_generator
+e os patterns. Sintoma: perfis apareciam na UI mas "vários parâmetros não vinham"
+(ex.: bloco de suporte ausente). **Causa-raiz**: o gap NÃO estava no `set_val`
+(que já funcionava) e sim no `SELECT` do `export_orca_processes` — enxuto, não
+buscava essas colunas, então nunca chegavam ao payload.
+
+Fix: o `SELECT` foi **estendido** com as colunas faltantes (desempacotadas na
+tupla `row`) e foram adicionadas as chamadas de emissão correspondentes,
+espelhando os nomes/valores/transformações do `field_map` do `export_processes`
+(CP). O export Orca agora **espelha os campos de perfil do CP**, exceto:
+
+- `flush_multiplier` — exclusão proposital (o CP rejeita a chave em processo;
+  mantida fora do Orca por simetria).
+- Colunas `[meta]` (printer_model, base_id, timestamps, ids etc.) — nunca vão
+  para o payload.
+
+Casas decimais: `set_val` arredonda float a 1 casa. Distâncias pequenas
+(`support_top_z_distance`, `support_interface_spacing`,
+`support_object_xy_distance`, `brim_object_gap`, `top/bottom_shell_thickness`) e
+`initial_layer_print_height` são emitidas via helper `set_2dp` (2 casas) para não
+colapsar 0.25→0.2 / 0.15→0.1 / 0.12→0.1 — mesmo tratamento já usado para
+`ironing_spacing`. Travado por `OrcaProcessFieldCoverageTests` em
+`tests/test_multi_device.py` (presença dos 8 de suporte + 4 de prime tower + 3 de
+flush, ausência de `flush_multiplier`, e 2 casas em 0.20 Standard).
+
 ## Export CP vs Orca — são blocos distintos no build.py
 
 `export_processes` (Creality Print, `field_map` indexado) e
