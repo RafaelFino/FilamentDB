@@ -49,10 +49,12 @@ class FilamentMVSContractTests(unittest.TestCase):
             self.assertIsInstance(mvs, int, f"{fname} {p.get('profile_name')}")
             self.assertGreater(mvs, 0)
 
-    def test_voolt3d_petg_hf_is_12(self):
+    def test_voolt3d_petg_hf_is_11(self):
+        # MVS ancorado no Creality CR PETG (11) — intermediário, abaixo do teto
+        # de classe PETG (12). Revisão nov/2026 (ver filamentdb-rules.md).
         hf = [p for _f, _l, p in self.profiles if p.get("profile_name") == "Voolt3D PETG HF"]
         self.assertEqual(len(hf), 1)
-        self.assertEqual(hf[0]["max_volumetric_speed"], 12)
+        self.assertEqual(hf[0]["max_volumetric_speed"], 11)
 
     def test_petg_ceilings(self):
         for fname, line, p in self.profiles:

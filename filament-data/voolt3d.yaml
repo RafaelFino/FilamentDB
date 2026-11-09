@@ -352,7 +352,9 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.0
-      max_volumetric_speed: 15
+      # MVS 15 -> 14: intermediário (política conservadora nov/2026). export:
+      # false — referência.
+      max_volumetric_speed: 14
       recommendation: >
         PLA "faz-tudo" da Voolt3D para o dia a dia. Sem drama, custo equilibrado,
         MVS 15 dá boa velocidade na K2. Acabamento gloss comum, sem efeito especial.
@@ -677,7 +679,10 @@ materials:
         initial: 65
         temp: 60
       flow_ratio: 1.0
-      max_volumetric_speed: 15
+      # MVS 15 -> 14: intermediário, não colar no teto (política conservadora
+      # nov/2026). Acima do CR PLA de entrada (12), abaixo do pico; produto
+      # outlet varia por lote.
+      max_volumetric_speed: 14
       density: 1.24
       diameter_tolerance: "1.75±0.02mm"
       glass_transition_temp: 55
@@ -725,7 +730,9 @@ materials:
         initial: 65
         temp: 60
       flow_ratio: 1.0
-      max_volumetric_speed: 15
+      # MVS 15 -> 14: intermediário, não colar no teto (política conservadora
+      # nov/2026). Acima do CR PLA de entrada (12), abaixo do pico.
+      max_volumetric_speed: 14
       density: 1.24
       diameter_tolerance: "1.75±0.02mm"
       glass_transition_temp: 55
@@ -772,8 +779,10 @@ materials:
         initial: 70
         temp: 70
       flow_ratio: 0.98
-      # MVS 15 -> 12: fabricante declara até 20 mm³/s (voolt3d.com.br, tecnocubo.com.br); 15 não tinha fonte e coincidiu com sub-extrusão no Strong 0.20; 12 = topo da faixa PETG (10-12)
-      max_volumetric_speed: 12
+      # MVS -> 11: ancorado no Creality CR PETG (11), o PETG de entrada similar.
+      # Fabricante declara 20, mas política conservadora nov/2026: intermediário,
+      # não colar no teto da classe (12). Antes 15 (sem fonte) -> 12 -> 11.
+      max_volumetric_speed: 11
       density: 1.27
       diameter_tolerance: "1.75±0.02mm"
       recommendation: >
@@ -1091,9 +1100,10 @@ materials:
         initial: 90
         temp: 90
       flow_ratio: 0.95
-      # MVS 10: PETG-CF é material mais difícil; sem fonte para subir. export:
-      # false (referência). Mantido em 10 na revisão nov/2026.
-      max_volumetric_speed: 10
+      # MVS 10 -> 11: faixa intermediária (pedido do usuário p/ CF). PETG-CF é
+      # material difícil; 11 fica abaixo do teto da classe PETG (12). export:
+      # false (referência).
+      max_volumetric_speed: 11
       recommendation: >
         PETG-CF para peças rígidas e estáveis dimensionalmente, com acabamento fosco que
         disfarça camadas. A fibra aumenta a rigidez mas deixa o material mais quebradiço.
@@ -1136,9 +1146,9 @@ materials:
         initial: 100
         temp: 100
       flow_ratio: 1.0
-      # MVS 10: sem fonte para subir ao teto da classe. Mantido em 10 na revisão
-      # nov/2026 — não subir sem embasamento técnico/histórico.
-      max_volumetric_speed: 10
+      # MVS 10 -> 11: faixa intermediária (pedido do usuário p/ ABS). Entre o
+      # conservador 10 e o Creality ABS de referência (12); não cola no teto.
+      max_volumetric_speed: 11
       density: 1.04
       diameter_tolerance: "1.75±0.02mm"
       recommendation: >
@@ -1176,9 +1186,9 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 0.97
-      # MVS 10: PLA-CF abrasivo/rígido; sem fonte para subir. Mantido em 10 na
-      # revisão nov/2026.
-      max_volumetric_speed: 10
+      # MVS 10 -> 11: faixa intermediária (pedido do usuário p/ CF). PLA-CF
+      # abrasivo/rígido; 11 fica abaixo do teto 12. export: false (referência).
+      max_volumetric_speed: 11
       density: 1.24
       recommendation: >
         PLA reforçado com fibra de carbono: mais rígido e com acabamento fosco, porém frágil
