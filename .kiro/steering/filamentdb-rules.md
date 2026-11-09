@@ -467,15 +467,38 @@ priorizar calibração, preferir Sunlu.
 
 | Produto | MVS | Racional |
 |---------|-----|----------|
-| Voolt3D PETG HF | 12 (era 15) | Fabricante declara 20; 15 sem fonte coincidiu com sub-extrusão no Strong |
-| Voolt3D PETG Outlet | 10 (novo) | Decisão do usuário: carretéis outlet/troca de cor variam por lote; pior caso conservador (ficha declara 20). Bico 260 (caixa do carretel) |
-| Voolt3D TPU | 4 (era 8) | Orca TPU 3.2; sem TDS |
+| Voolt3D PETG HF | 12 | Fabricante declara 20; teto de classe PETG. Travado em `test_voolt3d_petg_hf_is_12` |
+| Voolt3D PETG Outlet | 12 (era 10) | Revisão nov/2026: subido ao teto da classe PETG (faixa mais realista Voolt3D) |
+| Voolt3D TPU | 4 | Orca TPU 3.2; sem TDS. Flexível — subir é arriscado; mantido |
 | Sunlu PETG HS | 12 (era 18) | Sem MVS declarado (só 600 mm/s de marketing) |
 | Creality CR PETG | 11 (era 15) | Sem fonte; classe PETG 10-12 |
 | Creality Hyper PETG | 14 (era 18) | Perfil de fábrica da K2; sem fonte para 18 |
 | Elegoo PLA Pro | 14 (era 16) | Sem fonte; nozzle initial 200 °C |
 | Sunlu PLA High Speed | 22 (inalterado) | TDS; filamento premium validado pelo usuário |
-| Creality Hyper PLA 20, Voolt3D PLA Velvet 8, Soleyin 8, demais PLA/ABS/CF | inalterados | Dentro da classe |
+| Creality Hyper PLA 20, Soleyin 8 | inalterados | Dentro da classe |
+
+### Revisão de MVS Voolt3D — faixa mais realista (nov/2026)
+
+Decisão do usuário: 10 estava conservador demais para a Voolt3D; subir para a
+faixa 12-16 por material, respeitando os tetos de classe travados em
+`tests/test_filament_mvs.py` (PLA ≤ 18, PETG/ABS/PLA-CF ≤ 12, TPU ≤ 6).
+
+| Produto | Material | MVS antes → depois | Racional |
+|---------|----------|--------------------|----------|
+| Voolt3D PLA High Speed    | PLA    | 15 → **16** | Linha high-speed; dentro do teto PLA (18) |
+| Voolt3D PLA V-Silk        | PLA    | 10 → **12** | Silk mais lento; piso da faixa |
+| Voolt3D PLA Macaron       | PLA    | 10 → **12** | PLA comum |
+| Voolt3D PLA-CF (export false) | PLA-CF | 10 → **12** | Teto da classe PLA-CF |
+| Voolt3D PETG Outlet       | PETG   | 10 → **12** | Teto da classe PETG |
+| Voolt3D PETG CF (export false) | PETG | 10 → **12** | Teto da classe PETG |
+| Voolt3D ABS               | ABS    | 10 → **12** | Teto da classe ABS |
+| Voolt3D PLA Premium Outlet / EVO / Standard | PLA | 15 (mantidos) | Já na faixa |
+| **Voolt3D PLA Velvet**    | PLA    | **8 (MANTIDO)** | Sub-extrusão é MECÂNICA (grip da DXC2 — teste dos 100 mm falha no Velvet, passa no Sunlu), NÃO limite de MVS. Subir iria contra o diagnóstico. Ver backlog voolt3d-mvs-reduction |
+| Voolt3D TPU               | TPU    | 4 (MANTIDO) | Fora da faixa 12-16; teto TPU 6; subir flexível é arriscado |
+
+Limite: PETG/ABS/PLA-CF **não podem** passar de 12 (teto de classe + testes);
+por isso a faixa "até 16" só se aplica de fato aos PLA. Cada valor alterado tem
+comentário `# MVS A -> B: <fonte>` no YAML.
 
 Cada YAML alterado traz um comentário `# MVS A -> B: <fonte/justificativa>` acima do valor.
 

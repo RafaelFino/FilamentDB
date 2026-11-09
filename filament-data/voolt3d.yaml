@@ -504,11 +504,13 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 0.98
-      max_volumetric_speed: 15
+      # MVS 15 -> 16: linha High Speed; subida para faixa mais realista da Voolt3D
+      # (decisão do usuário, nov/2026). Dentro do teto de classe PLA (18).
+      max_volumetric_speed: 16
       density: 1.24
       diameter_tolerance: "1.75±0.02mm"
       recommendation: >
-        PLA para quando o objetivo é tempo de impressão. MVS 15 sustenta perfis Fast
+        PLA para quando o objetivo é tempo de impressão. MVS 16 sustenta perfis Fast
         sem faltar fluxo. Acabamento e precisão cedem um pouco em troca de velocidade.
         Quando escolher: lotes, protótipos rápidos, peças grandes onde o relógio pesa
         mais que o detalhe. Para acabamento fino, prefira Velvet ou baixe o layer height.
@@ -558,7 +560,9 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.02
-      max_volumetric_speed: 10
+      # MVS 10 -> 12: subida para faixa mais realista da Voolt3D (decisão do
+      # usuário, nov/2026). Silk tende a ser mais lento; 12 é o piso da faixa.
+      max_volumetric_speed: 12
       density: 1.24
       diameter_tolerance: "1.75±0.02mm"
       recommendation: >
@@ -614,7 +618,9 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 1.02
-      max_volumetric_speed: 10
+      # MVS 10 -> 12: PLA comum; subida para faixa mais realista da Voolt3D
+      # (decisão do usuário, nov/2026). Dentro do teto de classe PLA (18).
+      max_volumetric_speed: 12
       density: 1.24
       diameter_tolerance: "1.75±0.02mm"
       recommendation: >
@@ -1048,8 +1054,10 @@ materials:
         initial: 70
         temp: 70
       flow_ratio: 0.98
-      # MVS 10: decisão do usuário — carretéis outlet/troca de cor variam por lote; pior caso conservador (classe PETG ≤ 12)
-      max_volumetric_speed: 10
+      # MVS 10 -> 12: subida ao teto da classe PETG (decisão do usuário,
+      # nov/2026, faixa mais realista Voolt3D). Carretéis outlet variam por lote;
+      # 12 é o teto da classe e o pior caso aceitável.
+      max_volumetric_speed: 12
       density: 1.27
       diameter_tolerance: "1.75±0.02mm"
       glass_transition_temp: 75
@@ -1083,7 +1091,9 @@ materials:
         initial: 90
         temp: 90
       flow_ratio: 0.95
-      max_volumetric_speed: 10
+      # MVS 10 -> 12: subida ao teto da classe PETG (decisão do usuário,
+      # nov/2026). export: false — mantido como referência.
+      max_volumetric_speed: 12
       recommendation: >
         PETG-CF para peças rígidas e estáveis dimensionalmente, com acabamento fosco que
         disfarça camadas. A fibra aumenta a rigidez mas deixa o material mais quebradiço.
@@ -1126,7 +1136,9 @@ materials:
         initial: 100
         temp: 100
       flow_ratio: 1.0
-      max_volumetric_speed: 10
+      # MVS 10 -> 12: subida ao teto da classe ABS (decisão do usuário,
+      # nov/2026).
+      max_volumetric_speed: 12
       density: 1.04
       diameter_tolerance: "1.75±0.02mm"
       recommendation: >
@@ -1164,7 +1176,9 @@ materials:
         initial: 60
         temp: 60
       flow_ratio: 0.97
-      max_volumetric_speed: 10
+      # MVS 10 -> 12: subida ao teto da classe PLA-CF (decisão do usuário,
+      # nov/2026).
+      max_volumetric_speed: 12
       density: 1.24
       recommendation: >
         PLA reforçado com fibra de carbono: mais rígido e com acabamento fosco, porém frágil
