@@ -99,9 +99,28 @@ Casas decimais: `set_val` arredonda float a 1 casa. Distâncias pequenas
 `support_object_xy_distance`, `brim_object_gap`, `top/bottom_shell_thickness`) e
 `initial_layer_print_height` são emitidas via helper `set_2dp` (2 casas) para não
 colapsar 0.25→0.2 / 0.15→0.1 / 0.12→0.1 — mesmo tratamento já usado para
-`ironing_spacing`. Travado por `OrcaProcessFieldCoverageTests` em
-`tests/test_multi_device.py` (presença dos 8 de suporte + 4 de prime tower + 3 de
-flush, ausência de `flush_multiplier`, e 2 casas em 0.20 Standard).
+`ironing_spacing`. O mesmo `set_2dp` corrige um colapso pré-existente do próprio
+`layer_height` (0.12→"0.1", 0.16→"0.2"), que fazia o Orca fatiar na altura
+errada nos layer heights finos.
+
+Travado por `OrcaProcessFieldCoverageTests` em `tests/test_multi_device.py`:
+presença dos 8 de suporte + 4 de prime tower + 3 de flush + os 9 demais campos
+(wall_generator/wall_sequence, os 3 patterns, os 2 shell_thickness,
+initial_layer_print_height, infill_combination); ausência de `flush_multiplier`;
+enum de `support_type` ∈ {normal(auto), tree(auto)}; 2 casas em 0.20 Standard e
+no `layer_height` fino; e **paridade completa de VALOR CP×Orca** no perfil de
+referência (`test_cp_orca_scoped_field_parity`, comparação numérica que tolera só
+diferença de representação como `brim_width` "5.0"/"5"). Wipe
+(`role_based_wipe_speed`/`wipe_on_loops`) é **condicional** — CP e Orca só o
+emitem quando a coluna tem valor (ausente no Fast PETG em ambos); por isso não é
+asserção de presença incondicional, só é garantido pela paridade por-perfil.
+
+**Gate de runtime (manual, só o usuário):** a paridade estática CP×Orca NÃO
+substitui carregar os presets no OrcaSlicer real e conferir o log de debug
+(`~/.config/OrcaSlicer/log/debug_*.log.0`, extensão `.log.0`) por
+`incorrect keys`/`invalid preset`/`invalid version`. Antes de publicar para uso,
+confirmar na UI que o suporte aparece (`support_type=tree(auto)`,
+`support_top_z_distance=0.25`, `support_critical_regions_only=1`).
 
 ## Export CP vs Orca — são blocos distintos no build.py
 

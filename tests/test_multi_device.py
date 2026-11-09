@@ -301,6 +301,37 @@ ORCA_PRIME_TOWER_FIELDS = [
 ORCA_FLUSH_FIELDS = [
     "flush_into_infill", "flush_into_objects", "flush_into_support",
 ]
+# Demais campos de perfil que o export Orca passou a espelhar do CP, fora dos
+# blocos de suporte/prime tower/flush já cobertos acima. Travados contra
+# regressão de remoção/renomeação silenciosa (findings de review).
+ORCA_WALL_FIELDS = ["wall_generator", "wall_sequence"]
+ORCA_PATTERN_FIELDS = [
+    "internal_solid_infill_pattern", "top_surface_pattern",
+    "bottom_surface_pattern",
+]
+ORCA_SHELL_THICKNESS_FIELDS = ["top_shell_thickness", "bottom_shell_thickness"]
+ORCA_MISC_FIELDS = ["initial_layer_print_height", "infill_combination"]
+# Campos de wipe: condicionais — tanto o CP quanto o Orca só os emitem quando a
+# coluna tem valor (ex.: ausentes no Fast PETG em ambos). A paridade por-perfil
+# (test_cp_orca_scoped_field_parity) garante que o Orca os emite sempre que o CP
+# emite; aqui não exigimos presença incondicional.
+ORCA_WIPE_FIELDS = ["role_based_wipe_speed", "wipe_on_loops"]
+
+# Enum válido de support_type (espelha o field_map do CP). O slicer rejeita/oculta
+# o preset se o enum sair do vocabulário; travar evita regressão de valor.
+ORCA_SUPPORT_TYPE_VALUES = {"normal(auto)", "tree(auto)"}
+
+# Chaves que existem só no payload do Creality Print e NÃO devem aparecer no
+# Orca (meta/CP-only + exclusões propositais). Usadas no diff de paridade CP×Orca.
+CP_ONLY_KEYS = {
+    "base_id", "is_custom_defined", "print_settings_id", "inherits",
+    "from", "name", "version", "type", "instantiation", "setting_id",
+    "flush_multiplier",
+}
+# Nota: diferenças de representação de valor (CP "5.0"/"15%" vs Orca "5"/"15")
+# são toleradas pela comparação numérica de same_value em
+# test_cp_orca_scoped_field_parity — mesmo valor numérico, formatação diferente
+# do set_val (comportamento pré-existente, documentado).
 
 
 class OrcaProcessFieldCoverageTests(unittest.TestCase):
@@ -343,6 +374,83 @@ class OrcaProcessFieldCoverageTests(unittest.TestCase):
             data = json.load(open(f))
             for key in ORCA_FLUSH_FIELDS:
                 self.assertIn(key, data, f"{f} sem campo de flush '{key}'")
+
+    def test_wall_pattern_shell_wipe_misc_blocks_present(self):
+        """Fecha a regressão dos campos de perfil que não estão nos blocos de
+        suporte/prime tower/flush: parede, padrões, espessura de casca, wipe,
+        initial_layer_print_height e infill_combination."""
+        files = self._orca_process_jsons()
+        if not files:
+            self.skipTest("nenhum JSON Orca exportado (rodar build.py antes)")
+        # Campos incondicionais (valor não-nulo vindo de base.json/profile_type
+        # em todos os perfis). Wipe é condicional e fica fora desta asserção.
+        extra = (ORCA_WALL_FIELDS + ORCA_PATTERN_FIELDS
+                 + ORCA_SHELL_THICKNESS_FIELDS + ORCA_MISC_FIELDS)
+        for f in files:
+            data = json.load(open(f))
+            for key in extra:
+                self.assertIn(key, data, f"{f} sem campo de perfil '{key}'")
+
+    def test_support_type_enum_valid(self):
+        """support_type precisa ficar no vocabulário do slicer; fora dele o Orca
+        rejeita/oculta o preset."""
+        files = self._orca_process_jsons()
+        if not files:
+            self.skipTest("nenhum JSON Orca exportado (rodar build.py antes)")
+        for f in files:
+            data = json.load(open(f))
+            self.assertIn(
+                data.get("support_type"), ORCA_SUPPORT_TYPE_VALUES,
+                f"{f}: support_type={data.get('support_type')!r} fora de {ORCA_SUPPORT_TYPE_VALUES}",
+            )
+
+    def test_cp_orca_scoped_field_parity(self):
+        """Paridade completa CP×Orca no perfil de referência: todo campo de
+        perfil do CP (descontando as chaves CP-only/[meta] e flush_multiplier)
+        aparece no Orca com o MESMO valor. brim_width difere só na representação
+        de inteiro ("5.0" vs "5") — tolerado explicitamente.
+
+        Trava a regressão que o diff manual pegaria: um campo removido, renomeado
+        ou com valor divergente no export Orca derruba este teste.
+        """
+        cp_path = (ROOT / "Creality-Print" / "process"
+                   / "0.20mm Standard @Creality K2 0.4 nozzle - PLA.json")
+        orca_path = (ROOT / "OrcaSlicer" / "process"
+                     / "0.20mm Standard @Creality K2 0.4 nozzle - PLA.json")
+        if not (cp_path.exists() and orca_path.exists()):
+            self.skipTest("JSONs de referência CP/Orca ausentes (rodar build.py antes)")
+        cp = json.load(open(cp_path))
+        orca = json.load(open(orca_path))
+
+        cp_profile_keys = set(cp) - CP_ONLY_KEYS
+        missing = sorted(k for k in cp_profile_keys if k not in orca)
+        self.assertEqual(
+            missing, [],
+            f"Campos de perfil do CP ausentes no Orca: {missing}",
+        )
+
+        def same_value(a, b):
+            """Igualdade de VALOR, não de representação. CP usa o caminho float
+            genérico ("300.0", "15%") e o Orca usa as_int/str ("300", "15") — o
+            número é o mesmo. Normaliza "%", inteiros-float e compara numérico
+            quando possível; senão, string exata."""
+            if a == b:
+                return True
+            na, nb = str(a).rstrip("%"), str(b).rstrip("%")
+            try:
+                return float(na) == float(nb)
+            except (TypeError, ValueError):
+                return na == nb
+
+        mismatches = [
+            (k, cp[k], orca.get(k))
+            for k in sorted(cp_profile_keys)
+            if not same_value(cp[k], orca.get(k))
+        ]
+        self.assertEqual(
+            mismatches, [],
+            f"Divergências de valor CP×Orca (campo, cp, orca): {mismatches}",
+        )
 
     def test_flush_multiplier_absent(self):
         """flush_multiplier é exclusão proposital (rejeitado pelo CP; mantido
