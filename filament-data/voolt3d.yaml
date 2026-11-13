@@ -1139,7 +1139,7 @@ materials:
         preenchidos. MVS mantido em 10 (declarado até 20; política de MVS conservador).
         Fonte: https://voolt3d.com.br/produtos/filamento-abs-vermelho-premium/
       nozzle:
-        initial: 250
+        initial: 260
         min: 240
         max: 260
       bed:
@@ -1179,7 +1179,7 @@ materials:
       profile_name: Voolt3D PLA CF
       export: true
       nozzle:
-        initial: 225
+        initial: 235
         min: 215
         max: 235
       bed:
@@ -1217,7 +1217,7 @@ materials:
       profile_name: Voolt3D TPU
       export: true
       nozzle:
-        initial: 225
+        initial: 235
         min: 215
         max: 235
       bed:

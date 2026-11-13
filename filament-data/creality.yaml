@@ -135,7 +135,7 @@ materials:
         coincidem com a OFDB (190-230 / 25-60). Fonte:
         https://api.openfilamentdatabase.org/api/v1/brands/creality/materials/PLA/filaments/hyper_pla/index.json
       nozzle:
-        initial: 220
+        initial: 230
         min: 190
         max: 230
       bed:

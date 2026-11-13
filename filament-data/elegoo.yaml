@@ -353,7 +353,7 @@ materials:
         OFDB sem data_sheet_url. Fonte:
         https://api.openfilamentdatabase.org/api/v1/brands/elegoo/materials/PLA/filaments/pla_plus/index.json
       nozzle:
-        initial: 220
+        initial: 230
         min: 200
         max: 230
       bed:
@@ -416,7 +416,7 @@ materials:
         OFDB sem data_sheet_url. Fonte:
         https://api.openfilamentdatabase.org/api/v1/brands/elegoo/materials/PLA/filaments/pla_pro/index.json
       nozzle:
-        initial: 200
+        initial: 210
         min: 190
         max: 210
       bed:

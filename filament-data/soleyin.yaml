@@ -51,7 +51,7 @@ materials:
         data_sheet_url. Fonte:
         https://api.openfilamentdatabase.org/api/v1/brands/creality/materials/PLA/filaments/soleyin_ultra_pla/index.json
       nozzle:
-        initial: 210
+        initial: 230
         min: 190
         max: 230
       bed:

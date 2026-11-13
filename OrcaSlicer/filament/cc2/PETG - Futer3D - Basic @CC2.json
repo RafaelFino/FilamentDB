@@ -18,16 +18,16 @@
         "Futer3D"
     ],
     "nozzle_temperature": [
-        "260"
+        "270"
     ],
     "nozzle_temperature_initial_layer": [
-        "260"
+        "270"
     ],
     "nozzle_temperature_range_low": [
         "230"
     ],
     "nozzle_temperature_range_high": [
-        "260"
+        "270"
     ],
     "hot_plate_temp": [
         "80"

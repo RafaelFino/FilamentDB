@@ -287,7 +287,7 @@ materials:
         https://media.sunlu.com/prod/20260330/b129fd4c-7d50-46be-874e-84e0bb6ff1ae.pdf?filename=TDS
       drying_temperature: 50
       nozzle:
-        initial: 220
+        initial: 230
         min: 210
         max: 230
       bed:
@@ -356,7 +356,7 @@ materials:
         ±0.02mm); temperaturas já dentro da faixa. TDS:
         https://media.sunlu.com/prod/20260330/689d1925-acad-4de8-9079-c8eee9c3081e.pdf?filename=TDS
       nozzle:
-        initial: 220
+        initial: 230
         min: 200
         max: 230
       bed:
@@ -494,7 +494,7 @@ materials:
         preenchido. TDS:
         https://media.sunlu.com/prod/20260330/b42c1ff4-b3d1-42e4-82a3-b85523647407.pdf?filename=TDS
       nozzle:
-        initial: 210
+        initial: 225
         min: 205
         max: 225
       bed:
