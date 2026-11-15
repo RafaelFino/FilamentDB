@@ -596,9 +596,8 @@ class IroningDetailScopeTests(unittest.TestCase):
     def test_standard_ironing_has_no_detail_fields(self):
         device = build_mod.load_device("k2")
         prof = build_mod.generate_process_profile("standard", "0.20", "PLA", device)
-        # Standard mantém seu ironing leve próprio.
-        self.assertEqual(prof.get("ironing_type"), "top")
-        self.assertEqual(str(prof.get("ironing_flow")), "7%")
+        # Standard NÃO usa ironing (removido: piorava acabamento e alongava o tempo).
+        self.assertEqual(prof.get("ironing_type"), "no ironing")
         # Mas NÃO carrega os campos exclusivos do Detail.
         self.assertNotIn("ironing_pattern", prof)
         self.assertNotIn("ironing_angle", prof)

@@ -343,3 +343,22 @@ Durante a aplicação da correção, houve um commit intermediário que gravou c
 
 ### Endurecimento adicional
 O collector agora também possui fallback local: se a API antiga/indisponível devolver instruções sem `system_prompt` ou `user_prompt`, ele não envia mensagens vazias ao LLM. Ele monta um prompt mínimo usando a chave canônica e as regras estruturadas retornadas pela API. A API continua sendo a fonte canônica e deve ser atualizada no servidor.
+
+## 15. Evoluções futuras — perfis de processo e catálogo de cores (nov/2026)
+
+Itens levantados e deliberadamente NÃO aplicados (só se altera o que há certeza; validar em impressão antes).
+
+### Perfis de processo (hipóteses a testar)
+- **Detail `ironing_flow`**: hoje 50% (PETG 10% por override). Pode estar alto frente ao padrão do slicer; testar 10-15% no Detail PLA e comparar o topo impresso.
+- **Standard `seam_position`**: hoje `aligned` (com scarf seam externa). Testar `back` ou `nearest` e comparar a linha de costura visível.
+- **Chaves ainda ausentes do pipeline**: `elefant_foot_compensation`, `bridge_flow`, `reduce_crossing_wall`. Exigem coluna nova no banco e emissão nos dois exports. Adicionar UMA chave por vez e, após importar, ler o log do slicer (`incorrect keys` / `invalid preset`), pois o Creality Print invalida o preset inteiro se não aceitar a chave.
+- **Auditoria de cooling/retração do PETG** nos YAMLs de filamento (não revisado).
+
+### Catálogo de cores
+- **Creality Hyper PLA**: a fonte lista 15 cores; só ~11 foram confirmadas. Completar quando houver fonte.
+- **Voolt3D PLA Velvet**, **Soleyin Ultra PLA**, **Futer3D PETG Basic**: lista pública não verificada/encontrada.
+- **Hex das cores adicionadas** (Sunlu, Creality, Elegoo) são aproximados; fabricantes não publicam hex. Refinar por foto/medição do rolo real.
+- **Sunlu PLA High Speed Matte "Klein Blue"**: confirmada pela compra do usuário, mas ausente das listas públicas consultadas.
+
+### Estoque (UI)
+- Resumo do topo: não foi reproduzido erro de atualização. Se voltar a ocorrer, anotar o caso exato (o que foi adicionado e qual número ficou parado). Considerar contar "Itens" por card agrupado, não por rolo, para casar com o que aparece na tela.

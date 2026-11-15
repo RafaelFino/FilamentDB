@@ -405,6 +405,11 @@ materials:
         hex: "#A0522D"
       - color: Brown
         hex: "#8B4513"
+      # Cores adicionais (lista SimplyPrint/OFDB). Hex aproximados.
+      - color: Dark Blue
+        hex: "#1B2F6B"
+      - color: Neon Green
+        hex: "#39FF14"
     - line: PLA Pro Line
       commercial_name: PLA Pro
       profile_name: Elegoo PLA Pro

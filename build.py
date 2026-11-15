@@ -1902,8 +1902,11 @@ def export_orca_processes():
         set_val("prime_tower_enhance_type", prime_tower_enhance_type)
         set_val("ooze_prevention", ooze_prevention)
 
-        if ironing_type and ironing_type != "no ironing":
+        # ironing_type sempre explícito (inclusive "no ironing"): não depender do
+        # preset pai para desligar o ironing (paridade com o export do CP).
+        if ironing_type:
             data["ironing_type"] = str(ironing_type)
+        if ironing_type and ironing_type != "no ironing":
             set_val("ironing_speed", ironing_speed)
             # ironing_flow é string percentual ("50%"/"7%") — atribuir direto.
             if ironing_flow is not None:

@@ -243,6 +243,13 @@ materials:
         dry_hours: 8.0
         recommended_use: General
         status: Active
+      # Cores adicionais (lista SimplyPrint/OFDB, 15 cores). Hex aproximados.
+      - {color_name: Brown, hex: '#6B4423', finish: Gloss, diameter_mm: 1.75, weight_g: 1000, status: Active}
+      - {color_name: Gold, hex: '#C9A227', finish: Gloss, diameter_mm: 1.75, weight_g: 1000, status: Active}
+      - {color_name: Orange, hex: '#F26B21', finish: Gloss, diameter_mm: 1.75, weight_g: 1000, status: Active}
+      - {color_name: Peach Fuzz, hex: '#FFBE98', finish: Gloss, diameter_mm: 1.75, weight_g: 1000, status: Active}
+      - {color_name: Purple, hex: '#7A4FA3', finish: Gloss, diameter_mm: 1.75, weight_g: 1000, status: Active}
+      - {color_name: Skin, hex: '#E8C8A0', finish: Gloss, diameter_mm: 1.75, weight_g: 1000, status: Active}
     - line: CR Series
       commercial_name: CR PLA
       profile_name: Creality CR PLA
@@ -450,6 +457,11 @@ materials:
         dry_hours: 8.0
         recommended_use: Mechanical parts
         status: Active
+      # Cores adicionais (lista SimplyPrint/OFDB, 8 cores). Hex aproximados.
+      - {color_name: Grey, hex: '#808285', finish: Semi-Gloss, diameter_mm: 1.75, weight_g: 1000, status: Active}
+      - {color_name: Red, hex: '#C8202F', finish: Semi-Gloss, diameter_mm: 1.75, weight_g: 1000, status: Active}
+      - {color_name: Transparent, hex: '#E8EEF0', finish: Semi-Gloss, diameter_mm: 1.75, weight_g: 1000, status: Active}
+      - {color_name: Yellow, hex: '#F5C518', finish: Semi-Gloss, diameter_mm: 1.75, weight_g: 1000, status: Active}
   ABS:
     profiles:
     - line: ABS Industrial Line

@@ -341,6 +341,10 @@ materials:
         hex: "#9C64D6"
       - color: Mocha Mousse
         hex: "#A67B5B"
+      - color: Blue
+        hex: "#1F5FBF"
+      - color: Orange
+        hex: "#F26B21"
     - line: High Speed Matte Line
       commercial_name: PLA High Speed Matte
       profile_name: Sunlu PLA High Speed Matte
@@ -400,6 +404,16 @@ materials:
         hex: "#808000"
       - color: Sakura Pink
         hex: "#FF91A4"
+      # Cores abaixo: Klein Blue confirmada pelo usuário (spool comprado); demais
+      # listadas pela SimplyPrint/OFDB. Hex aproximados (Sunlu não publica hex).
+      - color: Klein Blue
+        hex: "#002FA7"
+      - color: Chocolate
+        hex: "#5C3A21"
+      - color: Lemon Yellow
+        hex: "#F4E04D"
+      - color: Mint Green
+        hex: "#98FF98"
     - line: Meta Line
       commercial_name: PLA Meta
       profile_name: Sunlu PLA Meta
@@ -523,6 +537,22 @@ materials:
         finish: Matte
         weight_g: 1000
         status: Active
+      # Cores adicionais (lista SimplyPrint/OFDB, 18 cores). Hex aproximados.
+      - {color_name: Blue, hex: "#2457A6", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Bone White, hex: "#E8E0CE", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Bright Yellow, hex: "#FFD400", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Clay, hex: "#B5654A", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Grey, hex: "#808285", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Green, hex: "#2E8B57", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Light Blue, hex: "#8EC5E8", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Light Yellow, hex: "#F7EE9A", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Olive Green, hex: "#808000", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Orange, hex: "#F26B21", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Pink, hex: "#F4A6B8", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Powder Blue, hex: "#B0C8DC", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Purple, hex: "#7A4FA3", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Red, hex: "#C8202F", finish: Matte, weight_g: 1000, status: Active}
+      - {color_name: Sprout Green, hex: "#9CCB3B", finish: Matte, weight_g: 1000, status: Active}
   PETG:
     profiles:
     - line: PETG Line
@@ -618,6 +648,9 @@ materials:
         hex: "#1DAA27"
       - color: Mint Green
         hex: "#4CA98F"
+      # Cor adicional (lista SimplyPrint/OFDB do High Speed PETG). Hex aproximado.
+      - color: Pink
+        hex: "#F4A6B8"
   ABS:
     profiles:
     - line: ABS Line
