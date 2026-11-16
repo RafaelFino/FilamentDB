@@ -94,9 +94,9 @@ materials:
       profile_name: Masterprint PETG
       export: true
       nozzle:
-        initial: 240
+        initial: 270
         min: 220
-        max: 240
+        max: 270
       bed:
         initial: 80
         temp: 80
@@ -106,8 +106,9 @@ materials:
       drying_temperature: 65
       drying_time: 8.0
       notes: 'Produto comprado pelo usuario (4 cores: Cinza, Skin/bege, Azul, Lavanda). Specs do catalogo:
-        nozzle 220-240C, mesa 70-90C. Temperaturas fixadas em 240/80 por decisao do usuario (padrao medio-alto,
-        proximo ao limite). MVS 10 conservador (PETG barato, nao-premium, sem spec de MVS do fabricante).
+        nozzle 220-240C, mesa 70-90C. Nozzle initial/max 270C = decisao do usuario (nov/2026), SEM FONTE em
+        ficha tecnica e acima da faixa do catalogo: mesmo problema de sub-extrusao do Voolt3D PETG Outlet,
+        resolvido com bico mais quente; calibrar por lote. Mesa 80C mantida por decisao do usuario. MVS 10 conservador (PETG barato, nao-premium, sem spec de MVS do fabricante).
         flow 1.0. SKU = Cod. Produto do catalogo. Fonte: catalogo oficial Masterprint (PDF).'
       variants:
       - sku: '231020012'
