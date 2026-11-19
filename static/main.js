@@ -2126,7 +2126,7 @@ function renderInventory(data) {
                 <span class="inv-group-meta">${group.colors_available} cor(es) · ${group.total_spools} rolo(s)</span>
                 <div class="inv-group-palette">${palette}</div>
             </div>
-            <div class="inv-cards">${group.items.map(renderInvCard).join('')}</div>
+            <div class="inv-cards">${renderInvCards(group.items)}</div>
         </div>`;
     }
     if (sealedHtml) {
@@ -2147,7 +2147,7 @@ function renderInventory(data) {
         <section class="inv-section inv-section-empty">
             <details open>
                 <summary class="inv-section-title">✔️ Usados (${empty.length})</summary>
-                <div class="inv-cards" style="margin-top:12px;">${empty.map(renderInvCard).join('')}</div>
+                <div class="inv-cards" style="margin-top:12px;">${renderInvCards(empty)}</div>
             </details>
         </section>`;
     }
@@ -2307,7 +2307,7 @@ function textColorFor(hex) {
 // Renderiza os 4 slots do CFS: cada rolo ocupa 1 slot; slots vazios aparecem como placeholders.
 function renderCfsSlots(cfs) {
     const cards = [];
-    for (const item of cfs.items) {
+    for (const item of invSortItems(cfs.items)) {
         // Um item com N rolos ocupa N slots — mostramos o card uma vez com a contagem de rolos.
         cards.push(renderInvCard(item));
     }
@@ -2319,6 +2319,42 @@ function renderCfsSlots(cfs) {
     return html;
 }
 
+// Ordenação dos cards: marca → tipo (produto) → cor. Usada nas listas livres
+// (CFS, dryboxes, abertos, estoque fechado, usados). O modelo não guarda a
+// posição física do slot no CFS, então ordenar não perde informação.
+function invSortKey(item) {
+    const pinfo = item.profile_name ? invProfileIndex()[item.profile_name] : null;
+    const product = pinfo ? pinfo.commercial_name : (item.profile_name || '');
+    return [item.manufacturer || '', product, item.color_name || ''];
+}
+
+function invSortItems(items) {
+    const cmp = (a, b) => String(a).localeCompare(String(b), 'pt-BR', { sensitivity: 'base', numeric: true });
+    return items
+        .map(it => ({ it, k: invSortKey(it) }))
+        .sort((a, b) => cmp(a.k[0], b.k[0]) || cmp(a.k[1], b.k[1]) || cmp(a.k[2], b.k[2]) || (a.it.id - b.it.id))
+        .map(x => x.it);
+}
+
+// Renderiza os cards ordenados; com mais de uma marca na lista, separa por
+// cabeçalho de marca (ocupa a linha inteira do grid).
+function renderInvCards(items) {
+    const sorted = invSortItems(items);
+    const brandOf = it => it.manufacturer || 'Sem marca';
+    const multiBrand = new Set(sorted.map(brandOf)).size > 1;
+    let lastBrand = null;
+    return sorted.map(it => {
+        let head = '';
+        const b = brandOf(it);
+        if (multiBrand && b !== lastBrand) {
+            const n = sorted.filter(x => brandOf(x) === b).length;
+            head = `<div class="inv-brand-head">${escapeHtml(b)} <span class="inv-slot-count">${n}</span></div>`;
+        }
+        lastBrand = b;
+        return head + renderInvCard(it);
+    }).join('');
+}
+
 function renderLocationSection(title, subtitle, items, extraClass = '') {
     return `
     <section class="inv-section ${extraClass}">
@@ -2326,7 +2362,7 @@ function renderLocationSection(title, subtitle, items, extraClass = '') {
             <span class="inv-section-title">${title}</span>
             <span class="inv-section-meta">${subtitle} · ${items.length} item(ns)</span>
         </div>
-        <div class="inv-cards">${items.map(renderInvCard).join('')}</div>
+        <div class="inv-cards">${renderInvCards(items)}</div>
     </section>`;
 }
 

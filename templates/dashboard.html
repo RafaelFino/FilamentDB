@@ -895,6 +895,15 @@
             border-radius: 10px;
             padding: 12px;
         }
+        .inv-brand-head {
+            grid-column: 1 / -1;
+            display: flex; align-items: center; gap: 8px;
+            font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            padding: 6px 2px 4px;
+        }
+        .inv-brand-head:not(:first-child) { margin-top: 6px; }
         .inv-card.is-empty { opacity:.55; }
         .inv-card.status-open { border-color: rgba(255,238,0,.6); box-shadow: 0 0 0 1px rgba(255,238,0,.3) inset; }
         .inv-card-top { display:flex; align-items:center; gap:10px; }
