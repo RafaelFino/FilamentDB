@@ -2193,6 +2193,38 @@ function collectAllItems(data) {
     return items;
 }
 
+// Chave de ordenação por cor a partir do hex: neutros (preto→branco, por
+// luminosidade) primeiro; depois cromáticos pelo matiz (vermelho→…→magenta),
+// e dentro do mesmo matiz do mais escuro ao mais claro.
+function invHexToHsl(hex) {
+    if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return null;
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const l = (max + min) / 2, d = max - min;
+    if (d === 0) return { h: 0, s: 0, l };
+    const s = d / (1 - Math.abs(2 * l - 1));
+    let h;
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60; if (h < 0) h += 360;
+    return { h, s, l };
+}
+
+function invColorCompare(hexA, hexB) {
+    const a = invHexToHsl(hexA), b = invHexToHsl(hexB);
+    if (!a || !b) return (a ? -1 : 0) + (b ? 1 : 0);   // sem hex válido vai para o fim
+    const neutral = c => c.s < 0.12 || c.l < 0.08 || c.l > 0.95;
+    const na = neutral(a), nb = neutral(b);
+    if (na !== nb) return na ? -1 : 1;
+    if (na) return a.l - b.l;
+    // matiz em fatias de 15° para agrupar tons próximos; depois luminosidade
+    const ha = Math.floor(a.h / 15), hb = Math.floor(b.h / 15);
+    return (ha - hb) || (a.l - b.l);
+}
+
 function renderInvCharts(data) {
     if (!invCharts) return;
     const items = collectAllItems(data);
@@ -2230,7 +2262,7 @@ function renderInvCharts(data) {
                 byColor[key].qty += i.spools;
             }
             const chips = Object.values(byColor)
-                .sort((a, b) => b.qty - a.qty)
+                .sort((a, b) => invColorCompare(a.hex, b.hex) || a.name.localeCompare(b.name, 'pt-BR'))
                 .map(c => `<span class="inv-palette-chip" style="background:${c.hex || '#333'}" title="${escapeHtml(c.name)} — ${c.qty} rolo(s)">${c.qty > 1 ? `<span class="qty">${c.qty}</span>` : ''}</span>`)
                 .join('');
             return `<div class="inv-palette-row">
@@ -2259,7 +2291,7 @@ function renderInvCharts(data) {
             if (!byColor[key]) byColor[key] = { name: i.color_name, hex: i.hex_color, qty: 0 };
             byColor[key].qty += i.spools;
         }
-        const colors = Object.values(byColor).sort((a, b) => b.qty - a.qty);
+        const colors = Object.values(byColor).sort((a, b) => invColorCompare(a.hex, b.hex) || a.name.localeCompare(b.name, 'pt-BR'));
         // Cada segmento ocupa (qtd de rolos) × unitPct da TRACK inteira.
         // A track representa 100% = maxTotal rolos; o material preenche só as
         // posições que possui. Assim 1 rolo tem o MESMO tamanho em toda barra.
@@ -2272,6 +2304,36 @@ function renderInvCharts(data) {
         return `<div class="inv-matbar-row">
             <span class="inv-matbar-label">${escapeHtml(mat)}</span>
             <div class="inv-matbar-track" style="--unit:${unitPct}%">${segsInner}</div>
+            <span class="inv-matbar-total"><strong>${total}</strong> rolo(s)</span>
+        </div>`;
+    }).join('');
+
+    // ── 4. Rolos por marca (cores empilhadas, mesma escala do gráfico por material) ──
+    const byBrand = {};
+    for (const it of items) {
+        (byBrand[it.manufacturer || 'Sem marca'] = byBrand[it.manufacturer || 'Sem marca'] || []).push(it);
+    }
+    const brandTotals = Object.entries(byBrand).map(([brand, its]) => ({
+        brand, its, total: its.reduce((s, i) => s + i.spools, 0),
+    })).sort((a, b) => b.total - a.total || a.brand.localeCompare(b.brand, 'pt-BR'));
+    const brandMax = brandTotals.length ? brandTotals[0].total : 1;
+    const brandUnit = 100 / (brandMax || 1);
+    const brandBarRows = brandTotals.map(({ brand, its, total }) => {
+        const byColor = {};
+        for (const i of its) {
+            const key = `${i.color_name}|${i.hex_color}`;
+            if (!byColor[key]) byColor[key] = { name: i.color_name, hex: i.hex_color, qty: 0 };
+            byColor[key].qty += i.spools;
+        }
+        const colors = Object.values(byColor)
+            .sort((a, b) => invColorCompare(a.hex, b.hex) || a.name.localeCompare(b.name, 'pt-BR'));
+        const inner = colors.map(c => {
+            const wpct = c.qty * brandUnit;
+            return `<div class="inv-matbar-seg" style="width:${wpct}%;background:${c.hex || '#333'};color:${textColorFor(c.hex)}" title="${escapeHtml(c.name)}: ${c.qty} rolo(s)">${wpct >= brandUnit * 0.9 ? c.qty : ''}</div>`;
+        }).join('');
+        return `<div class="inv-matbar-row">
+            <span class="inv-matbar-label inv-matbar-label-brand" title="${escapeHtml(brand)}">${escapeHtml(brand)}</span>
+            <div class="inv-matbar-track" style="--unit:${brandUnit}%">${inner}</div>
             <span class="inv-matbar-total"><strong>${total}</strong> rolo(s)</span>
         </div>`;
     }).join('');
@@ -2289,6 +2351,10 @@ function renderInvCharts(data) {
         <div class="inv-chart inv-chart-wide">
             <div class="inv-chart-title">Rolos por material e cor</div>
             <div class="inv-matbar-rows">${matBarRows}</div>
+        </div>
+        <div class="inv-chart inv-chart-wide">
+            <div class="inv-chart-title">Rolos por marca (${brandTotals.length} marca(s))</div>
+            <div class="inv-matbar-rows">${brandBarRows}</div>
         </div>
     `;
 }
